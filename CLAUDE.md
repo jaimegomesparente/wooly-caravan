@@ -17,11 +17,10 @@ Out of scope until explicitly requested: dog, enemies, powers, shop, map, meta-p
 
 ## Build order (one step at a time, test and commit after each)
 
-1. Sheep follow the shepherd (attraction + elastic radius, they stop when he stops)
-2. Add separation, then cohesion, then alignment (one rule at a time)
-3. Idle / graze when the flock is still
-4. One enemy that charges the most isolated sheep (flock panics and flees toward the center)
-5. The dog, with a flee force that pushes sheep without oscillation
+1. Chain following: front sheep follow the shepherd, the others follow the sheep ahead; discrete gaits (rest / walk / trot), limited turn rate, separation steers the heading
+2. Graze and wander at rest (graze animation cycle, short steps toward neighbors, never alone)
+3. One enemy that charges the most isolated sheep (flock panics and flees toward the center)
+4. The dog, with a flee force that pushes sheep without oscillation
 
 ## Game design (reference for later steps)
 
@@ -65,10 +64,10 @@ Prototype uses only 2 orders (Go there, Fetch).
 
 ## Boids guidelines
 
-- Rules: separation, alignment, cohesion, plus follow-shepherd (weak pull with elastic radius), flee (from enemy or dog), obstacle avoidance, panic (speed up, lower cohesion)
+- Rules: follow the sheep ahead (guide = shepherd for the front sheep), separation, cohesion at rest, flee (from enemy or dog), obstacle avoidance, panic (speed up, lower cohesion)
+- Movement is a heading turned at a limited `turn_rate` plus a speed tied to a discrete gait (rest / walk / trot); no free velocity vector, no slow creeping
 - Expose ALL weights and speeds with `@export` (in a Resource if possible) so they can be tuned in the Godot inspector without editing code
 - At ~10-30 sheep, compare every sheep with every other one (no spatial grid yet)
-- Limit speed with `limit_length(max_speed)`
 - Dog and enemies are state machines (FSM), not boids
 - Sheep flip `flip_h` from the sign of `velocity.x` with a small threshold (about 5 px/s) to avoid flickering
 - Walk animation speed is linked to real speed; when nearly still, play idle/graze instead of walk

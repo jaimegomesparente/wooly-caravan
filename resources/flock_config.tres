@@ -4,18 +4,20 @@
 
 [resource]
 script = ExtResource("1_script")
-start_follow_radius = 70.0
-stop_radius_min = 35.0
-stop_radius_max = 55.0
-reaction_delay_min = 0.1
-reaction_delay_max = 0.8
-elastic_width = 30.0
-max_speed = 66.0
-acceleration = 350.0
-min_move_speed = 12.0
+walk_speed = 24.0
+trot_speed = 48.0
+acceleration = 150.0
+turn_rate = 5.0
 speed_variation = 0.15
-separation_radius = 12.0
-separation_strength = 50.0
-idle_threshold = 5.0
+think_interval_min = 0.2
+think_interval_max = 0.4
+lead_radius = 40.0
+view_radius = 40.0
+shepherd_gap = 22.0
+follow_gap = 12.0
+start_margin = 6.0
+trot_margin = 30.0
+separation_radius = 11.0
+separation_strength = 1.5
+shuffle_threshold = 0.4
 flip_threshold = 5.0
-run_reference_speed = 60.0

@@ -1,15 +1,23 @@
 class_name Sheep
 extends CharacterBody2D
 
-enum State { IDLE, FOLLOW }
+enum Gait { REST, WALK, TROT }
+
+## A sheep this close to its guide's speed counts the guide as stopped (px/s).
+const GUIDE_STOPPED_SPEED := 2.0
+## A guide sheep must be at least this much closer (px) to the shepherd, so guides never loop.
+const GUIDE_AHEAD_MARGIN := 4.0
 
 @export var config: FlockConfig
 
-var _state: State = State.IDLE
+var _gait: Gait = Gait.REST
+var _heading: float = 0.0
+var _speed: float = 0.0
 var _speed_factor: float = 1.0
-var _stop_radius: float = 0.0
-## Seconds left before setting off; negative while no reaction is pending.
-var _reaction_timer: float = -1.0
+var _shepherd_gap: float = 0.0
+var _think_timer: float = 0.0
+## The shepherd, or the sheep ahead that this sheep follows.
+var _guide: Node2D
 var _shepherd: Node2D
 var _animation_started: bool = false
 
@@ -18,7 +26,9 @@ var _animation_started: bool = false
 
 func _ready() -> void:
 	_speed_factor = 1.0 + randf_range(-config.speed_variation, config.speed_variation)
-	_stop_radius = randf_range(config.stop_radius_min, config.stop_radius_max)
+	_shepherd_gap = config.shepherd_gap * (1.0 + randf_range(-config.speed_variation, config.speed_variation))
+	_heading = randf() * TAU
+	_think_timer = randf_range(0.0, config.think_interval_max)
 
 
 func _physics_process(delta: float) -> void:
@@ -27,39 +37,91 @@ func _physics_process(delta: float) -> void:
 	if _shepherd == null:
 		return
 
-	var to_shepherd := _shepherd.global_position - global_position
-	var distance := to_shepherd.length()
-	_update_state(delta, distance)
+	var separation := _separation()
+	_think_timer -= delta
+	if _think_timer <= 0.0:
+		_think_timer = randf_range(config.think_interval_min, config.think_interval_max)
+		_think()
 
-	var max_speed := config.max_speed * _speed_factor
-	var desired := Vector2.ZERO
-	if _state == State.FOLLOW:
-		var pull := clampf((distance - _stop_radius) / config.elastic_width, 0.0, 1.0)
-		desired = to_shepherd.normalized() * maxf(max_speed * pull, config.min_move_speed)
-	desired += _separation() * config.separation_strength
-	if desired.length() < config.min_move_speed:
-		desired = Vector2.ZERO
+	var direction := Vector2.from_angle(_heading)
+	var target_speed := 0.0
+	if _gait == Gait.REST:
+		if separation.length() > config.shuffle_threshold:
+			direction = separation
+			target_speed = config.walk_speed * _speed_factor * 0.5
+	else:
+		var to_guide := _guide.global_position - global_position
+		var distance := to_guide.length()
+		var gap := _gap()
+		var guide_speed := _speed_of(_guide)
+		if guide_speed < GUIDE_STOPPED_SPEED and (distance < gap + config.start_margin or _is_blocked(distance)):
+			_gait = Gait.REST
+		elif _gait == Gait.WALK and distance > gap + config.trot_margin:
+			_gait = Gait.TROT
+		elif _gait == Gait.TROT and distance < gap + config.trot_margin * 0.5:
+			_gait = Gait.WALK
 
-	velocity = velocity.move_toward(desired, config.acceleration * delta).limit_length(max_speed)
+		direction = to_guide.normalized() + separation * config.separation_strength
+		match _gait:
+			Gait.TROT:
+				target_speed = config.trot_speed * _speed_factor
+			Gait.WALK:
+				# Close behind a moving guide, match its pace instead of bumping into it.
+				var walk := config.walk_speed * _speed_factor
+				target_speed = walk if distance > gap + config.start_margin * 0.5 else minf(walk, guide_speed)
+
+	if direction != Vector2.ZERO:
+		_heading = rotate_toward(_heading, direction.angle(), config.turn_rate * delta)
+	_speed = move_toward(_speed, target_speed, config.acceleration * delta)
+	velocity = Vector2.from_angle(_heading) * _speed
 	move_and_slide()
 	_update_animation()
 
 
-func _update_state(delta: float, distance: float) -> void:
-	match _state:
-		State.IDLE:
-			if distance <= config.start_follow_radius:
-				_reaction_timer = -1.0
-			elif _reaction_timer < 0.0:
-				_reaction_timer = randf_range(config.reaction_delay_min, config.reaction_delay_max)
-			else:
-				_reaction_timer -= delta
-				if _reaction_timer <= 0.0:
-					_reaction_timer = -1.0
-					_state = State.FOLLOW
-		State.FOLLOW:
-			if distance <= _stop_radius:
-				_state = State.IDLE
+## Pick a guide (shepherd or the nearest sheep ahead) and decide whether to set off.
+func _think() -> void:
+	var my_distance := global_position.distance_to(_shepherd.global_position)
+	_guide = _shepherd
+	if my_distance > config.lead_radius:
+		var nearest := config.view_radius
+		for other: Node2D in get_tree().get_nodes_in_group("sheep"):
+			if other == self:
+				continue
+			if other.global_position.distance_to(_shepherd.global_position) > my_distance - GUIDE_AHEAD_MARGIN:
+				continue
+			var distance := global_position.distance_to(other.global_position)
+			if distance < nearest:
+				nearest = distance
+				_guide = other
+
+	if _gait == Gait.REST:
+		var distance := global_position.distance_to(_guide.global_position)
+		# Imitation: set off as soon as the guide walks away, not only once it is far.
+		var guide_leaving := _speed_of(_guide) >= GUIDE_STOPPED_SPEED and distance > _gap()
+		if distance > _gap() + config.trot_margin:
+			_gait = Gait.TROT
+		elif guide_leaving or distance > _gap() + config.start_margin:
+			_gait = Gait.WALK
+
+
+func _gap() -> float:
+	return _shepherd_gap if _guide == _shepherd else config.follow_gap
+
+
+## True when a stopped sheep stands right in front, closer to the guide: queue behind it.
+func _is_blocked(distance_to_guide: float) -> bool:
+	for other: Sheep in get_tree().get_nodes_in_group("sheep"):
+		if other == self or other._speed >= GUIDE_STOPPED_SPEED:
+			continue
+		if global_position.distance_to(other.global_position) < config.separation_radius \
+				and other.global_position.distance_to(_guide.global_position) < distance_to_guide:
+			return true
+	return false
+
+
+func _speed_of(node: Node2D) -> float:
+	var body := node as CharacterBody2D
+	return body.velocity.length() if body else 0.0
 
 
 ## Push away from sheep closer than separation_radius; magnitude fades from 1 to 0 across the radius.
@@ -78,12 +140,12 @@ func _separation() -> Vector2:
 
 
 func _update_animation() -> void:
-	var speed := velocity.length()
 	if absf(velocity.x) > config.flip_threshold:
 		_sprite.flip_h = velocity.x < 0.0
 
-	if speed > config.idle_threshold:
-		_play(&"run", speed / config.run_reference_speed)
+	if _speed > GUIDE_STOPPED_SPEED:
+		# Leg cadence follows real speed so feet do not slide.
+		_play(&"run", _speed / config.walk_speed)
 	else:
 		_play(&"idle", 1.0)
 
