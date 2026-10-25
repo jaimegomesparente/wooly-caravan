@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FlockConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/flock_config.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+follow_radius = 40.0
+elastic_width = 30.0
+max_speed = 66.0
+acceleration = 200.0
+speed_variation = 0.15
+idle_threshold = 5.0
+flip_threshold = 5.0
+run_reference_speed = 60.0

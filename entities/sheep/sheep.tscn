@@ -1,0 +1,49 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://entities/sheep/sheep.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/flock_config.tres" id="2_config"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_sheep"]
+animations = [{
+"frames": [],
+"loop": true,
+"name": &"graze",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": false,
+"name": &"finished_graze",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"run",
+"speed": 8.0
+}, {
+"frames": [],
+"loop": false,
+"name": &"to_graze",
+"speed": 5.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 4.0
+
+[node name="Sheep" type="CharacterBody2D" groups=["sheep"]]
+collision_layer = 2
+collision_mask = 16
+motion_mode = 1
+script = ExtResource("1_script")
+config = ExtResource("2_config")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_sheep")
+animation = &"idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_body")
