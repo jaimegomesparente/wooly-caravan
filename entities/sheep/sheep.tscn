@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bhgnnmv46ep3n"]
 
 [ext_resource type="Script" uid="uid://54f5ttv4q0c" path="res://entities/sheep/sheep.gd" id="1_script"]
-[ext_resource type="Resource" path="res://resources/flock_config.tres" id="2_config"]
+[ext_resource type="Resource" uid="uid://cqv7e475qv2o1" path="res://resources/flock_config.tres" id="2_config"]
 [ext_resource type="Texture2D" uid="uid://d16babea8sebx" path="res://art/sprites/sheeps/sheep-Sheet.png" id="3_fxwg6"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_tbl57"]
@@ -116,8 +116,8 @@ animations = [{
 "speed": 3.0
 }]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
-radius = 4.0
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lpfwp"]
+size = Vector2(7.375, 6)
 
 [node name="Sheep" type="CharacterBody2D" unique_id=1234322127 groups=["sheep"]]
 collision_layer = 2
@@ -127,9 +127,11 @@ script = ExtResource("1_script")
 config = ExtResource("2_config")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=796859497]
+position = Vector2(1, -5)
 sprite_frames = SubResource("SpriteFrames_sheep")
 animation = &"idle"
-frame_progress = 0.013715553
+frame_progress = 0.8937422
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1814773326]
-shape = SubResource("CircleShape2D_body")
+position = Vector2(-0.5, -4)
+shape = SubResource("RectangleShape2D_lpfwp")

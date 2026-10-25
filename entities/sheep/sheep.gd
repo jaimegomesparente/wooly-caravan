@@ -20,11 +20,17 @@ var _think_timer: float = 0.0
 var _guide: Node2D
 var _shepherd: Node2D
 var _animation_started: bool = false
+## Horizontal offsets of the sprite and collision when facing right, mirrored when flipped.
+var _sprite_offset_x: float = 0.0
+var _shape_offset_x: float = 0.0
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var _shape: CollisionShape2D = $CollisionShape2D
 
 
 func _ready() -> void:
+	_sprite_offset_x = _sprite.position.x
+	_shape_offset_x = _shape.position.x
 	_speed_factor = 1.0 + randf_range(-config.speed_variation, config.speed_variation)
 	_shepherd_gap = config.shepherd_gap * (1.0 + randf_range(-config.speed_variation, config.speed_variation))
 	_heading = randf() * TAU
@@ -141,13 +147,20 @@ func _separation() -> Vector2:
 
 func _update_animation() -> void:
 	if absf(velocity.x) > config.flip_threshold:
-		_sprite.flip_h = velocity.x < 0.0
+		_set_facing_left(velocity.x < 0.0)
 
 	if _speed > GUIDE_STOPPED_SPEED:
 		# Leg cadence follows real speed so feet do not slide.
 		_play(&"run", _speed / config.walk_speed)
 	else:
 		_play(&"idle", 1.0)
+
+
+func _set_facing_left(left: bool) -> void:
+	var side := -1.0 if left else 1.0
+	_sprite.flip_h = left
+	_sprite.position.x = _sprite_offset_x * side
+	_shape.position.x = _shape_offset_x * side
 
 
 func _play(animation: StringName, speed_scale: float) -> void:

@@ -1,7 +1,7 @@
 class_name Shepherd
 extends CharacterBody2D
 
-@export var speed: float = 60.0
+@export var speed: float = 32.0
 
 
 func _physics_process(_delta: float) -> void:

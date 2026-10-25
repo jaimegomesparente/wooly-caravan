@@ -1,23 +1,6 @@
-[gd_resource type="Resource" script_class="FlockConfig" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="FlockConfig" format=3 uid="uid://cqv7e475qv2o1"]
 
-[ext_resource type="Script" path="res://resources/flock_config.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://ccasphw2cbb07" path="res://resources/flock_config.gd" id="1_script"]
 
 [resource]
 script = ExtResource("1_script")
-walk_speed = 24.0
-trot_speed = 48.0
-acceleration = 150.0
-turn_rate = 5.0
-speed_variation = 0.15
-think_interval_min = 0.2
-think_interval_max = 0.4
-lead_radius = 40.0
-view_radius = 40.0
-shepherd_gap = 22.0
-follow_gap = 12.0
-start_margin = 6.0
-trot_margin = 30.0
-separation_radius = 11.0
-separation_strength = 1.5
-shuffle_threshold = 0.4
-flip_threshold = 5.0

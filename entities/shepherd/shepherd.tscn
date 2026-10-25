@@ -1,23 +1,21 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://1jxjp03wmhwd"]
 
-[ext_resource type="Script" path="res://entities/shepherd/shepherd.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://neqt0gh80e0l" path="res://entities/shepherd/shepherd.gd" id="1_script"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(12, 16)
 
-[node name="Shepherd" type="CharacterBody2D" groups=["shepherd"]]
-collision_layer = 1
+[node name="Shepherd" type="CharacterBody2D" unique_id=1739534669 groups=["shepherd"]]
 collision_mask = 16
 motion_mode = 1
 script = ExtResource("1_script")
-speed = 32.0
 
-[node name="Placeholder" type="ColorRect" parent="."]
+[node name="Placeholder" type="ColorRect" parent="." unique_id=1245055895]
 offset_left = -6.0
 offset_top = -8.0
 offset_right = 6.0
 offset_bottom = 8.0
 color = Color(0.45, 0.28, 0.14, 1)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1564870084]
 shape = SubResource("RectangleShape2D_body")
