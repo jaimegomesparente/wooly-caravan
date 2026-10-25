@@ -1,9 +1,15 @@
 class_name Sheep
 extends CharacterBody2D
 
+enum State { IDLE, FOLLOW }
+
 @export var config: FlockConfig
 
+var _state: State = State.IDLE
 var _speed_factor: float = 1.0
+var _stop_radius: float = 0.0
+## Seconds left before setting off; negative while no reaction is pending.
+var _reaction_timer: float = -1.0
 var _shepherd: Node2D
 var _animation_started: bool = false
 
@@ -12,6 +18,7 @@ var _animation_started: bool = false
 
 func _ready() -> void:
 	_speed_factor = 1.0 + randf_range(-config.speed_variation, config.speed_variation)
+	_stop_radius = randf_range(config.stop_radius_min, config.stop_radius_max)
 
 
 func _physics_process(delta: float) -> void:
@@ -21,14 +28,38 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var to_shepherd := _shepherd.global_position - global_position
-	var pull := clampf((to_shepherd.length() - config.follow_radius) / config.elastic_width, 0.0, 1.0)
+	var distance := to_shepherd.length()
+	_update_state(delta, distance)
+
 	var max_speed := config.max_speed * _speed_factor
-	var desired := to_shepherd.normalized() * max_speed * pull
+	var desired := Vector2.ZERO
+	if _state == State.FOLLOW:
+		var pull := clampf((distance - _stop_radius) / config.elastic_width, 0.0, 1.0)
+		desired = to_shepherd.normalized() * maxf(max_speed * pull, config.min_move_speed)
 	desired += _separation() * config.separation_strength
+	if desired.length() < config.min_move_speed:
+		desired = Vector2.ZERO
 
 	velocity = velocity.move_toward(desired, config.acceleration * delta).limit_length(max_speed)
 	move_and_slide()
 	_update_animation()
+
+
+func _update_state(delta: float, distance: float) -> void:
+	match _state:
+		State.IDLE:
+			if distance <= config.start_follow_radius:
+				_reaction_timer = -1.0
+			elif _reaction_timer < 0.0:
+				_reaction_timer = randf_range(config.reaction_delay_min, config.reaction_delay_max)
+			else:
+				_reaction_timer -= delta
+				if _reaction_timer <= 0.0:
+					_reaction_timer = -1.0
+					_state = State.FOLLOW
+		State.FOLLOW:
+			if distance <= _stop_radius:
+				_state = State.IDLE
 
 
 ## Push away from sheep closer than separation_radius; magnitude fades from 1 to 0 across the radius.

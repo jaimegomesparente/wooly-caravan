@@ -4,10 +4,15 @@
 
 [resource]
 script = ExtResource("1_script")
-follow_radius = 40.0
+start_follow_radius = 70.0
+stop_radius_min = 35.0
+stop_radius_max = 55.0
+reaction_delay_min = 0.1
+reaction_delay_max = 0.8
 elastic_width = 30.0
 max_speed = 66.0
-acceleration = 200.0
+acceleration = 350.0
+min_move_speed = 12.0
 speed_variation = 0.15
 separation_radius = 12.0
 separation_strength = 50.0

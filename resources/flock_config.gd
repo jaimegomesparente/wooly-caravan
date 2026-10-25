@@ -2,14 +2,22 @@ class_name FlockConfig
 extends Resource
 
 @export_group("Follow")
-## Inside this distance from the shepherd, sheep do not move.
-@export var follow_radius: float = 40.0
-## The pull ramps from 0 at follow_radius to full at follow_radius + elastic_width.
+## A resting sheep only sets off when the shepherd is farther than this (px).
+@export var start_follow_radius: float = 70.0
+## Each sheep picks its own stop distance in this range once, so the flock spreads over a band.
+@export var stop_radius_min: float = 35.0
+@export var stop_radius_max: float = 55.0
+## Random wait (s) between the shepherd getting out of range and the sheep setting off.
+@export var reaction_delay_min: float = 0.1
+@export var reaction_delay_max: float = 0.8
+## Speed ramps down over this distance (px) above the sheep's stop radius.
 @export var elastic_width: float = 30.0
 
 @export_group("Movement")
 @export var max_speed: float = 66.0
-@export var acceleration: float = 200.0
+@export var acceleration: float = 350.0
+## A desired speed below this (px/s) becomes 0: no slow creeping or sliding.
+@export var min_move_speed: float = 12.0
 ## Each sheep gets a random speed multiplier in [1 - variation, 1 + variation].
 @export_range(0.0, 0.5) var speed_variation: float = 0.15
 
