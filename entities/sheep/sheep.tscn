@@ -1,49 +1,135 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://bhgnnmv46ep3n"]
 
-[ext_resource type="Script" path="res://entities/sheep/sheep.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://54f5ttv4q0c" path="res://entities/sheep/sheep.gd" id="1_script"]
 [ext_resource type="Resource" path="res://resources/flock_config.tres" id="2_config"]
+[ext_resource type="Texture2D" uid="uid://d16babea8sebx" path="res://art/sprites/sheeps/sheep-Sheet.png" id="3_fxwg6"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tbl57"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(60, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y3f2v"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(50, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6dejo"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(40, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_a0hgy"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(60, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ph5w8"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(70, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_v5fba"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(0, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tklyc"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(10, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e7ufl"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(20, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pm4ct"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(30, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uffdh"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(40, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_smhca"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(50, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uhibe"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(60, 0, 10, 10)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_sheep"]
 animations = [{
-"frames": [],
-"loop": true,
-"name": &"graze",
-"speed": 5.0
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tbl57")
 }, {
-"frames": [],
-"loop": false,
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y3f2v")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6dejo")
+}],
+"loop": 0,
 "name": &"finished_graze",
-"speed": 5.0
+"speed": 3.0
 }, {
-"frames": [],
-"loop": true,
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a0hgy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ph5w8")
+}],
+"loop": 1,
+"name": &"graze",
+"speed": 2.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_v5fba")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tklyc")
+}],
+"loop": 1,
 "name": &"idle",
 "speed": 5.0
 }, {
-"frames": [],
-"loop": true,
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_e7ufl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pm4ct")
+}],
+"loop": 1,
 "name": &"run",
 "speed": 8.0
 }, {
-"frames": [],
-"loop": false,
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uffdh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_smhca")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uhibe")
+}],
+"loop": 0,
 "name": &"to_graze",
-"speed": 5.0
+"speed": 3.0
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 4.0
 
-[node name="Sheep" type="CharacterBody2D" groups=["sheep"]]
+[node name="Sheep" type="CharacterBody2D" unique_id=1234322127 groups=["sheep"]]
 collision_layer = 2
 collision_mask = 16
 motion_mode = 1
 script = ExtResource("1_script")
 config = ExtResource("2_config")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=796859497]
 sprite_frames = SubResource("SpriteFrames_sheep")
 animation = &"idle"
+frame_progress = 0.013715553
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1814773326]
 shape = SubResource("CircleShape2D_body")

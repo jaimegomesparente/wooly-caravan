@@ -24,10 +24,26 @@ func _physics_process(delta: float) -> void:
 	var pull := clampf((to_shepherd.length() - config.follow_radius) / config.elastic_width, 0.0, 1.0)
 	var max_speed := config.max_speed * _speed_factor
 	var desired := to_shepherd.normalized() * max_speed * pull
+	desired += _separation() * config.separation_strength
 
 	velocity = velocity.move_toward(desired, config.acceleration * delta).limit_length(max_speed)
 	move_and_slide()
 	_update_animation()
+
+
+## Push away from sheep closer than separation_radius; magnitude fades from 1 to 0 across the radius.
+func _separation() -> Vector2:
+	var push := Vector2.ZERO
+	for other: Node2D in get_tree().get_nodes_in_group("sheep"):
+		if other == self:
+			continue
+		var away := global_position - other.global_position
+		var distance := away.length()
+		if distance >= config.separation_radius:
+			continue
+		var direction := Vector2.from_angle(randf() * TAU) if distance == 0.0 else away / distance
+		push += direction * (1.0 - distance / config.separation_radius)
+	return push
 
 
 func _update_animation() -> void:

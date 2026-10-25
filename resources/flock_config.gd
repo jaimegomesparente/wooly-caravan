@@ -13,6 +13,12 @@ extends Resource
 ## Each sheep gets a random speed multiplier in [1 - variation, 1 + variation].
 @export_range(0.0, 0.5) var speed_variation: float = 0.15
 
+@export_group("Separation")
+## Sheep closer than this (px) push each other away.
+@export var separation_radius: float = 12.0
+## Desired speed (px/s) added when two sheep fully overlap; fades to 0 at separation_radius.
+@export var separation_strength: float = 50.0
+
 @export_group("Animation")
 ## Below this speed (px/s) the sheep plays idle instead of run.
 @export var idle_threshold: float = 5.0
