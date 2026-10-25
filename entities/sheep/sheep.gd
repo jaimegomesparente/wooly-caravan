@@ -18,7 +18,7 @@ var _shepherd_gap: float = 0.0
 var _think_timer: float = 0.0
 ## The shepherd, or the sheep ahead that this sheep follows.
 var _guide: Node2D
-var _shepherd: Node2D
+var _shepherd: Shepherd
 var _animation_started: bool = false
 ## Horizontal offsets of the sprite and collision when facing right, mirrored when flipped.
 var _sprite_offset_x: float = 0.0
@@ -39,7 +39,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if _shepherd == null:
-		_shepherd = get_tree().get_first_node_in_group("shepherd") as Node2D
+		_shepherd = get_tree().get_first_node_in_group("shepherd") as Shepherd
 	if _shepherd == null:
 		return
 
@@ -56,11 +56,11 @@ func _physics_process(delta: float) -> void:
 			direction = separation
 			target_speed = config.walk_speed * _speed_factor * 0.5
 	else:
-		var to_guide := _guide.global_position - global_position
+		var to_guide := _guide_target() - global_position
 		var distance := to_guide.length()
 		var gap := _gap()
 		var guide_speed := _speed_of(_guide)
-		if guide_speed < GUIDE_STOPPED_SPEED and (distance < gap + config.start_margin or _is_blocked(distance)):
+		if guide_speed < GUIDE_STOPPED_SPEED and (distance < gap + config.follow_start_margin or _is_blocked(distance)):
 			_gait = Gait.REST
 		elif _gait == Gait.WALK and distance > gap + config.trot_margin:
 			_gait = Gait.TROT
@@ -74,7 +74,7 @@ func _physics_process(delta: float) -> void:
 			Gait.WALK:
 				# Close behind a moving guide, match its pace instead of bumping into it.
 				var walk := config.walk_speed * _speed_factor
-				target_speed = walk if distance > gap + config.start_margin * 0.5 else minf(walk, guide_speed)
+				target_speed = walk if distance > gap + config.follow_start_margin * 0.5 else minf(walk, guide_speed)
 
 	if direction != Vector2.ZERO:
 		_heading = rotate_toward(_heading, direction.angle(), config.turn_rate * delta)
@@ -101,13 +101,19 @@ func _think() -> void:
 				_guide = other
 
 	if _gait == Gait.REST:
-		var distance := global_position.distance_to(_guide.global_position)
-		# Imitation: set off as soon as the guide walks away, not only once it is far.
-		var guide_leaving := _speed_of(_guide) >= GUIDE_STOPPED_SPEED and distance > _gap()
+		var distance := global_position.distance_to(_guide_target())
+		var start_margin := config.shepherd_start_margin if _guide == _shepherd else config.follow_start_margin
+		# Imitation: sometimes set off as soon as the sheep ahead walks away, not only once it is far.
+		var guide_leaving := _guide != _shepherd and _speed_of(_guide) >= GUIDE_STOPPED_SPEED 				and distance > _gap() and randf() < config.imitation_chance
 		if distance > _gap() + config.trot_margin:
 			_gait = Gait.TROT
-		elif guide_leaving or distance > _gap() + config.start_margin:
+		elif guide_leaving or distance > _gap() + start_margin:
 			_gait = Gait.WALK
+
+
+## Where this sheep heads: a point on the shepherd's trail, or the sheep ahead.
+func _guide_target() -> Vector2:
+	return _shepherd.trail_point(config.trail_lag) if _guide == _shepherd else _guide.global_position
 
 
 func _gap() -> float:
@@ -120,7 +126,7 @@ func _is_blocked(distance_to_guide: float) -> bool:
 		if other == self or other._speed >= GUIDE_STOPPED_SPEED:
 			continue
 		if global_position.distance_to(other.global_position) < config.separation_radius \
-				and other.global_position.distance_to(_guide.global_position) < distance_to_guide:
+				and other.global_position.distance_to(_guide_target()) < distance_to_guide:
 			return true
 	return false
 

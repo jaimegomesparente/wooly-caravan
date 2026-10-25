@@ -19,12 +19,18 @@ extends Resource
 @export var lead_radius: float = 40.0
 ## Other sheep follow the nearest sheep ahead of them within this distance (px).
 @export var view_radius: float = 40.0
-## Distance (px) kept behind the shepherd (randomized per sheep by speed_variation).
-@export var shepherd_gap: float = 22.0
+## Front sheep aim at the point of the shepherd's trail this far (px) behind him, along his path.
+@export var trail_lag: float = 30.0
+## Distance (px) kept from that trail point (randomized per sheep by speed_variation).
+@export var shepherd_gap: float = 10.0
 ## Distance (px) kept behind the sheep ahead.
 @export var follow_gap: float = 16.0
-## A resting sheep sets off when its guide is farther than gap + start_margin (px).
-@export var start_margin: float = 6.0
+## A resting front sheep sets off when the trail point is farther than gap + this (px).
+@export var shepherd_start_margin: float = 20.0
+## A resting sheep sets off when the sheep ahead is farther than gap + this (px).
+@export var follow_start_margin: float = 6.0
+## Chance, at each think, that a resting sheep follows a guide that starts walking away.
+@export_range(0.0, 1.0) var imitation_chance: float = 0.5
 ## A sheep trots when its guide is farther than gap + trot_margin (px).
 @export var trot_margin: float = 30.0
 
