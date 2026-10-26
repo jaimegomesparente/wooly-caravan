@@ -10,7 +10,7 @@
 [ext_resource type="PackedScene" path="res://entities/wolf/wolf.tscn" id="8_wolf"]
 [ext_resource type="Script" uid="uid://bo1b31a41aamx" path="res://scenes/main/trip.gd" id="9_trip"]
 [ext_resource type="PackedScene" path="res://ui/end_screen.tscn" id="10_end"]
-[ext_resource type="PackedScene" path="res://entities/dog/dog.tscn" id="11_dog"]
+[ext_resource type="PackedScene" uid="uid://c67pgonbomrfh" path="res://entities/dog/dog.tscn" id="11_dog"]
 
 [node name="Main" type="Node2D" unique_id=536968002]
 y_sort_enabled = true

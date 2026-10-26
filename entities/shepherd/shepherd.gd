@@ -6,8 +6,13 @@ extends CharacterBody2D
 @export var trail_spacing: float = 6.0
 @export var trail_max_points: int = 60
 
+## Minimum |velocity.x| (px/s) to flip the sprite.
+const FLIP_THRESHOLD := 5.0
+
 ## Past positions, oldest first. The front sheep walk along it instead of cutting toward him.
 var _trail: PackedVector2Array = []
+
+@onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 
 func _physics_process(_delta: float) -> void:
@@ -15,6 +20,12 @@ func _physics_process(_delta: float) -> void:
 	velocity = direction * speed
 	move_and_slide()
 	_record_trail()
+	_update_animation()
+
+
+## Plays the call animation once (for the dog orders, later); walking resumes the usual animations.
+func play_call() -> void:
+	_sprite.play(&"call")
 
 
 ## The point of the trail `distance_behind` px behind the shepherd, measured along his path.
@@ -33,6 +44,18 @@ func trail_point(distance_behind: float) -> Vector2:
 ## Recorded trail, oldest first (read-only use, e.g. the debug overlay).
 func get_trail() -> PackedVector2Array:
 	return _trail
+
+
+func _update_animation() -> void:
+	if absf(velocity.x) > FLIP_THRESHOLD:
+		_sprite.flip_h = velocity.x < 0.0
+	var moving := velocity.length() > 0.0
+	# Let a call finish while standing still.
+	if not moving and _sprite.animation == &"call" and _sprite.is_playing():
+		return
+	var animation := &"run" if moving else &"idle"
+	if _sprite.animation != animation or not _sprite.is_playing():
+		_sprite.play(animation)
 
 
 func _record_trail() -> void:

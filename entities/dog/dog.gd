@@ -7,7 +7,7 @@ extends CharacterBody2D
 
 enum State { WAIT, GATHER }
 
-## Minimum |velocity.x| (px/s) to flip the placeholder.
+## Minimum |velocity.x| (px/s) to flip the sprite.
 const FLIP_THRESHOLD := 5.0
 
 @export var data: DogData
@@ -24,13 +24,11 @@ var _flanking: bool = false
 var _goal: Vector2
 var _heading: float = 0.0
 var _speed: float = 0.0
-var _head_x: float = 0.0
 
-@onready var _head: ColorRect = $Head
+@onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 
 func _ready() -> void:
-	_head_x = _head.position.x
 	_goal = global_position
 
 
@@ -70,7 +68,7 @@ func _physics_process(delta: float) -> void:
 				_target = rearmost
 			_goal = _push_point(shepherd) if _target else global_position
 	_move_to(_goal, delta)
-	_update_facing()
+	_update_animation()
 	queue_redraw()
 
 
@@ -136,9 +134,21 @@ func _move_to(point: Vector2, delta: float) -> void:
 	move_and_slide()
 
 
-func _update_facing() -> void:
+## Plays the bark animation once (for the Bark order, later); moving resumes the usual animations.
+func play_bark() -> void:
+	_sprite.play(&"bark")
+
+
+func _update_animation() -> void:
 	if absf(velocity.x) > FLIP_THRESHOLD:
-		_head.position.x = -_head_x - _head.size.x if velocity.x < 0.0 else _head_x
+		_sprite.flip_h = velocity.x < 0.0
+	var moving := _speed > FLIP_THRESHOLD
+	# Let a bark finish while standing still.
+	if not moving and _sprite.animation == &"bark" and _sprite.is_playing():
+		return
+	var animation := &"run" if moving else &"idle"
+	if _sprite.animation != animation or not _sprite.is_playing():
+		_sprite.play(animation)
 
 
 ## Push away from sheep within avoid_radius (not the target); magnitude fades from 1 to 0 across it.

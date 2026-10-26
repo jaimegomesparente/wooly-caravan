@@ -1,37 +1,126 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://c67pgonbomrfh"]
 
-[ext_resource type="Script" path="res://entities/dog/dog.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bijg2iskjqfru" path="res://entities/dog/dog.gd" id="1_script"]
 [ext_resource type="Resource" path="res://resources/dog.tres" id="2_data"]
 [ext_resource type="PackedScene" path="res://effects/dust.tscn" id="3_dust"]
+[ext_resource type="Texture2D" uid="uid://boohdwk55lq6v" path="res://art/sprites/dogs/dog-Sheet.png" id="4_pl2nc"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gputl"]
+atlas = ExtResource("4_pl2nc")
+region = Rect2(128, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gq4hp"]
+atlas = ExtResource("4_pl2nc")
+region = Rect2(144, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4ckym"]
+atlas = ExtResource("4_pl2nc")
+region = Rect2(160, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_eyydl"]
+atlas = ExtResource("4_pl2nc")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heaid"]
+atlas = ExtResource("4_pl2nc")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_63i7a"]
+atlas = ExtResource("4_pl2nc")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6gqdp"]
+atlas = ExtResource("4_pl2nc")
+region = Rect2(48, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mnyvp"]
+atlas = ExtResource("4_pl2nc")
+region = Rect2(64, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pqlck"]
+atlas = ExtResource("4_pl2nc")
+region = Rect2(80, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gkfla"]
+atlas = ExtResource("4_pl2nc")
+region = Rect2(96, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pmmnb"]
+atlas = ExtResource("4_pl2nc")
+region = Rect2(112, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_dog"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gputl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gq4hp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4ckym")
+}],
+"loop": 0,
+"name": &"bark",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_eyydl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_heaid")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63i7a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6gqdp")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mnyvp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pqlck")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gkfla")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pmmnb")
+}],
+"loop": 1,
+"name": &"run",
+"speed": 10.0
+}]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(12, 8)
 
-[node name="Dog" type="CharacterBody2D" groups=["dog"]]
+[node name="Dog" type="CharacterBody2D" unique_id=726092661 groups=["dog"]]
 collision_layer = 8
 collision_mask = 16
 motion_mode = 1
 script = ExtResource("1_script")
 data = ExtResource("2_data")
 
-[node name="Dust" parent="." instance=ExtResource("3_dust")]
+[node name="Dust" parent="." unique_id=1300479480 instance=ExtResource("3_dust")]
 min_speed = 50.0
 
-[node name="Placeholder" type="ColorRect" parent="."]
-offset_left = -6.0
-offset_top = -8.0
-offset_right = 6.0
-mouse_filter = 2
-color = Color(0.3, 0.2, 0.12, 1)
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1071774784]
+position = Vector2(1, -5)
+sprite_frames = SubResource("SpriteFrames_dog")
+animation = &"bark"
+autoplay = "idle"
+frame = 2
+frame_progress = 1.0
 
-[node name="Head" type="ColorRect" parent="."]
-offset_left = 3.0
-offset_top = -10.0
-offset_right = 7.0
-offset_bottom = -5.0
-mouse_filter = 2
-color = Color(0.2, 0.13, 0.08, 1)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=726051838]
 position = Vector2(0, -4)
 shape = SubResource("RectangleShape2D_body")
