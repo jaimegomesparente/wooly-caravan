@@ -115,7 +115,7 @@ Prototype uses only 2 orders (Go there, Fetch).
 - Check scripts: `godot --headless --quit` (from the project root)
 - Run the game: `godot --path .`
 - On the end-of-trip screen, R restarts the trip
-- Mouse wheel / keypad + and - zoom the camera out and in (testing aid); F3 also draws the dog's flight zone (brown circle)
+- With the F3 overlay on, mouse wheel / keypad + and - zoom the camera out and in (testing aid, gameplay ignores it); F3 also draws the dog's flight zone (brown circle)
 - In game, F3 toggles the debug overlay (shepherd trail, flight zone, each sheep's target line and state color: white stand, yellow-green graze, blue walk, orange trot, purple wander, red flee or panic, magenta captured; magenta line from the wolf to its target)
 - If `godot` is not in PATH, use the full path to the executable here: ``C:\Users\jaime\Desktop\Godot\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64_console.exe``
 

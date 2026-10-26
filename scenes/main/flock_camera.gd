@@ -6,7 +6,8 @@ extends Camera2D
 @export var max_lean: float = 60.0
 ## Higher = the camera catches up faster.
 @export var smoothing: float = 3.0
-## Zoom steps for testing (mouse wheel / keypad + -): 1 = normal, lower = see more.
+## Zoom steps for testing (mouse wheel / keypad + -), only while the F3 debug overlay is on:
+## 1 = normal, lower = see more. Back to 1 when the overlay is turned off.
 @export var zoom_levels: Array[float] = [1.0, 0.75, 0.5, 0.35, 0.25]
 
 var _focus: Vector2
@@ -22,9 +23,14 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_focus = _focus.lerp(_target(), 1.0 - exp(-smoothing * delta))
 	global_position = _focus
+	if not Sheep.debug_draw and _zoom_index != 0:
+		_zoom_index = 0
+		zoom = Vector2.ONE
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not Sheep.debug_draw:
+		return
 	var step := 0
 	if event.is_action_pressed("zoom_out"):
 		step = 1

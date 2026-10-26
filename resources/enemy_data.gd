@@ -9,7 +9,7 @@ extends Resource
 @export_group("Approach")
 ## Walking speed (px/s) while coming in from off-screen, and when leaving empty-handed.
 @export var prowl_speed: float = 30.0
-## Stops to telegraph once this close (px) to its target and visible on screen.
+## Stops to telegraph once this close (px) to any sheep and visible on screen.
 @export var prowl_distance: float = 70.0
 ## How fast it turns (rad/s) outside the charge.
 @export var turn_rate: float = 5.0

@@ -15,6 +15,8 @@ const OFFSCREEN_MARGIN := 24.0
 const ONSCREEN_MARGIN := 12.0
 ## Minimum |velocity.x| (px/s) to flip the placeholder.
 const FLIP_THRESHOLD := 5.0
+## While approaching, switches to another sheep only if it is this much (px) farther from the flock center.
+const RETARGET_MARGIN := 16.0
 
 @export var data: EnemyData
 
@@ -112,15 +114,24 @@ func _appear() -> void:
 	_state = State.PROWL
 
 
+## Walks toward the most isolated sheep (re-chosen on the way if another strays clearly farther) and
+## stops to telegraph as soon as it is on screen and within prowl_distance of any sheep, so it never
+## walks into the flock unnoticed.
 func _prowl(delta: float) -> void:
-	if _target == null:
-		_target = _most_isolated_sheep()
-		if _target == null:
-			_leave(data.prowl_speed)
-			return
+	var isolated := _most_isolated_sheep()
+	if isolated == null:
+		_leave(data.prowl_speed)
+		return
+	if _target == null or not _target.is_in_group("sheep"):
+		_target = isolated
+	elif isolated != _target:
+		var center := _flock_center()
+		if isolated.global_position.distance_to(center) \
+				> _target.global_position.distance_to(center) + RETARGET_MARGIN:
+			_target = isolated
 	var to_target := _target.global_position - global_position
 	var on_screen := _view_rect().grow(-ONSCREEN_MARGIN).has_point(global_position)
-	if on_screen and to_target.length() <= data.prowl_distance:
+	if on_screen and _nearest_sheep_distance() <= data.prowl_distance:
 		velocity = Vector2.ZERO
 		_heading = to_target.angle()
 		_state = State.TELEGRAPH
@@ -211,6 +222,13 @@ func _most_isolated_sheep() -> Sheep:
 	return best
 
 
+func _nearest_sheep_distance() -> float:
+	var nearest := INF
+	for sheep: Node2D in get_tree().get_nodes_in_group("sheep"):
+		nearest = minf(nearest, global_position.distance_to(sheep.global_position))
+	return nearest
+
+
 func _flock_center() -> Vector2:
 	var flock := get_tree().get_nodes_in_group("sheep")
 	if flock.is_empty():
@@ -239,11 +257,11 @@ func _exit_direction() -> Vector2:
 	return Vector2.UP if global_position.y - band.position.y < band.end.y - global_position.y else Vector2.DOWN
 
 
-## The part of the world visible on screen.
+## The part of the world visible on screen at normal zoom (the debug zoom never changes where the
+## wolf appears or telegraphs).
 func _view_rect() -> Rect2:
 	var size := get_viewport_rect().size
 	var camera := get_viewport().get_camera_2d()
 	if camera == null:
 		return Rect2(Vector2.ZERO, size)
-	size /= camera.zoom
 	return Rect2(camera.get_screen_center_position() - size * 0.5, size)
