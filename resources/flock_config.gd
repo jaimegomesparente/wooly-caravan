@@ -25,9 +25,10 @@ extends Resource
 @export var shepherd_gap: float = 10.0
 ## Distance (px) kept behind the sheep ahead.
 @export var follow_gap: float = 16.0
-## A resting front sheep sets off when the trail point is farther than gap + this (px).
+## A resting front sheep sets off once the trail point has moved this far (px) since it settled.
 @export var shepherd_start_margin: float = 20.0
-## A resting sheep sets off when the sheep ahead is farther than gap + this (px).
+## A sheep walking up to a stopped guide halts within gap + this (px); behind a walking guide,
+## it matches the guide's pace within half of it.
 @export var follow_start_margin: float = 6.0
 ## Chance, at each think, that a resting sheep follows a guide that starts walking away.
 @export_range(0.0, 1.0) var imitation_chance: float = 0.5
@@ -40,6 +41,32 @@ extends Resource
 ## Weight of the push when steering; at rest, a push above shuffle_threshold makes the sheep step aside.
 @export var separation_strength: float = 1.5
 @export_range(0.0, 1.0) var shuffle_threshold: float = 0.25
+## A sheep walking up to a stopped flock halts once the push from its neighbors exceeds this.
+@export_range(0.0, 2.0) var crowd_stop_threshold: float = 0.35
+
+@export_group("Rest")
+## Time (s) standing with the head up before grazing or wandering.
+@export var stand_time_min: float = 0.5
+@export var stand_time_max: float = 2.0
+## Time (s) grazing with the head down.
+@export var graze_time_min: float = 2.0
+@export var graze_time_max: float = 6.0
+## Chance, after standing, to take a few steps instead of grazing.
+@export_range(0.0, 1.0) var wander_chance: float = 0.35
+## Same, for sheep on the edge of the flock (they step inward more often).
+@export_range(0.0, 1.0) var edge_wander_chance: float = 0.8
+@export var wander_distance_min: float = 6.0
+@export var wander_distance_max: float = 16.0
+## Wander speed as a fraction of walk_speed.
+@export_range(0.1, 1.0) var wander_speed_factor: float = 0.6
+## Neighbors within this distance (px) pull wander steps toward their center.
+@export var cohesion_radius: float = 40.0
+## Pull of wander steps toward the center of the whole flock (relative to a random direction = 1).
+@export var flock_center_weight: float = 1.0
+## A sheep whose nearest neighbor is farther than this (px) walks back to the others.
+@export var isolation_radius: float = 25.0
+## finished_graze speed when the sheep has to leave (head comes up faster).
+@export var raise_speed_scale: float = 3.0
 
 @export_group("Animation")
 ## Minimum |velocity.x| (px/s) to flip the sprite.

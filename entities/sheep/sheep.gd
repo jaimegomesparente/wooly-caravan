@@ -1,16 +1,29 @@
 class_name Sheep
 extends CharacterBody2D
 
-enum Gait { REST, WALK, TROT }
+enum Gait { REST, WALK, TROT, WANDER }
+## Sub-states of REST: head up, lowering the head, grazing, raising the head.
+enum Rest { STAND, LOWERING, GRAZING, RAISING }
 
-## A sheep this close to its guide's speed counts the guide as stopped (px/s).
+## Below this speed (px/s) a body counts as stopped.
 const GUIDE_STOPPED_SPEED := 2.0
 ## A guide sheep must be at least this much closer (px) to the shepherd, so guides never loop.
 const GUIDE_AHEAD_MARGIN := 4.0
+## A wander step ends this close (px) to its target, or after this many seconds.
+const WANDER_ARRIVE_DISTANCE := 2.0
+const WANDER_TIMEOUT := 3.0
 
 @export var config: FlockConfig
 
 var _gait: Gait = Gait.REST
+var _rest: Rest = Rest.STAND
+var _rest_timer: float = 0.0
+## Gait to take once the head is up again; REST means none.
+var _pending_gait: Gait = Gait.REST
+## Point of the shepherd's trail when this sheep settled; INF until the shepherd is known.
+var _rest_anchor: Vector2 = Vector2.INF
+var _wander_target: Vector2
+var _wander_timer: float = 0.0
 var _heading: float = 0.0
 var _speed: float = 0.0
 var _speed_factor: float = 1.0
@@ -36,6 +49,8 @@ func _ready() -> void:
 	_heading = randf() * TAU
 	_set_facing_left(cos(_heading) < 0.0)
 	_think_timer = randf_range(0.0, config.think_interval_max)
+	_sprite.animation_finished.connect(_on_animation_finished)
+	_enter_rest()
 
 
 func _physics_process(delta: float) -> void:
@@ -50,36 +65,18 @@ func _physics_process(delta: float) -> void:
 		_think_timer = randf_range(config.think_interval_min, config.think_interval_max)
 		_think()
 
-	var direction := Vector2.from_angle(_heading)
-	var target_speed := 0.0
-	if _gait == Gait.REST:
-		if separation.length() > config.shuffle_threshold:
-			direction = separation
-			target_speed = config.walk_speed * _speed_factor * 0.5
-	else:
-		var to_guide := _guide_target() - global_position
-		var distance := to_guide.length()
-		var gap := _gap()
-		var guide_speed := _speed_of(_guide)
-		if guide_speed < GUIDE_STOPPED_SPEED and (distance < gap + config.follow_start_margin or _is_blocked(distance)):
-			_gait = Gait.REST
-		elif _gait == Gait.WALK and distance > gap + config.trot_margin:
-			_gait = Gait.TROT
-		elif _gait == Gait.TROT and distance < gap + config.trot_margin * 0.5:
-			_gait = Gait.WALK
+	var desired: Vector2
+	match _gait:
+		Gait.REST:
+			desired = _rest_step(delta, separation)
+		Gait.WANDER:
+			desired = _wander_step(delta, separation)
+		_:
+			desired = _follow_step(separation)
 
-		direction = to_guide.normalized() + separation * config.separation_strength
-		match _gait:
-			Gait.TROT:
-				target_speed = config.trot_speed * _speed_factor
-			Gait.WALK:
-				# Close behind a moving guide, match its pace instead of bumping into it.
-				var walk := config.walk_speed * _speed_factor
-				target_speed = walk if distance > gap + config.follow_start_margin * 0.5 else minf(walk, guide_speed)
-
-	if direction != Vector2.ZERO:
-		_heading = rotate_toward(_heading, direction.angle(), config.turn_rate * delta)
-	_speed = move_toward(_speed, target_speed, config.acceleration * delta)
+	if desired != Vector2.ZERO:
+		_heading = rotate_toward(_heading, desired.angle(), config.turn_rate * delta)
+	_speed = move_toward(_speed, desired.length(), config.acceleration * delta)
 	velocity = Vector2.from_angle(_heading) * _speed
 	move_and_slide()
 	_update_animation()
@@ -101,16 +98,152 @@ func _think() -> void:
 				nearest = distance
 				_guide = other
 
-	if _gait == Gait.REST:
+	if _gait == Gait.REST or _gait == Gait.WANDER:
 		var distance := global_position.distance_to(_guide_target())
-		var start_margin := config.shepherd_start_margin if _guide == _shepherd else config.follow_start_margin
-		# Imitation: sometimes set off as soon as the sheep ahead walks away, not only once it is far.
-		var guide_leaving := _guide != _shepherd and _speed_of(_guide) >= GUIDE_STOPPED_SPEED \
-				and distance > _gap() and randf() < config.imitation_chance
-		if distance > _gap() + config.trot_margin:
-			_gait = Gait.TROT
-		elif guide_leaving or distance > _gap() + start_margin:
-			_gait = Gait.WALK
+		var set_off := false
+		if _guide == _shepherd:
+			# Front sheep set off once the shepherd's trail has really moved since they settled.
+			set_off = _rest_anchor.distance_to(_shepherd.trail_point(config.trail_lag)) > config.shepherd_start_margin
+		elif _is_travelling(_guide):
+			# Imitation: the others follow the sheep ahead when it walks away, with some hesitation.
+			set_off = distance > _gap() and randf() < config.imitation_chance
+		if set_off:
+			_request_gait(Gait.TROT if distance > _gap() + config.trot_margin else Gait.WALK)
+
+
+## Start walking or trotting; a grazing sheep raises its head first.
+func _request_gait(gait: Gait) -> void:
+	if _gait == Gait.REST and _rest != Rest.STAND:
+		_pending_gait = gait
+		if _rest != Rest.RAISING:
+			_set_rest(Rest.RAISING)
+		return
+	_gait = gait
+
+
+func _enter_rest() -> void:
+	_rest_anchor = _shepherd.trail_point(config.trail_lag) if _shepherd else Vector2.INF
+	_gait = Gait.REST
+	_pending_gait = Gait.REST
+	_set_rest(Rest.STAND)
+
+
+func _set_rest(state: Rest) -> void:
+	_rest = state
+	match state:
+		Rest.STAND:
+			_rest_timer = randf_range(config.stand_time_min, config.stand_time_max)
+		Rest.LOWERING:
+			if not _has_frames(&"to_graze"):
+				_set_rest(Rest.GRAZING)
+		Rest.GRAZING:
+			_rest_timer = randf_range(config.graze_time_min, config.graze_time_max)
+		Rest.RAISING:
+			if not _has_frames(&"finished_graze"):
+				_finish_raising()
+
+
+func _finish_raising() -> void:
+	var next := _pending_gait
+	_set_rest(Rest.STAND)
+	_pending_gait = Gait.REST
+	if next != Gait.REST:
+		_gait = next
+
+
+func _on_animation_finished() -> void:
+	if _gait != Gait.REST:
+		return
+	if _rest == Rest.LOWERING:
+		_set_rest(Rest.GRAZING)
+	elif _rest == Rest.RAISING:
+		_finish_raising()
+
+
+## Standing: step aside when crowded, then graze or wander. Returns the desired velocity.
+func _rest_step(delta: float, separation: Vector2) -> Vector2:
+	match _rest:
+		Rest.STAND:
+			if separation.length() > config.shuffle_threshold:
+				return separation.normalized() * config.walk_speed * _speed_factor * 0.5
+			_rest_timer -= delta
+			if _rest_timer <= 0.0:
+				# Sheep on the edge of the flock step inward more often, so a stopped column gathers.
+				var flock_radius := config.follow_gap * sqrt(get_tree().get_node_count_in_group("sheep")) * 0.6
+				var on_edge := global_position.distance_to(_flock_center()) > flock_radius
+				var chance := config.edge_wander_chance if on_edge else config.wander_chance
+				if _nearest_neighbor_distance() > config.isolation_radius or randf() < chance:
+					_start_wander()
+				else:
+					_set_rest(Rest.LOWERING)
+		Rest.GRAZING:
+			_rest_timer -= delta
+			if _rest_timer <= 0.0:
+				_set_rest(Rest.RAISING)
+	return Vector2.ZERO
+
+
+## A few slow steps, biased toward the neighbors' and the flock's center so no sheep drifts away
+## alone and a stopped column slowly gathers into a group.
+func _start_wander() -> void:
+	var center := Vector2.ZERO
+	var count := 0
+	for other: Node2D in get_tree().get_nodes_in_group("sheep"):
+		if other != self and global_position.distance_to(other.global_position) < config.cohesion_radius:
+			center += other.global_position
+			count += 1
+	var flock_center := _flock_center()
+
+	var to_center := (center / count - global_position) if count > 0 else _shepherd.global_position - global_position
+	var direction := Vector2.from_angle(randf() * TAU)
+	var distance := randf_range(config.wander_distance_min, config.wander_distance_max)
+	if count == 0 or _nearest_neighbor_distance() > config.isolation_radius:
+		direction = to_center.normalized()
+		distance = maxf(distance, to_center.length() - config.isolation_radius * 0.5)
+	else:
+		direction += to_center.normalized() + (flock_center - global_position).normalized() * config.flock_center_weight
+		direction = direction.normalized()
+
+	_wander_target = global_position + direction * distance
+	_wander_timer = WANDER_TIMEOUT
+	_gait = Gait.WANDER
+
+
+func _wander_step(delta: float, separation: Vector2) -> Vector2:
+	var to_target := _wander_target - global_position
+	_wander_timer -= delta
+	if to_target.length() < WANDER_ARRIVE_DISTANCE or _wander_timer <= 0.0:
+		_enter_rest()
+		return Vector2.ZERO
+	var direction := (to_target.normalized() + separation * config.separation_strength).normalized()
+	return direction * config.walk_speed * _speed_factor * config.wander_speed_factor
+
+
+## Walk or trot after the guide. Once the guide has stopped, keep walking toward the front of the
+## flock around the others and stop on reaching the group, so the column gathers like a flock
+## arriving on a pasture. Returns the desired velocity.
+func _follow_step(separation: Vector2) -> Vector2:
+	var guide_moving := _is_travelling(_guide)
+	var target := _guide_target() if guide_moving else _shepherd.trail_point(config.trail_lag)
+	var gap := _gap() if guide_moving else _shepherd_gap
+	var to_guide := target - global_position
+	var distance := to_guide.length()
+	if not guide_moving and (distance < gap + config.follow_start_margin \
+			or separation.length() > config.crowd_stop_threshold):
+		_enter_rest()
+		return Vector2.ZERO
+	if _gait == Gait.WALK and distance > gap + config.trot_margin:
+		_gait = Gait.TROT
+	elif _gait == Gait.TROT and distance < gap + config.trot_margin * 0.5:
+		_gait = Gait.WALK
+
+	var direction := (to_guide.normalized() + separation * config.separation_strength).normalized()
+	if _gait == Gait.TROT:
+		return direction * config.trot_speed * _speed_factor
+	# Close behind a moving guide, match its pace instead of bumping into it.
+	var walk := config.walk_speed * _speed_factor
+	var speed := walk if distance > gap + config.follow_start_margin * 0.5 else minf(walk, _speed_of(_guide))
+	return direction * speed
 
 
 ## Where this sheep heads: a point on the shepherd's trail, or the sheep ahead.
@@ -122,20 +255,33 @@ func _gap() -> float:
 	return _shepherd_gap if _guide == _shepherd else config.follow_gap
 
 
-## True when a stopped sheep stands right in front, closer to the guide: queue behind it.
-func _is_blocked(distance_to_guide: float) -> bool:
-	for other: Sheep in get_tree().get_nodes_in_group("sheep"):
-		if other == self or other._speed >= GUIDE_STOPPED_SPEED:
-			continue
-		if global_position.distance_to(other.global_position) < config.separation_radius \
-				and other.global_position.distance_to(_guide_target()) < distance_to_guide:
-			return true
-	return false
+## True for a walking shepherd or a sheep walking/trotting after its own guide (not a sheep wandering at rest).
+func _is_travelling(node: Node2D) -> bool:
+	var sheep := node as Sheep
+	if sheep:
+		return sheep._gait == Gait.WALK or sheep._gait == Gait.TROT
+	return _speed_of(node) >= GUIDE_STOPPED_SPEED
 
 
 func _speed_of(node: Node2D) -> float:
 	var body := node as CharacterBody2D
 	return body.velocity.length() if body else 0.0
+
+
+func _flock_center() -> Vector2:
+	var center := Vector2.ZERO
+	var flock := get_tree().get_nodes_in_group("sheep")
+	for other: Node2D in flock:
+		center += other.global_position
+	return center / flock.size()
+
+
+func _nearest_neighbor_distance() -> float:
+	var nearest := INF
+	for other: Node2D in get_tree().get_nodes_in_group("sheep"):
+		if other != self:
+			nearest = minf(nearest, global_position.distance_to(other.global_position))
+	return nearest
 
 
 ## Push away from sheep closer than separation_radius; magnitude fades from 1 to 0 across the radius.
@@ -160,8 +306,19 @@ func _update_animation() -> void:
 	if _speed > GUIDE_STOPPED_SPEED:
 		# Leg cadence follows real speed so feet do not slide.
 		_play(&"run", _speed / config.walk_speed)
-	else:
+		return
+	if _gait != Gait.REST:
 		_play(&"idle", 1.0)
+		return
+	match _rest:
+		Rest.STAND:
+			_play(&"idle", 1.0)
+		Rest.LOWERING:
+			_play(&"to_graze", 1.0)
+		Rest.GRAZING:
+			_play(&"graze", 1.0)
+		Rest.RAISING:
+			_play(&"finished_graze", config.raise_speed_scale if _pending_gait != Gait.REST else 1.0)
 
 
 func _set_facing_left(left: bool) -> void:
@@ -171,14 +328,18 @@ func _set_facing_left(left: bool) -> void:
 	_shape.position.x = _shape_offset_x * side
 
 
-func _play(animation: StringName, speed_scale: float) -> void:
+func _has_frames(animation: StringName) -> bool:
 	var frames := _sprite.sprite_frames
-	if frames == null or not frames.has_animation(animation) or frames.get_frame_count(animation) == 0:
+	return frames != null and frames.has_animation(animation) and frames.get_frame_count(animation) > 0
+
+
+func _play(animation: StringName, speed_scale: float) -> void:
+	if not _has_frames(animation):
 		return
 	_sprite.speed_scale = speed_scale
 	if _sprite.animation != animation or not _sprite.is_playing():
 		_sprite.play(animation)
 		if not _animation_started:
 			_animation_started = true
-			_sprite.frame = randi() % frames.get_frame_count(animation)
+			_sprite.frame = randi() % _sprite.sprite_frames.get_frame_count(animation)
 			_sprite.frame_progress = randf()

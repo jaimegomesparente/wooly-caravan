@@ -18,7 +18,7 @@ Out of scope until explicitly requested: dog, enemies, powers, shop, map, meta-p
 ## Build order (one step at a time, test and commit after each)
 
 1. Chain following: front sheep follow the shepherd, the others follow the sheep ahead; discrete gaits (rest / walk / trot), limited turn rate, separation steers the heading
-2. Graze and wander at rest (graze animation cycle, short steps toward neighbors, never alone)
+2. Graze and wander at rest (graze animation cycle, short steps toward neighbors, never alone); a stopped column gathers into a group
 3. One enemy that charges the most isolated sheep (flock panics and flees toward the center)
 4. The dog, with a flee force that pushes sheep without oscillation
 
