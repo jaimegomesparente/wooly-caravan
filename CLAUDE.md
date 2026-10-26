@@ -89,7 +89,7 @@ Prototype uses only 2 orders (Go there, Fetch).
 ## Technical rules
 
 - Godot 4.x, typed GDScript
-- Base resolution 320x180, integer scaling, texture filter Nearest, `Snap 2D Transforms to Pixel` enabled
+- Base resolution 320x180, integer scaling, texture filter Nearest, `Snap 2D Transforms to Pixel` disabled (smoother motion), physics interpolation enabled
 - Round animation offsets to whole pixels (`round()`) to avoid shimmering
 - One scene per entity (`Sheep`, `Shepherd`, later `Dog`, enemies); no gameplay logic in `Main`
 - `CharacterBody2D` + `AnimatedSprite2D` for sheep and shepherd; keep one `Sprite2D`/node per sheep (per-sheep logic is needed), do not use particles for the flock

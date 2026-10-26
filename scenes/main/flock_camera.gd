@@ -12,14 +12,13 @@ var _focus: Vector2
 
 func _ready() -> void:
 	_focus = _target()
-	global_position = _focus.round()
+	global_position = _focus
 
 
-# Physics tick, like the bodies it follows, so camera and sprites move in step.
+# Physics tick, like the bodies it follows; physics interpolation smooths both between ticks.
 func _physics_process(delta: float) -> void:
 	_focus = _focus.lerp(_target(), 1.0 - exp(-smoothing * delta))
-	# Whole pixels only: no shimmering with Snap 2D Transforms to Pixel.
-	global_position = _focus.round()
+	global_position = _focus
 
 
 func _target() -> Vector2:
