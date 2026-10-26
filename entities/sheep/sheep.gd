@@ -9,6 +9,8 @@ enum Rest { STAND, LOWERING, GRAZING, RAISING }
 const GUIDE_STOPPED_SPEED := 2.0
 ## A guide sheep must be at least this much closer (px) to the shepherd, so guides never loop.
 const GUIDE_AHEAD_MARGIN := 4.0
+## A guide is kept until it is this much beyond lead_radius / view_radius.
+const GUIDE_KEEP_SLACK := 1.25
 ## A wander step ends this close (px) to its target, or after this many seconds.
 const WANDER_ARRIVE_DISTANCE := 2.0
 const WANDER_TIMEOUT := 3.0
@@ -37,6 +39,7 @@ var _animation_started: bool = false
 ## Horizontal offsets of the sprite and collision when facing right, mirrored when flipped.
 var _sprite_offset_x: float = 0.0
 var _shape_offset_x: float = 0.0
+var _sprite_offset_y: float = 0.0
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _shape: CollisionShape2D = $CollisionShape2D
@@ -45,6 +48,7 @@ var _shape_offset_x: float = 0.0
 func _ready() -> void:
 	_sprite_offset_x = _sprite.position.x
 	_shape_offset_x = _shape.position.x
+	_sprite_offset_y = _sprite.position.y
 	_speed_factor = 1.0 + randf_range(-config.speed_variation, config.speed_variation)
 	_shepherd_gap = config.shepherd_gap * (1.0 + randf_range(-config.speed_variation, config.speed_variation))
 	_heading = randf() * TAU
@@ -86,21 +90,11 @@ func _physics_process(delta: float) -> void:
 	_update_animation()
 
 
-## Pick a guide (shepherd or the nearest sheep ahead) and decide whether to set off.
+## Keep or pick a guide (shepherd or the nearest sheep ahead) and decide whether to set off.
 func _think() -> void:
 	var my_distance := global_position.distance_to(_shepherd.global_position)
-	_guide = _shepherd
-	if my_distance > config.lead_radius:
-		var nearest := config.view_radius
-		for other: Node2D in get_tree().get_nodes_in_group("sheep"):
-			if other == self:
-				continue
-			if other.global_position.distance_to(_shepherd.global_position) > my_distance - GUIDE_AHEAD_MARGIN:
-				continue
-			var distance := global_position.distance_to(other.global_position)
-			if distance < nearest:
-				nearest = distance
-				_guide = other
+	if not _guide_still_valid(my_distance):
+		_guide = _pick_guide(my_distance)
 
 	if _gait == Gait.REST or _gait == Gait.WANDER:
 		var distance := global_position.distance_to(_guide_target())
@@ -115,6 +109,34 @@ func _think() -> void:
 			set_off = distance > _gap() and randf() < config.imitation_chance
 		if set_off:
 			_request_gait(Gait.TROT if distance > _gap() + config.trot_margin else Gait.WALK)
+
+
+## A guide is kept while it stays roughly valid (with some slack), so sheep do not switch guides
+## every think and zigzag in the column.
+func _guide_still_valid(my_distance: float) -> bool:
+	if _guide == null or not is_instance_valid(_guide):
+		return false
+	if _guide == _shepherd:
+		return my_distance <= config.lead_radius * GUIDE_KEEP_SLACK
+	var ahead := _guide.global_position.distance_to(_shepherd.global_position) < my_distance
+	return ahead and global_position.distance_to(_guide.global_position) <= config.view_radius * GUIDE_KEEP_SLACK
+
+
+func _pick_guide(my_distance: float) -> Node2D:
+	if my_distance <= config.lead_radius:
+		return _shepherd
+	var guide: Node2D = _shepherd
+	var nearest := config.view_radius
+	for other: Node2D in get_tree().get_nodes_in_group("sheep"):
+		if other == self:
+			continue
+		if other.global_position.distance_to(_shepherd.global_position) > my_distance - GUIDE_AHEAD_MARGIN:
+			continue
+		var distance := global_position.distance_to(other.global_position)
+		if distance < nearest:
+			nearest = distance
+			guide = other
+	return guide
 
 
 ## Start walking or trotting; a grazing sheep raises its head first.
@@ -339,9 +361,13 @@ func _update_animation() -> void:
 	if absf(velocity.x) > config.flip_threshold:
 		_set_facing_left(velocity.x < 0.0)
 
+	# Trot = 1 px hop on the second run frame (capped leg cadence would otherwise hide it).
+	var hop := 1.0 if _gait == Gait.TROT and _sprite.animation == &"run" and _sprite.frame == 1 else 0.0
+	_sprite.position.y = _sprite_offset_y - hop
+
 	if _speed > GUIDE_STOPPED_SPEED:
-		# Leg cadence follows real speed so feet do not slide.
-		_play(&"run", _speed / config.walk_speed)
+		# Leg cadence follows real speed so feet do not slide, capped so the trot does not flicker.
+		_play(&"run", minf(_speed / config.walk_speed, config.max_run_anim_scale))
 		return
 	if _gait != Gait.REST:
 		_play(&"idle", 1.0)

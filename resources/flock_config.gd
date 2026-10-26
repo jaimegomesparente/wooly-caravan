@@ -81,3 +81,5 @@ extends Resource
 @export_group("Animation")
 ## Minimum |velocity.x| (px/s) to flip the sprite.
 @export var flip_threshold: float = 5.0
+## Highest run animation speed_scale (1 = walk cadence); above it the trot shows as a 1 px hop.
+@export var max_run_anim_scale: float = 1.4
