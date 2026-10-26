@@ -9,6 +9,7 @@ size = Vector2(12, 16)
 collision_mask = 16
 motion_mode = 1
 script = ExtResource("1_script")
+speed = 64.0
 
 [node name="Placeholder" type="ColorRect" parent="." unique_id=1245055895]
 offset_left = -6.0

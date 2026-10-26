@@ -8,6 +8,8 @@
 [ext_resource type="Script" path="res://scenes/main/debug_overlay.gd" id="6_debug"]
 [ext_resource type="Resource" uid="uid://cqv7e475qv2o1" path="res://resources/flock_config.tres" id="7_config"]
 [ext_resource type="PackedScene" path="res://entities/wolf/wolf.tscn" id="8_wolf"]
+[ext_resource type="Script" path="res://scenes/main/trip.gd" id="9_trip"]
+[ext_resource type="PackedScene" path="res://ui/end_screen.tscn" id="10_end"]
 
 [node name="Main" type="Node2D" unique_id=536968002]
 y_sort_enabled = true
@@ -30,3 +32,8 @@ script = ExtResource("5_camera")
 z_index = 10
 script = ExtResource("6_debug")
 flock_config = ExtResource("7_config")
+
+[node name="Trip" type="Node" parent="."]
+script = ExtResource("9_trip")
+
+[node name="EndScreen" parent="." instance=ExtResource("10_end")]

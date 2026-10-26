@@ -8,6 +8,8 @@ extends Node2D
 @onready var _shepherd: Node2D = $Shepherd
 @onready var _ground: Ground = $Ground
 @onready var _camera: Camera2D = $FlockCamera
+@onready var _trip: Trip = $Trip
+@onready var _end_screen: CanvasLayer = $EndScreen
 
 
 func _ready() -> void:
@@ -24,4 +26,9 @@ func _ready() -> void:
 		sheep.position = _shepherd.position + offset
 		add_child(sheep)
 	if wolf_scene:
-		add_child(wolf_scene.instantiate())
+		var wolf := wolf_scene.instantiate() as Wolf
+		wolf.sheep_lost.connect(_trip.on_sheep_lost)
+		add_child(wolf)
+
+	_trip.finished.connect(_end_screen.show_result)
+	_trip.begin(sheep_count)
