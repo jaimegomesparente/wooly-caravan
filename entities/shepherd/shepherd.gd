@@ -30,6 +30,11 @@ func trail_point(distance_behind: float) -> Vector2:
 	return previous
 
 
+## Recorded trail, oldest first (read-only use, e.g. the debug overlay).
+func get_trail() -> PackedVector2Array:
+	return _trail
+
+
 func _record_trail() -> void:
 	if _trail.is_empty() or global_position.distance_to(_trail[-1]) >= trail_spacing:
 		_trail.append(global_position)

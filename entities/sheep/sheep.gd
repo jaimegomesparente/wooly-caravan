@@ -15,6 +15,9 @@ const GUIDE_KEEP_SLACK := 1.25
 const WANDER_ARRIVE_DISTANCE := 2.0
 const WANDER_TIMEOUT := 3.0
 
+## Toggled by the debug overlay (F3): each sheep draws a line to its target and a state dot.
+static var debug_draw: bool = false
+
 @export var config: FlockConfig
 
 var _gait: Gait = Gait.REST
@@ -27,6 +30,7 @@ var _rest_anchor: Vector2 = Vector2.INF
 var _wander_target: Vector2
 var _wander_timer: float = 0.0
 var _fleeing: bool = false
+var _debug_drawn: bool = false
 var _heading: float = 0.0
 var _speed: float = 0.0
 var _speed_factor: float = 1.0
@@ -88,6 +92,31 @@ func _physics_process(delta: float) -> void:
 	velocity = Vector2.from_angle(_heading) * _speed
 	move_and_slide()
 	_update_animation()
+	# Redraw while debugging, plus once after it is turned off to clear the lines.
+	if debug_draw or _debug_drawn:
+		queue_redraw()
+	_debug_drawn = debug_draw
+
+
+func _draw() -> void:
+	if not debug_draw:
+		return
+	var target := _wander_target if _gait == Gait.WANDER else _guide_target() if _guide else global_position
+	draw_line(Vector2.ZERO, to_local(target), _debug_color(), 1.0)
+	draw_rect(Rect2(-1, -15, 3, 3), _debug_color())
+
+
+func _debug_color() -> Color:
+	if _fleeing:
+		return Color.RED
+	match _gait:
+		Gait.WALK:
+			return Color.DODGER_BLUE
+		Gait.TROT:
+			return Color.ORANGE
+		Gait.WANDER:
+			return Color.MEDIUM_PURPLE
+	return Color.YELLOW_GREEN if _rest == Rest.GRAZING or _rest == Rest.LOWERING else Color.WHITE
 
 
 ## Keep or pick a guide (shepherd or the nearest sheep ahead) and decide whether to set off.
