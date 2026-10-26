@@ -31,9 +31,10 @@ var _wander_target: Vector2
 var _wander_timer: float = 0.0
 var _fleeing: bool = false
 var _panicking: bool = false
-## Moving because the dog pushed it, or because a pushed sheep pressed it from behind; makes the
-## resting sheep just ahead set off too, so the push spreads through the flock. Cleared at rest.
-var _pushed: bool = false
+## Time (s) left moving on because the dog pushed it, or because a pushed sheep pressed it from
+## behind. Meanwhile it does not stop on bumping into the flock, and makes the resting sheep just
+## ahead set off too, so the push spreads through the flock.
+var _push_timer: float = 0.0
 var _fleeing_dog: bool = false
 ## The enemy dragging this sheep away; the sheep has no logic of its own meanwhile.
 var _captor: Node2D
@@ -89,6 +90,15 @@ func _physics_process(delta: float) -> void:
 		_think_timer = randf_range(config.think_interval_min, config.think_interval_max)
 		_think()
 
+	_push_timer = maxf(_push_timer - delta, 0.0)
+	# Pressure, checked every frame so a running sheep is never stuck behind a slow one: a pushed
+	# sheep running in from behind makes this one run on too (head up at once, whatever its gait),
+	# with a weaker push, so the wave dies out after a few sheep instead of feeding itself.
+	var pressure := _pressure_from_behind(global_position.distance_to(_shepherd.global_position))
+	if pressure >= config.min_push_time and pressure > _push_timer:
+		_push_timer = pressure
+		_startle()
+		_set_off(Gait.TROT)
 	var desired := _panic_step()
 	var was_fleeing_dog := _fleeing_dog
 	_fleeing_dog = false
@@ -111,9 +121,9 @@ func _physics_process(delta: float) -> void:
 		else:
 			desired = _flee_from(_shepherd.global_position, _shepherd.velocity, config.flight_radius)
 	if _fleeing_dog:
-		_pushed = true
+		_push_timer = config.push_time
 	elif was_fleeing_dog:
-		# Out of the dog's reach: keep trotting after the flock instead of stopping there.
+		# Out of the dog's reach: keep trotting toward the front instead of stopping there.
 		_set_off(Gait.TROT)
 	if desired == Vector2.ZERO:
 		match _gait:
@@ -203,22 +213,24 @@ func _think() -> void:
 			set_off = distance > _gap() and randf() < config.imitation_chance
 		if set_off:
 			_request_gait(Gait.TROT if distance > _gap() + config.trot_margin else Gait.WALK)
-		elif _pressed_from_behind(my_distance):
-			# Pressure: a pushed sheep bumping in from behind makes this one move on as well.
-			_pushed = true
-			_set_off(Gait.WALK)
 
 
-## True when a pushed sheep, farther from the shepherd, is within pressure_radius.
-func _pressed_from_behind(my_distance: float) -> bool:
+func _is_pushed() -> bool:
+	return _push_timer > 0.0
+
+
+## The push (s) passed on by pushed sheep running in from behind (farther from the shepherd, within
+## pressure_radius, faster than a walk): their remaining push times pressure_decay. Zero if none.
+func _pressure_from_behind(my_distance: float) -> float:
+	var pressure := 0.0
 	for other: Sheep in get_tree().get_nodes_in_group("sheep"):
-		if other == self or not other._pushed:
+		if other == self or not other._is_pushed() or other._speed <= config.walk_speed:
 			continue
 		if other.global_position.distance_to(_shepherd.global_position) <= my_distance:
 			continue
 		if global_position.distance_to(other.global_position) < config.pressure_radius:
-			return true
-	return false
+			pressure = maxf(pressure, other._push_timer * config.pressure_decay)
+	return pressure
 
 
 ## Walk or trot after the guide, from any gait.
@@ -273,7 +285,7 @@ func _enter_rest() -> void:
 	_rest_anchor = _shepherd.trail_point(config.trail_lag) if _shepherd else Vector2.INF
 	_gait = Gait.REST
 	_pending_gait = Gait.REST
-	_pushed = false
+	_push_timer = 0.0
 	_set_rest(Rest.STAND)
 
 
@@ -441,20 +453,22 @@ func _startle() -> void:
 
 ## Walk or trot after the guide. Once the guide has stopped, keep walking toward the front of the
 ## flock around the others and stop on reaching the group, so the column gathers like a flock
-## arriving on a pasture. Returns the desired velocity.
+## arriving on a pasture. A pushed sheep does not stop on reaching the group: it keeps going
+## through it, at its pace, until the push wears off. Returns the desired velocity.
 func _follow_step(separation: Vector2) -> Vector2:
 	var guide_moving := _is_travelling(_guide)
 	var target := _guide_target() if guide_moving else _shepherd.trail_point(config.trail_lag)
 	var gap := _gap() if guide_moving else _shepherd_gap
 	var to_guide := target - global_position
 	var distance := to_guide.length()
+	var pushed := _is_pushed()
 	if not guide_moving and (distance < gap + config.follow_start_margin \
-			or separation.length() > config.crowd_stop_threshold):
+			or (not pushed and separation.length() > config.crowd_stop_threshold)):
 		_enter_rest()
 		return Vector2.ZERO
 	if _gait == Gait.WALK and distance > gap + config.trot_margin:
 		_gait = Gait.TROT
-	elif _gait == Gait.TROT and distance < gap + config.trot_margin * 0.5:
+	elif _gait == Gait.TROT and not pushed and distance < gap + config.trot_margin * 0.5:
 		_gait = Gait.WALK
 
 	var direction := (to_guide.normalized() + separation * config.separation_strength).normalized()

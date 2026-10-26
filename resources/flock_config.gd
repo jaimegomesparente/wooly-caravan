@@ -36,9 +36,15 @@ extends Resource
 @export_range(0.0, 1.0) var imitation_chance: float = 0.5
 ## A sheep trots when its guide is farther than gap + trot_margin (px).
 @export var trot_margin: float = 30.0
-## A resting sheep sets off when a sheep pushed by the dog comes this close (px) from behind it
+## A sheep (resting or walking) trots on when a pushed sheep comes this close (px) from behind it
 ## (farther from the shepherd), and passes the push on.
 @export var pressure_radius: float = 22.0
+## How long (s) a sheep pushed by the dog keeps moving on through the flock before it may stop.
+@export var push_time: float = 2.0
+## A pressed sheep gets the presser's remaining push times this: lower = the wave dies out sooner.
+@export_range(0.0, 1.0) var pressure_decay: float = 0.6
+## Pushes shorter than this (s) are not passed on.
+@export var min_push_time: float = 0.4
 
 @export_group("Separation")
 ## Sheep closer than this (px) push each other away.
