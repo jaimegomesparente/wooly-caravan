@@ -5,11 +5,13 @@
 [ext_resource type="PackedScene" uid="uid://bhgnnmv46ep3n" path="res://entities/sheep/sheep.tscn" id="3_sheep"]
 
 [node name="Main" type="Node2D" unique_id=536968002]
+y_sort_enabled = true
 script = ExtResource("1_script")
 sheep_scene = ExtResource("3_sheep")
 sheep_count = 40
 
 [node name="Background" type="ColorRect" parent="." unique_id=1590427545]
+z_index = -1
 offset_right = 320.0
 offset_bottom = 180.0
 color = Color(0.29, 0.5, 0.24, 1)

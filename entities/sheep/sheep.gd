@@ -34,6 +34,7 @@ func _ready() -> void:
 	_speed_factor = 1.0 + randf_range(-config.speed_variation, config.speed_variation)
 	_shepherd_gap = config.shepherd_gap * (1.0 + randf_range(-config.speed_variation, config.speed_variation))
 	_heading = randf() * TAU
+	_set_facing_left(cos(_heading) < 0.0)
 	_think_timer = randf_range(0.0, config.think_interval_max)
 
 
@@ -104,7 +105,8 @@ func _think() -> void:
 		var distance := global_position.distance_to(_guide_target())
 		var start_margin := config.shepherd_start_margin if _guide == _shepherd else config.follow_start_margin
 		# Imitation: sometimes set off as soon as the sheep ahead walks away, not only once it is far.
-		var guide_leaving := _guide != _shepherd and _speed_of(_guide) >= GUIDE_STOPPED_SPEED 				and distance > _gap() and randf() < config.imitation_chance
+		var guide_leaving := _guide != _shepherd and _speed_of(_guide) >= GUIDE_STOPPED_SPEED \
+				and distance > _gap() and randf() < config.imitation_chance
 		if distance > _gap() + config.trot_margin:
 			_gait = Gait.TROT
 		elif guide_leaving or distance > _gap() + start_margin:
