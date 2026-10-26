@@ -19,8 +19,9 @@ Out of scope until explicitly requested: dog, enemies, powers, shop, map, meta-p
 
 1. Chain following: front sheep follow the shepherd, the others follow the sheep ahead; discrete gaits (rest / walk / trot), limited turn rate, separation steers the heading
 2. Graze and wander at rest (graze animation cycle, short steps toward neighbors, never alone); a stopped column gathers into a group
-3. One enemy that charges the most isolated sheep (flock panics and flees toward the center)
-4. The dog, with a flee force that pushes sheep without oscillation
+3. Flight zone: sheep step aside from the shepherd, sideways to his path (`_flee_from`, reused by the dog)
+4. One enemy that charges the most isolated sheep (flock panics and flees toward the center)
+5. The dog, with a flee force that pushes sheep without oscillation
 
 ## Game design (reference for later steps)
 

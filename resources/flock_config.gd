@@ -27,6 +27,8 @@ extends Resource
 @export var follow_gap: float = 16.0
 ## A resting front sheep sets off once the trail point has moved this far (px) since it settled.
 @export var shepherd_start_margin: float = 20.0
+## A straggler (no sheep ahead in view) sets off when farther than this (px) from the trail point.
+@export var catch_up_distance: float = 80.0
 ## A sheep walking up to a stopped guide halts within gap + this (px); behind a walking guide,
 ## it matches the guide's pace within half of it.
 @export var follow_start_margin: float = 6.0
@@ -43,6 +45,14 @@ extends Resource
 @export_range(0.0, 1.0) var shuffle_threshold: float = 0.25
 ## A sheep walking up to a stopped flock halts once the push from its neighbors exceeds this.
 @export_range(0.0, 2.0) var crowd_stop_threshold: float = 0.35
+
+@export_group("Flight")
+## A sheep closer than this (px) to the shepherd steps away, to the side of his path.
+@export var flight_radius: float = 18.0
+## It keeps stepping away until it is flight_radius + flight_margin (px) away.
+@export var flight_margin: float = 6.0
+## Turn rate and acceleration multiplier while stepping away (a startle).
+@export var flight_reflex: float = 3.0
 
 @export_group("Rest")
 ## Time (s) standing with the head up before grazing or wandering.

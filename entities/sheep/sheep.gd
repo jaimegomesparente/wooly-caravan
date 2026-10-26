@@ -24,6 +24,7 @@ var _pending_gait: Gait = Gait.REST
 var _rest_anchor: Vector2 = Vector2.INF
 var _wander_target: Vector2
 var _wander_timer: float = 0.0
+var _fleeing: bool = false
 var _heading: float = 0.0
 var _speed: float = 0.0
 var _speed_factor: float = 1.0
@@ -65,18 +66,21 @@ func _physics_process(delta: float) -> void:
 		_think_timer = randf_range(config.think_interval_min, config.think_interval_max)
 		_think()
 
-	var desired: Vector2
-	match _gait:
-		Gait.REST:
-			desired = _rest_step(delta, separation)
-		Gait.WANDER:
-			desired = _wander_step(delta, separation)
-		_:
-			desired = _follow_step(separation)
+	var desired := _flee_from(_shepherd.global_position, _shepherd.velocity, config.flight_radius)
+	if desired == Vector2.ZERO:
+		match _gait:
+			Gait.REST:
+				desired = _rest_step(delta, separation)
+			Gait.WANDER:
+				desired = _wander_step(delta, separation)
+			_:
+				desired = _follow_step(separation)
 
+	# A startled sheep turns and speeds up faster.
+	var reflex := config.flight_reflex if _fleeing else 1.0
 	if desired != Vector2.ZERO:
-		_heading = rotate_toward(_heading, desired.angle(), config.turn_rate * delta)
-	_speed = move_toward(_speed, desired.length(), config.acceleration * delta)
+		_heading = rotate_toward(_heading, desired.angle(), config.turn_rate * reflex * delta)
+	_speed = move_toward(_speed, desired.length(), config.acceleration * reflex * delta)
 	velocity = Vector2.from_angle(_heading) * _speed
 	move_and_slide()
 	_update_animation()
@@ -102,8 +106,10 @@ func _think() -> void:
 		var distance := global_position.distance_to(_guide_target())
 		var set_off := false
 		if _guide == _shepherd:
-			# Front sheep set off once the shepherd's trail has really moved since they settled.
-			set_off = _rest_anchor.distance_to(_shepherd.trail_point(config.trail_lag)) > config.shepherd_start_margin
+			# Front sheep set off once the shepherd's trail has really moved since they settled;
+			# a straggler with no sheep ahead in view sets off when it is far from the trail.
+			set_off = _rest_anchor.distance_to(_shepherd.trail_point(config.trail_lag)) > config.shepherd_start_margin \
+					or distance > config.catch_up_distance
 		elif _is_travelling(_guide):
 			# Imitation: the others follow the sheep ahead when it walks away, with some hesitation.
 			set_off = distance > _gap() and randf() < config.imitation_chance
@@ -219,6 +225,31 @@ func _wander_step(delta: float, separation: Vector2) -> Vector2:
 	return direction * config.walk_speed * _speed_factor * config.wander_speed_factor
 
 
+## Step away from a threat closer than `radius`, sideways to its path so the flock parts in front
+## of it. Returns the desired velocity, or zero when not fleeing. Reused later for the dog.
+func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: float) -> Vector2:
+	var away := global_position - threat_position
+	var distance := away.length()
+	if distance > radius + (config.flight_margin if _fleeing else 0.0):
+		_fleeing = false
+		return Vector2.ZERO
+
+	if not _fleeing and _gait == Gait.REST and _rest != Rest.STAND:
+		# Startled: the head comes up at once, no finished_graze.
+		_set_rest(Rest.STAND)
+		_pending_gait = Gait.REST
+	_fleeing = true
+
+	var direction := Vector2.from_angle(randf() * TAU) if distance == 0.0 else away / distance
+	if threat_velocity.length() > GUIDE_STOPPED_SPEED:
+		var side := threat_velocity.normalized().orthogonal()
+		# Mostly sideways: running ahead of a faster threat only gets the sheep caught up.
+		direction = (direction * 0.5 + side * signf(side.dot(away) + 0.001)).normalized()
+	var walk := config.walk_speed * _speed_factor
+	var speed := config.trot_speed * _speed_factor if threat_velocity.length() > walk else walk
+	return direction * speed
+
+
 ## Walk or trot after the guide. Once the guide has stopped, keep walking toward the front of the
 ## flock around the others and stop on reaching the group, so the column gathers like a flock
 ## arriving on a pasture. Returns the desired velocity.
@@ -285,8 +316,13 @@ func _nearest_neighbor_distance() -> float:
 
 
 ## Push away from sheep closer than separation_radius; magnitude fades from 1 to 0 across the radius.
+## The shepherd also pushes, over twice the flight radius, so walking sheep curve around him.
 func _separation() -> Vector2:
 	var push := Vector2.ZERO
+	var from_shepherd := global_position - _shepherd.global_position
+	var shepherd_radius := config.flight_radius * 2.0
+	if from_shepherd.length() < shepherd_radius and from_shepherd != Vector2.ZERO:
+		push += from_shepherd.normalized() * (1.0 - from_shepherd.length() / shepherd_radius)
 	for other: Node2D in get_tree().get_nodes_in_group("sheep"):
 		if other == self:
 			continue
