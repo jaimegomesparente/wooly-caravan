@@ -1,15 +1,16 @@
 [gd_scene format=3 uid="uid://drc7cadd07h38"]
 
 [ext_resource type="Script" uid="uid://d35vukxwcum44" path="res://scenes/main/main.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://entities/shepherd/shepherd.tscn" id="2_shepherd"]
+[ext_resource type="PackedScene" uid="uid://1jxjp03wmhwd" path="res://entities/shepherd/shepherd.tscn" id="2_shepherd"]
 [ext_resource type="PackedScene" uid="uid://bhgnnmv46ep3n" path="res://entities/sheep/sheep.tscn" id="3_sheep"]
-[ext_resource type="Script" path="res://scenes/main/ground.gd" id="4_ground"]
-[ext_resource type="Script" path="res://scenes/main/flock_camera.gd" id="5_camera"]
-[ext_resource type="Script" path="res://scenes/main/debug_overlay.gd" id="6_debug"]
+[ext_resource type="Script" uid="uid://bgeoa48knrxki" path="res://scenes/main/ground.gd" id="4_ground"]
+[ext_resource type="Script" uid="uid://cwjbb70vbfx1s" path="res://scenes/main/flock_camera.gd" id="5_camera"]
+[ext_resource type="Script" uid="uid://bqilwa470fm3t" path="res://scenes/main/debug_overlay.gd" id="6_debug"]
 [ext_resource type="Resource" uid="uid://cqv7e475qv2o1" path="res://resources/flock_config.tres" id="7_config"]
 [ext_resource type="PackedScene" path="res://entities/wolf/wolf.tscn" id="8_wolf"]
-[ext_resource type="Script" path="res://scenes/main/trip.gd" id="9_trip"]
+[ext_resource type="Script" uid="uid://bo1b31a41aamx" path="res://scenes/main/trip.gd" id="9_trip"]
 [ext_resource type="PackedScene" path="res://ui/end_screen.tscn" id="10_end"]
+[ext_resource type="PackedScene" path="res://entities/dog/dog.tscn" id="11_dog"]
 
 [node name="Main" type="Node2D" unique_id=536968002]
 y_sort_enabled = true
@@ -17,6 +18,7 @@ script = ExtResource("1_script")
 sheep_scene = ExtResource("3_sheep")
 sheep_count = 40
 wolf_scene = ExtResource("8_wolf")
+dog_scene = ExtResource("11_dog")
 
 [node name="Ground" type="Node2D" parent="." unique_id=1590427545]
 z_index = -1
@@ -25,15 +27,15 @@ script = ExtResource("4_ground")
 [node name="Shepherd" parent="." unique_id=1167479979 instance=ExtResource("2_shepherd")]
 position = Vector2(120, 150)
 
-[node name="FlockCamera" type="Camera2D" parent="."]
+[node name="FlockCamera" type="Camera2D" parent="." unique_id=749402461]
 script = ExtResource("5_camera")
 
-[node name="DebugOverlay" type="Node2D" parent="."]
+[node name="DebugOverlay" type="Node2D" parent="." unique_id=581513149]
 z_index = 10
 script = ExtResource("6_debug")
 flock_config = ExtResource("7_config")
 
-[node name="Trip" type="Node" parent="."]
+[node name="Trip" type="Node" parent="." unique_id=1414957768]
 script = ExtResource("9_trip")
 
-[node name="EndScreen" parent="." instance=ExtResource("10_end")]
+[node name="EndScreen" parent="." unique_id=798652235 instance=ExtResource("10_end")]

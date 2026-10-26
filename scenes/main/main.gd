@@ -4,6 +4,7 @@ extends Node2D
 @export var sheep_count: int = 10
 @export var spawn_radius: float = 60.0
 @export var wolf_scene: PackedScene
+@export var dog_scene: PackedScene
 
 @onready var _shepherd: Node2D = $Shepherd
 @onready var _ground: Ground = $Ground
@@ -25,6 +26,10 @@ func _ready() -> void:
 		var offset := Vector2.from_angle(randf() * TAU) * randf_range(spawn_radius * 0.5, spawn_radius)
 		sheep.position = _shepherd.position + offset
 		add_child(sheep)
+	if dog_scene:
+		var dog := dog_scene.instantiate() as Node2D
+		dog.position = _shepherd.position + Vector2(-16, 0)
+		add_child(dog)
 	if wolf_scene:
 		var wolf := wolf_scene.instantiate() as Wolf
 		wolf.sheep_lost.connect(_trip.on_sheep_lost)

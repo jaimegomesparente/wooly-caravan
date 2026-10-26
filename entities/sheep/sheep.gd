@@ -31,6 +31,10 @@ var _wander_target: Vector2
 var _wander_timer: float = 0.0
 var _fleeing: bool = false
 var _panicking: bool = false
+## Moving because the dog pushed it, or because a pushed sheep pressed it from behind; makes the
+## resting sheep just ahead set off too, so the push spreads through the flock. Cleared at rest.
+var _pushed: bool = false
+var _fleeing_dog: bool = false
 ## The enemy dragging this sheep away; the sheep has no logic of its own meanwhile.
 var _captor: Node2D
 var _debug_drawn: bool = false
@@ -86,8 +90,31 @@ func _physics_process(delta: float) -> void:
 		_think()
 
 	var desired := _panic_step()
+	var was_fleeing_dog := _fleeing_dog
+	_fleeing_dog = false
 	if desired == Vector2.ZERO:
-		desired = _flee_from(_shepherd.global_position, _shepherd.velocity, config.flight_radius)
+		# One flight threat at a time (the nearest), so the flight margin keeps working.
+		var dog := get_tree().get_first_node_in_group("dog") as Dog
+		if dog and global_position.distance_to(dog.global_position) \
+				< global_position.distance_to(_shepherd.global_position):
+			if dog.is_pushing():
+				desired = _flee_from(dog.global_position, Vector2.ZERO, config.dog_flight_radius, true)
+				_fleeing_dog = desired != Vector2.ZERO
+				if _fleeing_dog:
+					# Keep some room from the neighbors: a flock packed too tight spreads out
+					# backward as soon as the dog leaves.
+					desired = (desired.normalized() + separation * config.separation_strength).normalized() \
+							* desired.length()
+			else:
+				# Not working: the dog only gets the shepherd's small flight zone.
+				desired = _flee_from(dog.global_position, dog.velocity, config.flight_radius)
+		else:
+			desired = _flee_from(_shepherd.global_position, _shepherd.velocity, config.flight_radius)
+	if _fleeing_dog:
+		_pushed = true
+	elif was_fleeing_dog:
+		# Out of the dog's reach: keep trotting after the flock instead of stopping there.
+		_set_off(Gait.TROT)
 	if desired == Vector2.ZERO:
 		match _gait:
 			Gait.REST:
@@ -176,6 +203,30 @@ func _think() -> void:
 			set_off = distance > _gap() and randf() < config.imitation_chance
 		if set_off:
 			_request_gait(Gait.TROT if distance > _gap() + config.trot_margin else Gait.WALK)
+		elif _pressed_from_behind(my_distance):
+			# Pressure: a pushed sheep bumping in from behind makes this one move on as well.
+			_pushed = true
+			_set_off(Gait.WALK)
+
+
+## True when a pushed sheep, farther from the shepherd, is within pressure_radius.
+func _pressed_from_behind(my_distance: float) -> bool:
+	for other: Sheep in get_tree().get_nodes_in_group("sheep"):
+		if other == self or not other._pushed:
+			continue
+		if other.global_position.distance_to(_shepherd.global_position) <= my_distance:
+			continue
+		if global_position.distance_to(other.global_position) < config.pressure_radius:
+			return true
+	return false
+
+
+## Walk or trot after the guide, from any gait.
+func _set_off(gait: Gait) -> void:
+	if _gait == Gait.REST or _gait == Gait.WANDER:
+		_request_gait(gait)
+	else:
+		_gait = gait
 
 
 ## A guide is kept while it stays roughly valid (with some slack), so sheep do not switch guides
@@ -222,6 +273,7 @@ func _enter_rest() -> void:
 	_rest_anchor = _shepherd.trail_point(config.trail_lag) if _shepherd else Vector2.INF
 	_gait = Gait.REST
 	_pending_gait = Gait.REST
+	_pushed = false
 	_set_rest(Rest.STAND)
 
 
@@ -317,8 +369,9 @@ func _wander_step(delta: float, separation: Vector2) -> Vector2:
 
 
 ## Step away from a threat closer than `radius`, sideways to its path so the flock parts in front
-## of it. Returns the desired velocity, or zero when not fleeing. Reused later for the dog.
-func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: float) -> Vector2:
+## of it. A `pushed` sheep (by the dog) instead trots straight away, where the dog wants it to go.
+## Returns the desired velocity, or zero when not fleeing.
+func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: float, pushed: bool = false) -> Vector2:
 	var away := global_position - threat_position
 	var distance := away.length()
 	if distance > radius + (config.flight_margin if _fleeing else 0.0):
@@ -335,7 +388,7 @@ func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: floa
 		# Mostly sideways: running ahead of a faster threat only gets the sheep caught up.
 		direction = (direction * 0.5 + side * signf(side.dot(away) + 0.001)).normalized()
 	var walk := config.walk_speed * _speed_factor
-	var speed := config.trot_speed * _speed_factor if threat_velocity.length() > walk else walk
+	var speed := config.trot_speed * _speed_factor if pushed or threat_velocity.length() > walk else walk
 	return direction * speed
 
 
@@ -452,11 +505,11 @@ func _nearest_neighbor_distance() -> float:
 
 
 ## Push away from sheep closer than separation_radius; magnitude fades from 1 to 0 across the radius.
-## The shepherd also pushes, over twice the flight radius, so walking sheep curve around him.
+## The shepherd also pushes, over shepherd_push_radius, so walking sheep curve around him.
 func _separation() -> Vector2:
 	var push := Vector2.ZERO
 	var from_shepherd := global_position - _shepherd.global_position
-	var shepherd_radius := config.flight_radius * 2.0
+	var shepherd_radius := config.shepherd_push_radius
 	if from_shepherd.length() < shepherd_radius and from_shepherd != Vector2.ZERO:
 		push += from_shepherd.normalized() * (1.0 - from_shepherd.length() / shepherd_radius)
 	for other: Node2D in get_tree().get_nodes_in_group("sheep"):

@@ -36,6 +36,9 @@ extends Resource
 @export_range(0.0, 1.0) var imitation_chance: float = 0.5
 ## A sheep trots when its guide is farther than gap + trot_margin (px).
 @export var trot_margin: float = 30.0
+## A resting sheep sets off when a sheep pushed by the dog comes this close (px) from behind it
+## (farther from the shepherd), and passes the push on.
+@export var pressure_radius: float = 22.0
 
 @export_group("Separation")
 ## Sheep closer than this (px) push each other away.
@@ -45,6 +48,9 @@ extends Resource
 @export_range(0.0, 1.0) var shuffle_threshold: float = 0.25
 ## A sheep walking up to a stopped flock halts once the push from its neighbors exceeds this.
 @export_range(0.0, 2.0) var crowd_stop_threshold: float = 0.35
+## The shepherd pushes sheep closer than this (px) like a neighbor (was 2 x flight_radius = 36):
+## lower = the flock stays calmer around him when he stands among it.
+@export var shepherd_push_radius: float = 24.0
 
 @export_group("Flight")
 ## A sheep closer than this (px) to the shepherd steps away, to the side of his path.
@@ -53,6 +59,9 @@ extends Resource
 @export var flight_margin: float = 6.0
 ## Turn rate and acceleration multiplier while stepping away (a startle).
 @export var flight_reflex: float = 3.0
+## While the dog pushes, a sheep closer than this (px) trots straight away from it (flight_margin
+## applies too). The rest of the time the dog only has flight_radius, like the shepherd.
+@export var dog_flight_radius: float = 36.0
 
 @export_group("Panic")
 ## A sheep closer than this (px) to a charging or carrying enemy trots away (also uses flight_reflex).

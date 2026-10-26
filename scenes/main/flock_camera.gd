@@ -6,8 +6,11 @@ extends Camera2D
 @export var max_lean: float = 60.0
 ## Higher = the camera catches up faster.
 @export var smoothing: float = 3.0
+## Zoom steps for testing (mouse wheel / keypad + -): 1 = normal, lower = see more.
+@export var zoom_levels: Array[float] = [1.0, 0.75, 0.5, 0.35, 0.25]
 
 var _focus: Vector2
+var _zoom_index: int = 0
 
 
 func _ready() -> void:
@@ -19,6 +22,17 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_focus = _focus.lerp(_target(), 1.0 - exp(-smoothing * delta))
 	global_position = _focus
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	var step := 0
+	if event.is_action_pressed("zoom_out"):
+		step = 1
+	elif event.is_action_pressed("zoom_in"):
+		step = -1
+	if step != 0:
+		_zoom_index = clampi(_zoom_index + step, 0, zoom_levels.size() - 1)
+		zoom = Vector2.ONE * zoom_levels[_zoom_index]
 
 
 func _target() -> Vector2:
