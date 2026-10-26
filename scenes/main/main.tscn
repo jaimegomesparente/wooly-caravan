@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://d35vukxwcum44" path="res://scenes/main/main.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://entities/shepherd/shepherd.tscn" id="2_shepherd"]
 [ext_resource type="PackedScene" uid="uid://bhgnnmv46ep3n" path="res://entities/sheep/sheep.tscn" id="3_sheep"]
+[ext_resource type="Script" path="res://scenes/main/ground.gd" id="4_ground"]
+[ext_resource type="Script" path="res://scenes/main/flock_camera.gd" id="5_camera"]
 
 [node name="Main" type="Node2D" unique_id=536968002]
 y_sort_enabled = true
@@ -10,11 +12,13 @@ script = ExtResource("1_script")
 sheep_scene = ExtResource("3_sheep")
 sheep_count = 40
 
-[node name="Background" type="ColorRect" parent="." unique_id=1590427545]
+[node name="Ground" type="Node2D" parent="." unique_id=1590427545]
 z_index = -1
-offset_right = 320.0
-offset_bottom = 180.0
-color = Color(0.29, 0.5, 0.24, 1)
+position = Vector2(160, 90)
+script = ExtResource("4_ground")
 
 [node name="Shepherd" parent="." unique_id=1167479979 instance=ExtResource("2_shepherd")]
 position = Vector2(160, 90)
+
+[node name="FlockCamera" type="Camera2D" parent="."]
+script = ExtResource("5_camera")
