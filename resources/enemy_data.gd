@@ -22,8 +22,6 @@ extends Resource
 @export var charge_turn_rate: float = 3.0
 ## Grabs the target when this close (px).
 @export var capture_distance: float = 6.0
-## Gives up and leaves if it has not caught the target after this long (s).
-@export var charge_time: float = 3.0
 
 @export_group("Carry")
 ## Speed (px/s) while dragging a sheep to the nearest forest edge, where the sheep is lost.

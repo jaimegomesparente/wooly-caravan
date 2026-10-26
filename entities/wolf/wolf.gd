@@ -1,8 +1,8 @@
 class_name Wolf
 extends CharacterBody2D
-## Comes out of the forest edge toward the most isolated sheep, stops with a blinking "!", charges,
-## then drags the sheep back to the nearest edge. The shepherd frees it by reaching the wolf first;
-## once the wolf crosses the edge, the sheep is lost.
+## Comes out of the forest edge toward the most isolated sheep, stops with a blinking "!", charges
+## until it catches a sheep, then drags it back to the nearest edge. The shepherd frees it by
+## reaching the wolf first; once the wolf crosses the edge, the sheep is lost.
 
 signal sheep_captured(sheep: Sheep)
 signal sheep_lost(sheep: Sheep)
@@ -15,7 +15,8 @@ const OFFSCREEN_MARGIN := 24.0
 const ONSCREEN_MARGIN := 12.0
 ## Minimum |velocity.x| (px/s) to flip the placeholder.
 const FLIP_THRESHOLD := 5.0
-## While approaching, switches to another sheep only if it is this much (px) farther from the flock center.
+## Switches to another sheep only if it is clearly better by this much (px): farther from the flock
+## center while approaching, closer to the wolf while charging.
 const RETARGET_MARGIN := 16.0
 
 @export var data: EnemyData
@@ -60,7 +61,6 @@ func _physics_process(delta: float) -> void:
 				_leave(data.prowl_speed)
 			elif _timer <= 0.0:
 				_state = State.CHARGE
-				_timer = data.charge_time
 		State.CHARGE:
 			_charge(delta)
 		State.CARRY:
@@ -140,10 +140,17 @@ func _prowl(delta: float) -> void:
 	_steer(to_target, data.prowl_speed, data.turn_rate, delta)
 
 
+## Runs at the target until it catches a sheep: never gives up, but switches to another sheep when
+## the target is gone or another one is clearly closer (it grabs whatever it can reach first).
 func _charge(delta: float) -> void:
-	if _target == null or not _target.is_in_group("sheep") or _timer <= 0.0:
+	var nearest := _nearest_sheep()
+	if nearest == null:
 		_leave(data.prowl_speed)
 		return
+	if _target == null or not _target.is_in_group("sheep") \
+			or global_position.distance_to(nearest.global_position) + RETARGET_MARGIN \
+			< global_position.distance_to(_target.global_position):
+		_target = nearest
 	var to_target := _target.global_position - global_position
 	if to_target.length() <= data.capture_distance:
 		_target.capture(self)
@@ -223,9 +230,18 @@ func _most_isolated_sheep() -> Sheep:
 
 
 func _nearest_sheep_distance() -> float:
-	var nearest := INF
-	for sheep: Node2D in get_tree().get_nodes_in_group("sheep"):
-		nearest = minf(nearest, global_position.distance_to(sheep.global_position))
+	var nearest := _nearest_sheep()
+	return global_position.distance_to(nearest.global_position) if nearest else INF
+
+
+func _nearest_sheep() -> Sheep:
+	var nearest: Sheep = null
+	var nearest_distance := INF
+	for sheep: Sheep in get_tree().get_nodes_in_group("sheep"):
+		var distance := global_position.distance_to(sheep.global_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest = sheep
 	return nearest
 
 
