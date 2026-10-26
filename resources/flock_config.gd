@@ -54,6 +54,15 @@ extends Resource
 ## Turn rate and acceleration multiplier while stepping away (a startle).
 @export var flight_reflex: float = 3.0
 
+@export_group("Panic")
+## A sheep closer than this (px) to a charging or carrying enemy trots away (also uses flight_reflex).
+@export var panic_radius: float = 70.0
+## It keeps running until it is panic_radius + panic_margin (px) away.
+@export var panic_margin: float = 15.0
+## Pull toward the flock center while panicking (relative to "away from the enemy" = 1).
+## Never toward the enemy: that part is removed.
+@export var panic_center_weight: float = 1.0
+
 @export_group("Rest")
 ## Time (s) standing with the head up before grazing or wandering.
 @export var stand_time_min: float = 0.5

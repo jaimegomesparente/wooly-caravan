@@ -30,6 +30,9 @@ var _rest_anchor: Vector2 = Vector2.INF
 var _wander_target: Vector2
 var _wander_timer: float = 0.0
 var _fleeing: bool = false
+var _panicking: bool = false
+## The enemy dragging this sheep away; the sheep has no logic of its own meanwhile.
+var _captor: Node2D
 var _debug_drawn: bool = false
 var _heading: float = 0.0
 var _speed: float = 0.0
@@ -67,6 +70,14 @@ func _physics_process(delta: float) -> void:
 		_shepherd = get_tree().get_first_node_in_group("shepherd") as Shepherd
 	if _shepherd == null:
 		return
+	if _captor:
+		_speed = 0.0
+		velocity = Vector2.ZERO
+		_update_animation()
+		_update_debug_draw()
+		return
+	if _guide != null and not is_instance_valid(_guide):
+		_guide = _shepherd
 
 	var separation := _separation()
 	_think_timer -= delta
@@ -74,7 +85,9 @@ func _physics_process(delta: float) -> void:
 		_think_timer = randf_range(config.think_interval_min, config.think_interval_max)
 		_think()
 
-	var desired := _flee_from(_shepherd.global_position, _shepherd.velocity, config.flight_radius)
+	var desired := _panic_step()
+	if desired == Vector2.ZERO:
+		desired = _flee_from(_shepherd.global_position, _shepherd.velocity, config.flight_radius)
 	if desired == Vector2.ZERO:
 		match _gait:
 			Gait.REST:
@@ -85,14 +98,36 @@ func _physics_process(delta: float) -> void:
 				desired = _follow_step(separation)
 
 	# A startled sheep turns and speeds up faster.
-	var reflex := config.flight_reflex if _fleeing else 1.0
+	var reflex := config.flight_reflex if _fleeing or _panicking else 1.0
 	if desired != Vector2.ZERO:
 		_heading = rotate_toward(_heading, desired.angle(), config.turn_rate * reflex * delta)
 	_speed = move_toward(_speed, desired.length(), config.acceleration * reflex * delta)
 	velocity = Vector2.from_angle(_heading) * _speed
 	move_and_slide()
 	_update_animation()
-	# Redraw while debugging, plus once after it is turned off to clear the lines.
+	_update_debug_draw()
+
+
+## Called by an enemy that grabs this sheep: it leaves the flock until released.
+func capture(by: Node2D) -> void:
+	_captor = by
+	remove_from_group("sheep")
+	_fleeing = false
+	_panicking = false
+	_gait = Gait.REST
+	_set_rest(Rest.STAND)
+	_pending_gait = Gait.REST
+
+
+## Called by the enemy when the shepherd frees this sheep: it rejoins the flock.
+func release() -> void:
+	_captor = null
+	add_to_group("sheep")
+	_enter_rest()
+
+
+# Redraw while debugging, plus once after it is turned off to clear the lines.
+func _update_debug_draw() -> void:
 	if debug_draw or _debug_drawn:
 		queue_redraw()
 	_debug_drawn = debug_draw
@@ -101,13 +136,16 @@ func _physics_process(delta: float) -> void:
 func _draw() -> void:
 	if not debug_draw:
 		return
+	if _captor:
+		draw_rect(Rect2(-1, -15, 3, 3), Color.MAGENTA)
+		return
 	var target := _wander_target if _gait == Gait.WANDER else _guide_target() if _guide else global_position
 	draw_line(Vector2.ZERO, to_local(target), _debug_color(), 1.0)
 	draw_rect(Rect2(-1, -15, 3, 3), _debug_color())
 
 
 func _debug_color() -> Color:
-	if _fleeing:
+	if _fleeing or _panicking:
 		return Color.RED
 	match _gait:
 		Gait.WALK:
@@ -147,6 +185,8 @@ func _guide_still_valid(my_distance: float) -> bool:
 		return false
 	if _guide == _shepherd:
 		return my_distance <= config.lead_radius * GUIDE_KEEP_SLACK
+	if not _guide.is_in_group("sheep"):
+		return false
 	var ahead := _guide.global_position.distance_to(_shepherd.global_position) < my_distance
 	return ahead and global_position.distance_to(_guide.global_position) <= config.view_radius * GUIDE_KEEP_SLACK
 
@@ -285,10 +325,8 @@ func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: floa
 		_fleeing = false
 		return Vector2.ZERO
 
-	if not _fleeing and _gait == Gait.REST and _rest != Rest.STAND:
-		# Startled: the head comes up at once, no finished_graze.
-		_set_rest(Rest.STAND)
-		_pending_gait = Gait.REST
+	if not _fleeing:
+		_startle()
 	_fleeing = true
 
 	var direction := Vector2.from_angle(randf() * TAU) if distance == 0.0 else away / distance
@@ -299,6 +337,53 @@ func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: floa
 	var walk := config.walk_speed * _speed_factor
 	var speed := config.trot_speed * _speed_factor if threat_velocity.length() > walk else walk
 	return direction * speed
+
+
+## Trot away from the nearest dangerous enemy within panic_radius, toward the flock center but
+## never toward the enemy. Returns the desired velocity, or zero when not panicking.
+func _panic_step() -> Vector2:
+	var threat := _nearest_threat()
+	var radius := config.panic_radius + (config.panic_margin if _panicking else 0.0)
+	if threat == null or global_position.distance_to(threat.global_position) > radius:
+		_panicking = false
+		return Vector2.ZERO
+
+	if not _panicking and not _fleeing:
+		_startle()
+	_panicking = true
+
+	var away := global_position - threat.global_position
+	var away_direction := Vector2.from_angle(randf() * TAU) if away == Vector2.ZERO else away.normalized()
+	var to_center := _flock_center() - global_position
+	var direction := away_direction
+	if to_center != Vector2.ZERO:
+		direction += to_center.normalized() * config.panic_center_weight
+	# Remove any part pointing at the enemy (the center can lie beyond it).
+	var toward_threat := -direction.dot(away_direction)
+	if toward_threat > 0.0:
+		direction += away_direction * toward_threat
+	direction = away_direction if direction.length() < 0.01 else direction.normalized()
+	return direction * config.trot_speed * _speed_factor
+
+
+func _nearest_threat() -> Node2D:
+	var nearest: Node2D = null
+	var nearest_distance := INF
+	for enemy: Wolf in get_tree().get_nodes_in_group("enemy"):
+		if not enemy.is_dangerous():
+			continue
+		var distance := global_position.distance_to(enemy.global_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest = enemy
+	return nearest
+
+
+## Startled: a grazing head comes up at once, no finished_graze.
+func _startle() -> void:
+	if _gait == Gait.REST and _rest != Rest.STAND:
+		_set_rest(Rest.STAND)
+		_pending_gait = Gait.REST
 
 
 ## Walk or trot after the guide. Once the guide has stopped, keep walking toward the front of the

@@ -7,12 +7,14 @@
 [ext_resource type="Script" path="res://scenes/main/flock_camera.gd" id="5_camera"]
 [ext_resource type="Script" path="res://scenes/main/debug_overlay.gd" id="6_debug"]
 [ext_resource type="Resource" uid="uid://cqv7e475qv2o1" path="res://resources/flock_config.tres" id="7_config"]
+[ext_resource type="PackedScene" path="res://entities/wolf/wolf.tscn" id="8_wolf"]
 
 [node name="Main" type="Node2D" unique_id=536968002]
 y_sort_enabled = true
 script = ExtResource("1_script")
 sheep_scene = ExtResource("3_sheep")
 sheep_count = 40
+wolf_scene = ExtResource("8_wolf")
 
 [node name="Ground" type="Node2D" parent="." unique_id=1590427545]
 z_index = -1
