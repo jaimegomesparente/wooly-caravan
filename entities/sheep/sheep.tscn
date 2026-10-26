@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://54f5ttv4q0c" path="res://entities/sheep/sheep.gd" id="1_script"]
 [ext_resource type="Resource" uid="uid://cqv7e475qv2o1" path="res://resources/flock_config.tres" id="2_config"]
 [ext_resource type="Texture2D" uid="uid://d16babea8sebx" path="res://art/sprites/sheeps/sheep-Sheet.png" id="3_fxwg6"]
+[ext_resource type="PackedScene" path="res://effects/dust.tscn" id="4_dust"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_tbl57"]
 atlas = ExtResource("3_fxwg6")
@@ -125,6 +126,9 @@ collision_mask = 16
 motion_mode = 1
 script = ExtResource("1_script")
 config = ExtResource("2_config")
+
+[node name="Dust" parent="." instance=ExtResource("4_dust")]
+min_speed = 36.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=796859497]
 position = Vector2(1, -5)

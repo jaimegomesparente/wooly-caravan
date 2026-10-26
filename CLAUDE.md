@@ -14,7 +14,7 @@ In scope:
 
 Added since: a wolf (step 4), the trip band with an end screen (R restarts), the dog with the Gather posture only (step 5).
 
-Out of scope until explicitly requested: other dog postures and orders, other enemies, powers, shop, map, meta-progression, menus, tilemaps, shadows, particles, sound.
+Out of scope until explicitly requested: other dog postures and orders, other enemies, powers, shop, map, meta-progression, menus, tilemaps, shadows, other particles (only running dust exists), sound.
 
 **Do only the step you are asked to do, nothing more.** Do not add systems, menus or "nice to have" features.
 
@@ -102,7 +102,7 @@ Prototype uses only 2 orders (Go there, Fetch).
 
 ## Project structure and conventions
 
-- `art/` sprites; `entities/<name>/` scene + script + data of one entity; `scenes/` assembled screens (`main`, later map, shop, menus); `resources/` custom `Resource` scripts and `.tres` data; `autoload/` singletons (only `RunManager`, when needed); `ui/` when needed
+- `art/` sprites; `entities/<name>/` scene + script + data of one entity; `scenes/` assembled screens (`main`, later map, shop, menus); `resources/` custom `Resource` scripts and `.tres` data; `autoload/` singletons (only `RunManager`, when needed); `ui/` when needed; `effects/` reusable visual effects (`dust.tscn`: square dust while a body runs, threshold `min_speed` per instance)
 - Create folders only when first used
 - Entities communicate through signals and groups (`sheep`, `shepherd`), never `get_node("../..")`. `Main` only instantiates and wires
 - Tunables live in `Resource` subclasses (`FlockConfig`, later `EnemyData`, `PowerData`) with `@export`

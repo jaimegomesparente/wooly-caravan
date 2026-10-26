@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://entities/dog/dog.gd" id="1_script"]
 [ext_resource type="Resource" path="res://resources/dog.tres" id="2_data"]
+[ext_resource type="PackedScene" path="res://effects/dust.tscn" id="3_dust"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(12, 8)
@@ -12,6 +13,9 @@ collision_mask = 16
 motion_mode = 1
 script = ExtResource("1_script")
 data = ExtResource("2_data")
+
+[node name="Dust" parent="." instance=ExtResource("3_dust")]
+min_speed = 50.0
 
 [node name="Placeholder" type="ColorRect" parent="."]
 offset_left = -6.0
