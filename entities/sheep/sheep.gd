@@ -99,7 +99,7 @@ func _physics_process(delta: float) -> void:
 		_push_timer = pressure
 		_startle()
 		_set_off(Gait.TROT)
-	var desired := _panic_step()
+	var desired := _panic_step(separation)
 	var was_fleeing_dog := _fleeing_dog
 	_fleeing_dog = false
 	if desired == Vector2.ZERO:
@@ -405,8 +405,9 @@ func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: floa
 
 
 ## Trot away from the nearest dangerous enemy within panic_radius, toward the flock center but
-## never toward the enemy. Returns the desired velocity, or zero when not panicking.
-func _panic_step() -> Vector2:
+## never toward the enemy, keeping some room from the neighbors. Returns the desired velocity, or
+## zero when not panicking.
+func _panic_step(separation: Vector2) -> Vector2:
 	var threat := _nearest_threat()
 	var radius := config.panic_radius + (config.panic_margin if _panicking else 0.0)
 	if threat == null or global_position.distance_to(threat.global_position) > radius:
@@ -420,9 +421,13 @@ func _panic_step() -> Vector2:
 	var away := global_position - threat.global_position
 	var away_direction := Vector2.from_angle(randf() * TAU) if away == Vector2.ZERO else away.normalized()
 	var to_center := _flock_center() - global_position
-	var direction := away_direction
+	var direction := away_direction + separation * config.separation_strength
+	# The pull toward the center fades out inside the space a packed flock takes up, so the sheep
+	# bunch up as a flock instead of all running to the same spot.
+	var packed_radius := config.follow_gap * sqrt(get_tree().get_node_count_in_group("sheep")) * 0.6
+	var pull := clampf((to_center.length() - packed_radius) / packed_radius, 0.0, 1.0)
 	if to_center != Vector2.ZERO:
-		direction += to_center.normalized() * config.panic_center_weight
+		direction += to_center.normalized() * config.panic_center_weight * pull
 	# Remove any part pointing at the enemy (the center can lie beyond it).
 	var toward_threat := -direction.dot(away_direction)
 	if toward_threat > 0.0:
