@@ -9,7 +9,7 @@ Goal: prove that guiding the flock is fun before building anything else.
 In scope:
 - 10 sheep moving as boids and following the shepherd
 - Shepherd (placeholder 12x16 rectangle, arrow keys / WASD)
-- Pasture ground drawn in code (`scenes/main/ground.gd`: green with grass tufts and stones, no tilemap)
+- One trip drawn in code (`scenes/main/ground.gd`): a band walked left to right, taller than the screen, start and end pastures, walls and forest edges at top and bottom; grass tufts and stones, no tilemap (decor sprites will come from Aseprite)
 - Camera following the shepherd, leaning toward the flock, whole-pixel positions (`scenes/main/flock_camera.gd`)
 
 Out of scope until explicitly requested: dog, enemies, powers, shop, map, meta-progression, menus, tilemaps, shadows, particles, sound.

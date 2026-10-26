@@ -26,10 +26,9 @@ extends Resource
 @export var charge_time: float = 3.0
 
 @export_group("Carry")
-## Speed (px/s) while dragging a sheep away. Must stay below the shepherd's speed.
+## Speed (px/s) while dragging a sheep to the nearest forest edge, where the sheep is lost.
+## Must stay below the shepherd's speed.
 @export var carry_speed: float = 20.0
-## Time (s) the shepherd has to reach it before the sheep is lost.
-@export var carry_time: float = 5.0
 ## The shepherd frees the sheep by coming this close (px).
 @export var rescue_radius: float = 16.0
 ## Distance (px) of the dragged sheep behind the wolf.
