@@ -77,6 +77,11 @@ extends Resource
 ## Pull toward the flock center while panicking (relative to "away from the enemy" = 1).
 ## Never toward the enemy: that part is removed.
 @export var panic_center_weight: float = 1.0
+## A sheep freed from an enemy panics this long (s): it runs away from where it was dropped, back to
+## the flock, then stays restless among the others until the time is over.
+@export var release_panic_time: float = 4.0
+## Speed of that restlessness, as a fraction of trot_speed.
+@export_range(0.1, 1.0) var agitation_speed: float = 0.7
 
 @export_group("Rest")
 ## Time (s) standing with the head up before grazing or wandering.

@@ -38,6 +38,13 @@ var _push_timer: float = 0.0
 var _fleeing_dog: bool = false
 ## The enemy dragging this sheep away; the sheep has no logic of its own meanwhile.
 var _captor: Node2D
+## After being freed, the sheep panics away from where it was dropped for release_panic_time.
+var _scare_point: Vector2
+var _scare_timer: float = 0.0
+## Back among the others but still shaken: current restless direction, and when (on the _age clock)
+## it changes.
+var _agitate_direction: Vector2 = Vector2.RIGHT
+var _agitate_until: float = 0.0
 var _debug_drawn: bool = false
 var _heading: float = 0.0
 var _speed: float = 0.0
@@ -104,6 +111,7 @@ func _physics_process(delta: float) -> void:
 		_think()
 
 	_push_timer = maxf(_push_timer - delta, 0.0)
+	_scare_timer = maxf(_scare_timer - delta, 0.0)
 	# Pressure, checked every frame so a running sheep is never stuck behind a slow one: a pushed
 	# sheep running in from behind makes this one run on too (head up at once, whatever its gait),
 	# with a weaker push, so the wave dies out after a few sheep instead of feeding itself.
@@ -183,6 +191,8 @@ func capture(by: Node2D) -> void:
 
 ## Called by the enemy when the shepherd frees this sheep: it rejoins the flock.
 func release() -> void:
+	_scare_point = _captor.global_position if _captor else global_position
+	_scare_timer = config.release_panic_time
 	_captor = null
 	add_to_group("sheep")
 	_enter_rest()
@@ -430,13 +440,26 @@ func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: floa
 	return direction * speed
 
 
-## Trot away from the nearest dangerous enemy within panic_radius, toward the flock center but
-## never toward the enemy, keeping some room from the neighbors. Returns the desired velocity, or
-## zero when not panicking.
+## Trot away from the nearest dangerous enemy within panic_radius (or, just after being freed, from
+## where the enemy dropped it), toward the flock center but never toward the danger, keeping some
+## room from the neighbors. Returns the desired velocity, or zero when not panicking.
 func _panic_step(separation: Vector2) -> Vector2:
 	var threat := _nearest_threat()
 	var radius := config.panic_radius * _temper(-1.0) + (config.panic_margin if _panicking else 0.0)
-	if threat == null or global_position.distance_to(threat.global_position) > radius:
+	var to_center := _flock_center() - global_position
+	var packed_radius := config.follow_gap * sqrt(get_tree().get_node_count_in_group("sheep")) * 0.6
+	var danger := Vector2.INF
+	var scared := false
+	if threat and global_position.distance_to(threat.global_position) <= radius:
+		danger = threat.global_position
+	elif _scare_timer > 0.0:
+		if _nearest_neighbor_distance() < config.isolation_radius:
+			# Back among the others: still shaken, but it stays with them.
+			return _agitate_step(separation)
+		else:
+			danger = _scare_point
+			scared = true
+	if danger == Vector2.INF:
 		_panicking = false
 		return Vector2.ZERO
 
@@ -444,14 +467,13 @@ func _panic_step(separation: Vector2) -> Vector2:
 		_startle()
 	_panicking = true
 
-	var away := global_position - threat.global_position
+	var away := global_position - danger
 	var away_direction := Vector2.from_angle(randf() * TAU) if away == Vector2.ZERO else away.normalized()
-	var to_center := _flock_center() - global_position
 	var direction := away_direction + separation * config.separation_strength
 	# The pull toward the center fades out inside the space a packed flock takes up, so the sheep
-	# bunch up as a flock instead of all running to the same spot.
-	var packed_radius := config.follow_gap * sqrt(get_tree().get_node_count_in_group("sheep")) * 0.6
-	var pull := clampf((to_center.length() - packed_radius) / packed_radius, 0.0, 1.0)
+	# bunch up as a flock instead of all running to the same spot. A freed sheep, alone, keeps the
+	# full pull until it reaches the others.
+	var pull := 1.0 if scared else clampf((to_center.length() - packed_radius) / packed_radius, 0.0, 1.0)
 	if to_center != Vector2.ZERO:
 		direction += to_center.normalized() * config.panic_center_weight * pull
 	# Remove any part pointing at the enemy (the center can lie beyond it).
@@ -460,6 +482,35 @@ func _panic_step(separation: Vector2) -> Vector2:
 		direction += away_direction * toward_threat
 	direction = away_direction if direction.length() < 0.01 else direction.normalized()
 	return direction * config.trot_speed * _speed_factor
+
+
+## A freed sheep back among the others, until release_panic_time is over: trots restlessly in a
+## direction that changes every fraction of a second, held among its neighbors by their pull.
+func _agitate_step(separation: Vector2) -> Vector2:
+	if not _panicking and not _fleeing:
+		_startle()
+	_panicking = true
+	if _age >= _agitate_until:
+		_agitate_direction = Vector2.from_angle(randf() * TAU)
+		_agitate_until = _age + randf_range(0.3, 0.7)
+	var direction := _agitate_direction + separation * config.separation_strength
+	var to_neighbors := _neighbors_center() - global_position
+	if to_neighbors != Vector2.ZERO:
+		# Stronger the farther it gets from them, so it never leaves the group.
+		direction += to_neighbors.normalized() * clampf(to_neighbors.length() / (config.isolation_radius * 0.5), 0.0, 2.0)
+	direction = _agitate_direction if direction.length() < 0.01 else direction.normalized()
+	return direction * config.trot_speed * _speed_factor * config.agitation_speed
+
+
+## Center of the sheep within cohesion_radius (this sheep's own position if none).
+func _neighbors_center() -> Vector2:
+	var center := Vector2.ZERO
+	var count := 0
+	for other: Node2D in get_tree().get_nodes_in_group("sheep"):
+		if other != self and global_position.distance_to(other.global_position) < config.cohesion_radius:
+			center += other.global_position
+			count += 1
+	return center / count if count > 0 else global_position
 
 
 func _nearest_threat() -> Node2D:
