@@ -102,6 +102,20 @@ extends Resource
 ## finished_graze speed when the sheep has to leave (head comes up faster).
 @export var raise_speed_scale: float = 3.0
 
+@export_group("Variety")
+## Each sheep gets a temperament from timid to bold; this scales how much it changes: a timid sheep
+## reacts faster, has larger flight zones and stays closer to the others; a bold one reacts slower,
+## lets threats come closer, grazes longer and strays a bit farther. 0 = all alike.
+@export_range(0.0, 0.5) var temperament_strength: float = 0.2
+## While walking, trotting or wandering, the heading sways by up to this angle (rad), slowly.
+@export_range(0.0, 0.5) var meander_angle: float = 0.15
+## Seconds for one sway (each sheep gets its own, +/-30%).
+@export var meander_period: float = 3.0
+## While walking, trotting or wandering, the pace rises and falls by this fraction, slowly.
+@export_range(0.0, 0.3) var speed_wobble: float = 0.05
+## Seconds for one rise and fall (each sheep gets its own, +/-30%).
+@export var wobble_period: float = 4.0
+
 @export_group("Animation")
 ## Minimum |velocity.x| (px/s) to flip the sprite.
 @export var flip_threshold: float = 5.0

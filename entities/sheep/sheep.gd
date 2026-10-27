@@ -42,6 +42,14 @@ var _debug_drawn: bool = false
 var _heading: float = 0.0
 var _speed: float = 0.0
 var _speed_factor: float = 1.0
+## Temperament, -1 (timid) to 1 (bold); see FlockConfig.temperament_strength.
+var _boldness: float = 0.0
+## Clock (s) and per-sheep phases and periods of the meandering walk and breathing pace.
+var _age: float = 0.0
+var _meander_phase: float = 0.0
+var _meander_period: float = 1.0
+var _wobble_phase: float = 0.0
+var _wobble_period: float = 1.0
 var _shepherd_gap: float = 0.0
 var _think_timer: float = 0.0
 ## The shepherd, or the sheep ahead that this sheep follows.
@@ -62,6 +70,11 @@ func _ready() -> void:
 	_shape_offset_x = _shape.position.x
 	_sprite_offset_y = _sprite.position.y
 	_speed_factor = 1.0 + randf_range(-config.speed_variation, config.speed_variation)
+	_boldness = randf_range(-1.0, 1.0)
+	_meander_phase = randf() * TAU
+	_meander_period = maxf(config.meander_period, 0.1) * randf_range(0.7, 1.3)
+	_wobble_phase = randf() * TAU
+	_wobble_period = maxf(config.wobble_period, 0.1) * randf_range(0.7, 1.3)
 	_shepherd_gap = config.shepherd_gap * (1.0 + randf_range(-config.speed_variation, config.speed_variation))
 	_heading = randf() * TAU
 	_set_facing_left(cos(_heading) < 0.0)
@@ -87,7 +100,7 @@ func _physics_process(delta: float) -> void:
 	var separation := _separation()
 	_think_timer -= delta
 	if _think_timer <= 0.0:
-		_think_timer = randf_range(config.think_interval_min, config.think_interval_max)
+		_think_timer = randf_range(config.think_interval_min, config.think_interval_max) * _temper(1.0)
 		_think()
 
 	_push_timer = maxf(_push_timer - delta, 0.0)
@@ -108,7 +121,7 @@ func _physics_process(delta: float) -> void:
 		if dog and global_position.distance_to(dog.global_position) \
 				< global_position.distance_to(_shepherd.global_position):
 			if dog.is_pushing():
-				desired = _flee_from(dog.global_position, Vector2.ZERO, config.dog_flight_radius, true)
+				desired = _flee_from(dog.global_position, Vector2.ZERO, config.dog_flight_radius * _temper(-1.0), true)
 				_fleeing_dog = desired != Vector2.ZERO
 				if _fleeing_dog:
 					# Keep some room from the neighbors: a flock packed too tight spreads out
@@ -117,14 +130,15 @@ func _physics_process(delta: float) -> void:
 							* desired.length()
 			else:
 				# Not working: the dog only gets the shepherd's small flight zone.
-				desired = _flee_from(dog.global_position, dog.velocity, config.flight_radius)
+				desired = _flee_from(dog.global_position, dog.velocity, config.flight_radius * _temper(-1.0))
 		else:
-			desired = _flee_from(_shepherd.global_position, _shepherd.velocity, config.flight_radius)
+			desired = _flee_from(_shepherd.global_position, _shepherd.velocity, config.flight_radius * _temper(-1.0))
 	if _fleeing_dog:
 		_push_timer = config.push_time
 	elif was_fleeing_dog:
 		# Out of the dog's reach: keep trotting toward the front instead of stopping there.
 		_set_off(Gait.TROT)
+	_age += delta
 	if desired == Vector2.ZERO:
 		match _gait:
 			Gait.REST:
@@ -133,6 +147,11 @@ func _physics_process(delta: float) -> void:
 				desired = _wander_step(delta, separation)
 			_:
 				desired = _follow_step(separation)
+		if _gait != Gait.REST:
+			# Organic walk: the heading sways and the pace rises and falls, slowly, per sheep.
+			var sway := sin(_age * TAU / _meander_period + _meander_phase) * config.meander_angle
+			var pace := 1.0 + sin(_age * TAU / _wobble_period + _wobble_phase) * config.speed_wobble
+			desired = desired.rotated(sway) * pace
 
 	# A startled sheep turns and speeds up faster.
 	var reflex := config.flight_reflex if _fleeing or _panicking else 1.0
@@ -143,6 +162,12 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_animation()
 	_update_debug_draw()
+
+
+## Temperament multiplier: 1 +/- temperament_strength, growing with boldness when `direction` is 1
+## (slower reactions, longer grazing, farther strays) and shrinking with it when -1 (flight zones).
+func _temper(direction: float) -> float:
+	return 1.0 + config.temperament_strength * _boldness * direction
 
 
 ## Called by an enemy that grabs this sheep: it leaves the flock until released.
@@ -298,7 +323,7 @@ func _set_rest(state: Rest) -> void:
 			if not _has_frames(&"to_graze"):
 				_set_rest(Rest.GRAZING)
 		Rest.GRAZING:
-			_rest_timer = randf_range(config.graze_time_min, config.graze_time_max)
+			_rest_timer = randf_range(config.graze_time_min, config.graze_time_max) * _temper(1.0)
 		Rest.RAISING:
 			if not _has_frames(&"finished_graze"):
 				_finish_raising()
@@ -333,7 +358,7 @@ func _rest_step(delta: float, separation: Vector2) -> Vector2:
 				var flock_radius := config.follow_gap * sqrt(get_tree().get_node_count_in_group("sheep")) * 0.6
 				var on_edge := global_position.distance_to(_flock_center()) > flock_radius
 				var chance := config.edge_wander_chance if on_edge else config.wander_chance
-				if _nearest_neighbor_distance() > config.isolation_radius or randf() < chance:
+				if _nearest_neighbor_distance() > config.isolation_radius * _temper(1.0) or randf() < chance:
 					_start_wander()
 				else:
 					_set_rest(Rest.LOWERING)
@@ -358,9 +383,10 @@ func _start_wander() -> void:
 	var to_center := (center / count - global_position) if count > 0 else _shepherd.global_position - global_position
 	var direction := Vector2.from_angle(randf() * TAU)
 	var distance := randf_range(config.wander_distance_min, config.wander_distance_max)
-	if count == 0 or _nearest_neighbor_distance() > config.isolation_radius:
+	var isolation := config.isolation_radius * _temper(1.0)
+	if count == 0 or _nearest_neighbor_distance() > isolation:
 		direction = to_center.normalized()
-		distance = maxf(distance, to_center.length() - config.isolation_radius * 0.5)
+		distance = maxf(distance, to_center.length() - isolation * 0.5)
 	else:
 		direction += to_center.normalized() + (flock_center - global_position).normalized() * config.flock_center_weight
 		direction = direction.normalized()
@@ -409,7 +435,7 @@ func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: floa
 ## zero when not panicking.
 func _panic_step(separation: Vector2) -> Vector2:
 	var threat := _nearest_threat()
-	var radius := config.panic_radius + (config.panic_margin if _panicking else 0.0)
+	var radius := config.panic_radius * _temper(-1.0) + (config.panic_margin if _panicking else 0.0)
 	if threat == null or global_position.distance_to(threat.global_position) > radius:
 		_panicking = false
 		return Vector2.ZERO
