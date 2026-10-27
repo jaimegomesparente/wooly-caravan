@@ -4,6 +4,7 @@
 [ext_resource type="Resource" path="res://resources/wolf.tres" id="2_data"]
 [ext_resource type="PackedScene" path="res://effects/dust.tscn" id="3_dust"]
 [ext_resource type="Texture2D" uid="uid://oow2ajod08ih" path="res://art/sprites/enemies/wolf/wolf-Sheet.png" id="4_yjxua"]
+[ext_resource type="PackedScene" path="res://effects/shadow.tscn" id="shadow_fx"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_do8rb"]
 atlas = ExtResource("4_yjxua")
@@ -224,6 +225,10 @@ collision_mask = 0
 motion_mode = 1
 script = ExtResource("1_script")
 data = ExtResource("2_data")
+
+[node name="Shadow" parent="." node_paths=PackedStringArray("sprite") instance=ExtResource("shadow_fx")]
+sprite = NodePath("../AnimatedSprite2D")
+size = Vector2i(16, 4)
 
 [node name="Dust" parent="." unique_id=1503153962 instance=ExtResource("3_dust")]
 min_speed = 50.0

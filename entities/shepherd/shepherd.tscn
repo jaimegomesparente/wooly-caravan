@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://neqt0gh80e0l" path="res://entities/shepherd/shepherd.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://brydiksr72vi5" path="res://art/sprites/shepherd/shepherd-Sheet.png" id="2_hg5gq"]
+[ext_resource type="PackedScene" path="res://effects/shadow.tscn" id="shadow_fx"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_lkgrd"]
 atlas = ExtResource("2_hg5gq")
@@ -91,6 +92,10 @@ size = Vector2(12, 16)
 collision_mask = 16
 motion_mode = 1
 script = ExtResource("1_script")
+
+[node name="Shadow" parent="." node_paths=PackedStringArray("sprite") instance=ExtResource("shadow_fx")]
+sprite = NodePath("../AnimatedSprite2D")
+size = Vector2i(10, 3)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1995826777]
 position = Vector2(0, -7)

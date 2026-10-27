@@ -4,6 +4,7 @@
 [ext_resource type="Resource" uid="uid://cqv7e475qv2o1" path="res://resources/flock_config.tres" id="2_config"]
 [ext_resource type="Texture2D" uid="uid://d16babea8sebx" path="res://art/sprites/sheeps/sheep-Sheet.png" id="3_fxwg6"]
 [ext_resource type="PackedScene" path="res://effects/dust.tscn" id="4_dust"]
+[ext_resource type="PackedScene" path="res://effects/shadow.tscn" id="shadow_fx"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_tbl57"]
 atlas = ExtResource("3_fxwg6")
@@ -127,8 +128,12 @@ motion_mode = 1
 script = ExtResource("1_script")
 config = ExtResource("2_config")
 
-[node name="Dust" parent="." instance=ExtResource("4_dust")]
-min_speed = 36.0
+[node name="Shadow" parent="." node_paths=PackedStringArray("sprite") unique_id=1487742616 instance=ExtResource("shadow_fx")]
+position = Vector2(-1, 0)
+sprite = NodePath("../AnimatedSprite2D")
+instance_shader_parameters/size = Vector2(10, 3)
+
+[node name="Dust" parent="." unique_id=1443843709 instance=ExtResource("4_dust")]
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=796859497]
 position = Vector2(1, -5)

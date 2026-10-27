@@ -4,6 +4,7 @@
 [ext_resource type="Resource" path="res://resources/dog.tres" id="2_data"]
 [ext_resource type="PackedScene" path="res://effects/dust.tscn" id="3_dust"]
 [ext_resource type="Texture2D" uid="uid://boohdwk55lq6v" path="res://art/sprites/dogs/dog-Sheet.png" id="4_pl2nc"]
+[ext_resource type="PackedScene" path="res://effects/shadow.tscn" id="shadow_fx"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_gputl"]
 atlas = ExtResource("4_pl2nc")
@@ -110,16 +111,22 @@ motion_mode = 1
 script = ExtResource("1_script")
 data = ExtResource("2_data")
 
+[node name="Shadow" parent="." node_paths=PackedStringArray("sprite") unique_id=162964064 instance=ExtResource("shadow_fx")]
+sprite = NodePath("../AnimatedSprite2D")
+instance_shader_parameters/size = Vector2(12, 3)
+size = Vector2i(12, 3)
+
 [node name="Dust" parent="." unique_id=1300479480 instance=ExtResource("3_dust")]
 min_speed = 50.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1071774784]
-position = Vector2(1, -5)
+position = Vector2(0, -5)
 sprite_frames = SubResource("SpriteFrames_dog")
 animation = &"bark"
 autoplay = "idle"
 frame = 2
 frame_progress = 1.0
+offset = Vector2(2, 0)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=726051838]
 position = Vector2(0, -4)
