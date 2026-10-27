@@ -417,7 +417,8 @@ func _wander_step(delta: float, separation: Vector2) -> Vector2:
 
 
 ## Step away from a threat closer than `radius`, sideways to its path so the flock parts in front
-## of it. A `pushed` sheep (by the dog) instead trots straight away, where the dog wants it to go.
+## of it, at a walk. A `pushed` sheep (by the dog) instead trots straight away, where the dog wants
+## it to go.
 ## Returns the desired velocity, or zero when not fleeing.
 func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: float, pushed: bool = false) -> Vector2:
 	var away := global_position - threat_position
@@ -435,9 +436,8 @@ func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: floa
 		var side := threat_velocity.normalized().orthogonal()
 		# Mostly sideways: running ahead of a faster threat only gets the sheep caught up.
 		direction = (direction * 0.5 + side * signf(side.dot(away) + 0.001)).normalized()
-	var walk := config.walk_speed * _speed_factor
-	var speed := config.trot_speed * _speed_factor if pushed or threat_velocity.length() > walk else walk
-	return direction * speed
+	# Only a pushing dog makes it trot: from the shepherd it calmly walks aside.
+	return direction * (config.trot_speed if pushed else config.walk_speed) * _speed_factor
 
 
 ## Trot away from the nearest dangerous enemy within panic_radius (or, just after being freed, from
