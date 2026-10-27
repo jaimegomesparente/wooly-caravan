@@ -1,7 +1,7 @@
 class_name Ground
 extends Node2D
 ## One trip: a band from (0, 0) to (length, height) walked from left to right, with a start and
-## an end pasture, walls all around and a dark forest edge drawn beyond the top and bottom.
+## an end pasture, walls all around; the grass goes on beyond them, under the forest (`Forest`).
 
 ## Tuft shapes, as pixel offsets from the tuft's top-left corner.
 const TUFT_SHAPES: Array = [
@@ -38,8 +38,6 @@ const OBSTACLE_LAYER := 1 << 4
 @export_group("Palette")
 @export var grass_color: Color = Color(0.605, 0.68, 0.415, 1.0)
 @export var patch_color: Color = Color(0.502, 0.712, 0.395, 1.0)
-@export var edge_color: Color = Color(0.12, 0.27, 0.14)
-@export var edge_line_color: Color = Color(0.08, 0.19, 0.1)
 @export var tuft_dark_color: Color = Color(0.46, 0.544, 0.289)
 @export var tuft_light_color: Color = Color(0.775, 0.806, 0.446)
 @export var tuft_bright_color: Color = Color(0.9, 0.85, 0.493)
@@ -75,12 +73,10 @@ func bounds() -> Rect2:
 
 func _draw() -> void:
 	var e := edge_depth
-	draw_rect(Rect2(-e, -e, length + e * 2.0, height + e * 2.0), edge_color)
-	draw_rect(bounds(), grass_color)
-	draw_rect(Rect2(0, 0, patch_width, height), patch_color)
-	draw_rect(Rect2(length - patch_width, 0, patch_width, height), patch_color)
-	draw_rect(Rect2(-e, -2, length + e * 2.0, 2), edge_line_color)
-	draw_rect(Rect2(-e, height, length + e * 2.0, 2), edge_line_color)
+	draw_rect(Rect2(-e, -e, length + e * 2.0, height + e * 2.0), grass_color)
+	# The pastures run on under the forest at the left and right ends.
+	draw_rect(Rect2(-e, 0, patch_width + e, height), patch_color)
+	draw_rect(Rect2(length - patch_width, 0, patch_width + e, height), patch_color)
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = layout_seed
