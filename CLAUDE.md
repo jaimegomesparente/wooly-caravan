@@ -12,9 +12,9 @@ In scope:
 - One trip drawn in code (`scenes/main/ground.gd`): a band walked left to right, taller than the screen, start and end pastures, walls and forest edges at top and bottom; grass tufts and stones, no tilemap (decor sprites will come from Aseprite)
 - Camera following the shepherd, leaning toward the flock, whole-pixel positions (`scenes/main/flock_camera.gd`)
 
-Added since: a wolf (step 4), the trip band with an end screen (R restarts), the dog with the Gather posture only (step 5).
+Added since: a wolf (step 4), the trip band with an end screen (R restarts), the dog (step 5) with three modes cycled with Space: Gather, Rear guard, Hunt (a chased wolf is barked at and runs off, dropping its sheep), shown top left.
 
-Out of scope until explicitly requested: other dog postures and orders, other enemies, powers, shop, map, meta-progression, menus, tilemaps, shadows, other particles (only running dust exists), sound.
+Out of scope until explicitly requested: other dog postures (Vanguard, Circle) and the one-shot orders, other enemies, powers, shop, map, meta-progression, menus, tilemaps, shadows, other particles (only running dust exists), sound.
 
 **Do only the step you are asked to do, nothing more.** Do not add systems, menus or "nice to have" features.
 
@@ -115,6 +115,7 @@ Prototype uses only 2 orders (Go there, Fetch).
 - Check scripts: `godot --headless --quit` (from the project root)
 - Run the game: `godot --path .`
 - On the end-of-trip screen, R restarts the trip
+- Space cycles the dog's mode (Gather, Rear guard, Hunt); the current mode is shown top left
 - With the F3 overlay on, mouse wheel / keypad + and - zoom the camera out and in (testing aid, gameplay ignores it); F3 also draws the dog's flight zone (brown circle)
 - In game, F3 toggles the debug overlay (shepherd trail, flight zone, each sheep's target line and state color: white stand, yellow-green graze, blue walk, orange trot, purple wander, red flee or panic, magenta captured; magenta line from the wolf to its target)
 - If `godot` is not in PATH, use the full path to the executable here: ``C:\Users\jaime\Desktop\Godot\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64_console.exe``

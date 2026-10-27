@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://bo1b31a41aamx" path="res://scenes/main/trip.gd" id="9_trip"]
 [ext_resource type="PackedScene" path="res://ui/end_screen.tscn" id="10_end"]
 [ext_resource type="PackedScene" uid="uid://c67pgonbomrfh" path="res://entities/dog/dog.tscn" id="11_dog"]
+[ext_resource type="Script" path="res://ui/dog_mode_label.gd" id="12_dog_mode"]
 
 [node name="Main" type="Node2D" unique_id=536968002]
 y_sort_enabled = true
@@ -37,5 +38,13 @@ flock_config = ExtResource("7_config")
 
 [node name="Trip" type="Node" parent="." unique_id=1414957768]
 script = ExtResource("9_trip")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="DogMode" type="Label" parent="Hud"]
+offset_left = 4.0
+offset_top = 2.0
+theme_override_font_sizes/font_size = 8
+script = ExtResource("12_dog_mode")
 
 [node name="EndScreen" parent="." unique_id=798652235 instance=ExtResource("10_end")]

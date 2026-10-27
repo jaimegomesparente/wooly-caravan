@@ -1,6 +1,9 @@
 class_name Shepherd
 extends CharacterBody2D
 
+## Space: calls the dog to switch to its next mode.
+signal dog_mode_called
+
 @export var speed: float = 32.0
 ## A trail point is recorded every time the shepherd has walked this far (px).
 @export var trail_spacing: float = 6.0
@@ -20,10 +23,13 @@ func _physics_process(_delta: float) -> void:
 	velocity = direction * speed
 	move_and_slide()
 	_record_trail()
+	if Input.is_action_just_pressed("dog_mode"):
+		play_call()
+		dog_mode_called.emit()
 	_update_animation()
 
 
-## Plays the call animation once (for the dog orders, later); walking resumes the usual animations.
+## Plays the call animation once (to switch the dog's mode); walking resumes the usual animations.
 func play_call() -> void:
 	_sprite.play(&"call")
 

@@ -4,14 +4,22 @@ extends CharacterBody2D
 ## following only when left behind. When the flock stays stretched beyond its reach for a moment,
 ## runs around the outside to get behind the rearmost sheep (opposite the shepherd) and pushes it,
 ## and any sheep near it, toward the shepherd; then the next rearmost. Waits again once it is tight.
+## Rear guard posture: stays behind the rearmost sheep without pushing, and chases a wolf coming
+## near it. Hunt posture: chases any wolf around, otherwise only stays near the shepherd.
+## Chasing: runs straight at the wolf (the sheep step aside), stops and barks; the wolf runs off.
 
-enum State { WAIT, GATHER }
+signal mode_changed(mode_name: String)
+
+enum Mode { GATHER, REAR_GUARD, HUNT }
+enum State { WAIT, GATHER, GUARD, CHASE }
 
 ## Minimum |velocity.x| (px/s) to flip the sprite.
 const FLIP_THRESHOLD := 5.0
+const MODE_NAMES: Array[String] = ["Rassemblement", "Arrière-garde", "Chasse"]
 
 @export var data: DogData
 
+var _mode: Mode = Mode.GATHER
 var _state: State = State.WAIT
 ## How long (s) the condition to switch state (stretched while waiting, tight while gathering) has held.
 var _switch_time: float = 0.0
@@ -21,6 +29,9 @@ var _following: bool = false
 var _target: Sheep
 ## True while running around the flock to get behind the target (avoids sheep on the way).
 var _flanking: bool = false
+## The chased wolf, and true once barking at it.
+var _wolf: Wolf
+var _barking: bool = false
 var _goal: Vector2
 var _heading: float = 0.0
 var _speed: float = 0.0
@@ -30,6 +41,7 @@ var _speed: float = 0.0
 
 func _ready() -> void:
 	_goal = global_position
+	mode_changed.emit(MODE_NAMES[_mode])
 
 
 func _physics_process(delta: float) -> void:
@@ -43,23 +55,34 @@ func _physics_process(delta: float) -> void:
 		reach *= data.walking_reach_factor
 	var rearmost := _rearmost_sheep(shepherd)
 	var rearmost_distance := rearmost.global_position.distance_to(shepherd.global_position) if rearmost else 0.0
-	# Time hysteresis: start once the flock has stayed beyond the reach for gather_delay, stop once
-	# it has stayed within it for as long.
-	var stretched := rearmost_distance > reach
-	_switch_time = _switch_time + delta if stretched == (_state == State.WAIT) else 0.0
-	if _switch_time >= data.gather_delay:
-		_switch_time = 0.0
-		if _state == State.WAIT:
-			_state = State.GATHER
-			_following = false
+	if _mode == Mode.GATHER:
+		# Time hysteresis: start once the flock has stayed beyond the reach for gather_delay, stop
+		# once it has stayed within it for as long.
+		var stretched := rearmost_distance > reach
+		_switch_time = _switch_time + delta if stretched == (_state == State.WAIT) else 0.0
+		if _switch_time >= data.gather_delay:
+			_switch_time = 0.0
+			if _state == State.WAIT:
+				_state = State.GATHER
+				_following = false
+			else:
+				_state = State.WAIT
+				_target = null
+				_flanking = false
+	elif _state != State.CHASE:
+		_wolf = _threat(rearmost)
+		if _wolf:
+			_state = State.CHASE
 		else:
-			_state = State.WAIT
-			_target = null
-			_flanking = false
+			_state = State.GUARD if _mode == Mode.REAR_GUARD and rearmost else State.WAIT
 
 	match _state:
 		State.WAIT:
 			_goal = _wait_point(shepherd, reach)
+		State.GUARD:
+			_goal = _guard_point(shepherd, rearmost)
+		State.CHASE:
+			_chase()
 		State.GATHER:
 			# Keep the target until another sheep is clearly farther behind, so the dog sweeps the
 			# rear instead of zigzagging between sheep at about the same distance.
@@ -70,6 +93,70 @@ func _physics_process(delta: float) -> void:
 	_move_to(_goal, delta)
 	_update_animation()
 	queue_redraw()
+
+
+## Next mode (Space, through the shepherd): barks, and starts it afresh.
+func next_mode() -> void:
+	_mode = ((_mode + 1) % Mode.size()) as Mode
+	_state = State.WAIT
+	_switch_time = 0.0
+	_target = null
+	_flanking = false
+	_wolf = null
+	_barking = false
+	play_bark()
+	mode_changed.emit(MODE_NAMES[_mode])
+
+
+## The nearest wolf to chase: any threat in Hunt, only one near the rearmost sheep or the dog in
+## Rear guard.
+func _threat(rearmost: Sheep) -> Wolf:
+	var nearest: Wolf = null
+	for enemy in get_tree().get_nodes_in_group("enemy"):
+		var wolf := enemy as Wolf
+		if wolf == null or not wolf.is_threat():
+			continue
+		var distance := global_position.distance_to(wolf.global_position)
+		if _mode == Mode.REAR_GUARD and distance > data.guard_radius and (rearmost == null \
+				or rearmost.global_position.distance_to(wolf.global_position) > data.guard_radius):
+			continue
+		if nearest == null or distance < global_position.distance_to(nearest.global_position):
+			nearest = wolf
+	return nearest
+
+
+## Runs at the wolf; within bark_distance, stops and barks, and scares it once the bark is over.
+## Gives up when the wolf is no longer a threat (the mode then picks the next state).
+func _chase() -> void:
+	if not is_instance_valid(_wolf) or not _wolf.is_threat():
+		_stop_chase()
+		return
+	if _barking:
+		_goal = global_position
+		if _sprite.animation != &"bark" or not _sprite.is_playing():
+			_wolf.scare()
+			_stop_chase()
+		return
+	_goal = _wolf.global_position
+	if global_position.distance_to(_goal) <= data.bark_distance:
+		_barking = true
+		_goal = global_position
+		play_bark()
+
+
+func _stop_chase() -> void:
+	_state = State.WAIT
+	_wolf = null
+	_barking = false
+	_goal = global_position
+
+
+## guard_distance behind the rearmost sheep, opposite the shepherd.
+func _guard_point(shepherd: Node2D, rearmost: Sheep) -> Vector2:
+	var away := rearmost.global_position - shepherd.global_position
+	if away == Vector2.ZERO:
+		away = Vector2.LEFT
+	return rearmost.global_position + away.normalized() * data.guard_distance
 
 
 ## True while actually pushing sheep (behind its target): only then do sheep trot straight away
@@ -124,7 +211,8 @@ func _move_to(point: Vector2, delta: float) -> void:
 	var wanted := data.run_speed * clampf(distance / data.arrive_distance, 0.0, 1.0)
 	if distance > 0.5:
 		var direction := to_point / distance
-		if not is_pushing():
+		# Chasing is urgent: straight through the flock (curving around it could keep it circling).
+		if not is_pushing() and _state != State.CHASE:
 			direction += _avoid_flock() * data.avoid_strength
 		_heading = rotate_toward(_heading, direction.angle(), data.turn_rate * delta)
 	else:
@@ -134,7 +222,7 @@ func _move_to(point: Vector2, delta: float) -> void:
 	move_and_slide()
 
 
-## Plays the bark animation once (for the Bark order, later); moving resumes the usual animations.
+## Plays the bark animation once (mode change, wolf chased); moving resumes the usual animations.
 func play_bark() -> void:
 	_sprite.play(&"bark")
 
@@ -143,8 +231,8 @@ func _update_animation() -> void:
 	if absf(velocity.x) > FLIP_THRESHOLD:
 		_sprite.flip_h = velocity.x < 0.0
 	var moving := _speed > FLIP_THRESHOLD
-	# Let a bark finish while standing still.
-	if not moving and _sprite.animation == &"bark" and _sprite.is_playing():
+	# Let a bark finish while standing still, or while braking to bark at the wolf.
+	if (not moving or _barking) and _sprite.animation == &"bark" and _sprite.is_playing():
 		return
 	var animation := &"run" if moving else &"idle"
 	if _sprite.animation != animation or not _sprite.is_playing():

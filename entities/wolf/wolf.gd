@@ -3,7 +3,7 @@ extends CharacterBody2D
 ## Comes out of the forest edge beside the most isolated sheep and howls there with a blinking "!"
 ## (at the screen edge while the wolf is off screen), charges until it catches a sheep, then backs
 ## away to the nearest edge, dragging it. The shepherd frees it by reaching the wolf first; once the
-## sheep crosses the edge, it is lost.
+## sheep crosses the edge, it is lost. A bark from the dog makes it drop the sheep or give up.
 
 signal sheep_captured(sheep: Sheep)
 signal sheep_lost(sheep: Sheep)
@@ -44,6 +44,20 @@ func _ready() -> void:
 ## True while charging or dragging a sheep: nearby sheep panic.
 func is_dangerous() -> bool:
 	return _state == State.CHARGE or _state == State.CARRY
+
+
+## True from the moment it shows up until it leaves: the dog may chase it.
+func is_threat() -> bool:
+	return _state == State.PROWL or _state == State.TELEGRAPH or _state == State.CHARGE \
+			or _state == State.CARRY
+
+
+## Barked at by the dog: drops the dragged sheep, or gives up the attack, and runs off.
+func scare() -> void:
+	if _state == State.CARRY and _prey:
+		_let_go()
+	elif is_threat():
+		_leave(data.charge_speed)
 
 
 func _physics_process(delta: float) -> void:
@@ -178,9 +192,7 @@ func _carry(delta: float) -> void:
 		return
 	var shepherd := get_tree().get_first_node_in_group("shepherd") as Node2D
 	if shepherd and global_position.distance_to(shepherd.global_position) <= data.rescue_radius:
-		_prey.release()
-		_prey = null
-		_leave(data.charge_speed)
+		_let_go()
 		return
 	if not _band().has_point(_prey.global_position):
 		# Into the forest: the sheep is lost; the wolf keeps dragging it out of sight.
@@ -198,6 +210,13 @@ func _drag_prey() -> void:
 		if _sprite.flip_h:
 			point.x = -point.x
 		_prey.global_position = global_position + point
+
+
+## Drops the dragged sheep (freed, it panics back to the flock) and runs off.
+func _let_go() -> void:
+	_prey.release()
+	_prey = null
+	_leave(data.charge_speed)
 
 
 func _leave(speed: float) -> void:

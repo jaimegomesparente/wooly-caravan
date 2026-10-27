@@ -35,3 +35,11 @@ extends Resource
 @export var detour_distance: float = 44.0
 ## Starts running around the target when this far (px) on the shepherd's side of it.
 @export var flank_margin: float = 8.0
+
+@export_group("Rear guard and hunt")
+## Rear guard: distance (px) kept behind the rearmost sheep, beyond its flight zone (no pushing).
+@export var guard_distance: float = 28.0
+## Rear guard: chases a wolf coming this close (px) to the rearmost sheep or to the dog.
+@export var guard_radius: float = 64.0
+## Stops and barks this close (px) to the chased wolf; the wolf runs off once the bark is over.
+@export var bark_distance: float = 24.0

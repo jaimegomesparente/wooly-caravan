@@ -6,11 +6,12 @@ extends Node2D
 @export var wolf_scene: PackedScene
 @export var dog_scene: PackedScene
 
-@onready var _shepherd: Node2D = $Shepherd
+@onready var _shepherd: Shepherd = $Shepherd
 @onready var _ground: Ground = $Ground
 @onready var _camera: Camera2D = $FlockCamera
 @onready var _trip: Trip = $Trip
 @onready var _end_screen: CanvasLayer = $EndScreen
+@onready var _dog_mode: DogModeLabel = $Hud/DogMode
 
 
 func _ready() -> void:
@@ -27,8 +28,10 @@ func _ready() -> void:
 		sheep.position = _shepherd.position + offset
 		add_child(sheep)
 	if dog_scene:
-		var dog := dog_scene.instantiate() as Node2D
+		var dog := dog_scene.instantiate() as Dog
 		dog.position = _shepherd.position + Vector2(-16, 0)
+		_shepherd.dog_mode_called.connect(dog.next_mode)
+		dog.mode_changed.connect(_dog_mode.show_mode)
 		add_child(dog)
 	if wolf_scene:
 		var wolf := wolf_scene.instantiate() as Wolf
