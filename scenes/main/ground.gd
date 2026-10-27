@@ -37,7 +37,7 @@ const OBSTACLE_LAYER := 1 << 4
 
 @export_group("Palette")
 @export var grass_color: Color = Color(0.605, 0.68, 0.415, 1.0)
-@export var patch_color: Color = Color(0.503, 0.714, 0.359, 1.0)
+@export var patch_color: Color = Color(0.502, 0.712, 0.395, 1.0)
 @export var edge_color: Color = Color(0.12, 0.27, 0.14)
 @export var edge_line_color: Color = Color(0.08, 0.19, 0.1)
 @export var tuft_dark_color: Color = Color(0.46, 0.544, 0.289)

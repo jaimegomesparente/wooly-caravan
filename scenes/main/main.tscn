@@ -7,7 +7,7 @@
 [ext_resource type="Script" uid="uid://cwjbb70vbfx1s" path="res://scenes/main/flock_camera.gd" id="5_camera"]
 [ext_resource type="Script" uid="uid://bqilwa470fm3t" path="res://scenes/main/debug_overlay.gd" id="6_debug"]
 [ext_resource type="Resource" uid="uid://cqv7e475qv2o1" path="res://resources/flock_config.tres" id="7_config"]
-[ext_resource type="PackedScene" path="res://entities/wolf/wolf.tscn" id="8_wolf"]
+[ext_resource type="PackedScene" uid="uid://dsla4jtx1mnqu" path="res://entities/wolf/wolf.tscn" id="8_wolf"]
 [ext_resource type="Script" uid="uid://bo1b31a41aamx" path="res://scenes/main/trip.gd" id="9_trip"]
 [ext_resource type="PackedScene" path="res://ui/end_screen.tscn" id="10_end"]
 [ext_resource type="PackedScene" uid="uid://c67pgonbomrfh" path="res://entities/dog/dog.tscn" id="11_dog"]
