@@ -1,8 +1,9 @@
 class_name Wolf
 extends CharacterBody2D
-## Comes out of the forest edge toward the most isolated sheep, stops with a blinking "!", charges
-## until it catches a sheep, then drags it back to the nearest edge. The shepherd frees it by
-## reaching the wolf first; once the wolf crosses the edge, the sheep is lost.
+## Comes out of the forest edge beside the most isolated sheep and howls there with a blinking "!"
+## (at the screen edge while the wolf is off screen), charges until it catches a sheep, then backs
+## away to the nearest edge, dragging it. The shepherd frees it by reaching the wolf first; once the
+## sheep crosses the edge, it is lost.
 
 signal sheep_captured(sheep: Sheep)
 signal sheep_lost(sheep: Sheep)
@@ -11,9 +12,11 @@ enum State { HIDDEN, PROWL, TELEGRAPH, CHARGE, CARRY, LEAVE }
 
 ## Spawns and despawns this far (px) outside the visible screen.
 const OFFSCREEN_MARGIN := 24.0
-## Must be this far (px) inside the screen edge before telegraphing, so the "!" is seen.
-const ONSCREEN_MARGIN := 12.0
-## Minimum |velocity.x| (px/s) to flip the placeholder.
+## The "!" stays this far (px) inside the screen edge.
+const ALERT_MARGIN := 8.0
+## The "!" above the head, from the wolf's feet.
+const ALERT_OFFSET := Vector2(0, -18)
+## Minimum |velocity.x| (px/s) to flip the sprite.
 const FLIP_THRESHOLD := 5.0
 ## Switches to another sheep only if it is clearly better by this much (px): farther from the flock
 ## center while approaching, closer to the wolf while charging.
@@ -28,13 +31,13 @@ var _leave_speed: float = 0.0
 var _target: Sheep
 ## The sheep being dragged away (kept after it is lost, until the wolf is out of sight).
 var _prey: Sheep
-var _head_x: float = 0.0
 
-@onready var _head: ColorRect = $Head
+@onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
+## Where the caught sheep stands (its feet), facing right; mirrored when the sprite is flipped.
+@onready var _prey_point: Marker2D = $PreyPoint
 
 
 func _ready() -> void:
-	_head_x = _head.position.x
 	_hide(data.first_attack_delay)
 
 
@@ -59,7 +62,8 @@ func _physics_process(delta: float) -> void:
 			velocity = Vector2.ZERO
 			if _target == null:
 				_leave(data.prowl_speed)
-			elif _timer <= 0.0:
+			elif _timer <= 0.0 and not _sprite.is_playing():
+				# Charges once both the telegraph time and the howl are over.
 				_state = State.CHARGE
 		State.CHARGE:
 			_charge(delta)
@@ -73,14 +77,19 @@ func _physics_process(delta: float) -> void:
 				_hide(data.attack_interval)
 	move_and_slide()
 	_update_facing()
+	_update_animation()
 	queue_redraw()
 
 
 func _draw() -> void:
 	if _state == State.TELEGRAPH and int(_timer * 8.0) % 2 == 0:
-		# Blinking "!" above the head.
-		draw_rect(Rect2(-1, -22, 2, 5), Color.RED)
-		draw_rect(Rect2(-1, -16, 2, 2), Color.RED)
+		# Blinking "!" above the head, held inside the screen edge while the wolf is off screen.
+		var view := _view_rect().grow(-ALERT_MARGIN)
+		var alert := global_position + ALERT_OFFSET
+		alert = alert.clamp(view.position, view.end)
+		alert = (to_local(alert)).round()
+		draw_rect(Rect2(alert + Vector2(-1, -4), Vector2(2, 5)), Color.RED)
+		draw_rect(Rect2(alert + Vector2(-1, 2), Vector2(2, 2)), Color.RED)
 	if Sheep.debug_draw and _target != null:
 		draw_line(Vector2.ZERO, to_local(_target.global_position), Color.MAGENTA, 1.0)
 
@@ -115,8 +124,7 @@ func _appear() -> void:
 
 
 ## Walks toward the most isolated sheep (re-chosen on the way if another strays clearly farther) and
-## stops to telegraph as soon as it is on screen and within prowl_distance of any sheep, so it never
-## walks into the flock unnoticed.
+## stops to telegraph as soon as it comes out of the forest edge, on screen or not.
 func _prowl(delta: float) -> void:
 	var isolated := _most_isolated_sheep()
 	if isolated == null:
@@ -130,8 +138,7 @@ func _prowl(delta: float) -> void:
 				> _target.global_position.distance_to(center) + RETARGET_MARGIN:
 			_target = isolated
 	var to_target := _target.global_position - global_position
-	var on_screen := _view_rect().grow(-ONSCREEN_MARGIN).has_point(global_position)
-	if on_screen and _nearest_sheep_distance() <= data.prowl_distance:
+	if _band().has_point(global_position):
 		velocity = Vector2.ZERO
 		_heading = to_target.angle()
 		_state = State.TELEGRAPH
@@ -157,6 +164,10 @@ func _charge(delta: float) -> void:
 		_prey = _target
 		sheep_captured.emit(_target)
 		_state = State.CARRY
+		# Backs away from the sheep, so it never turns around.
+		velocity = Vector2.ZERO
+		_heading = 0.0 if _sprite.flip_h else PI
+		_drag_prey()
 		return
 	_steer(to_target, data.charge_speed, data.charge_turn_rate, delta)
 
@@ -171,7 +182,7 @@ func _carry(delta: float) -> void:
 		_prey = null
 		_leave(data.charge_speed)
 		return
-	if not _band().grow(data.carry_offset).has_point(global_position):
+	if not _band().has_point(_prey.global_position):
 		# Into the forest: the sheep is lost; the wolf keeps dragging it out of sight.
 		sheep_lost.emit(_prey)
 		_leave(data.carry_speed)
@@ -180,10 +191,13 @@ func _carry(delta: float) -> void:
 	_drag_prey()
 
 
-## Keep the dragged sheep just behind the wolf.
+## Keep the caught sheep at the prey point, in front of the muzzle.
 func _drag_prey() -> void:
 	if _prey:
-		_prey.global_position = global_position - Vector2.from_angle(_heading) * data.carry_offset
+		var point := _prey_point.position
+		if _sprite.flip_h:
+			point.x = -point.x
+		_prey.global_position = global_position + point
 
 
 func _leave(speed: float) -> void:
@@ -211,9 +225,27 @@ func _steer(direction: Vector2, speed: float, turn_rate: float, delta: float) ->
 
 
 func _update_facing() -> void:
-	var facing_x := velocity.x if velocity.length() > 0.0 else cos(_heading) * FLIP_THRESHOLD * 2.0
+	var facing_x := velocity.x
+	if _prey:
+		# Backs away while dragging, facing the sheep.
+		facing_x = -facing_x
+	elif velocity == Vector2.ZERO:
+		facing_x = cos(_heading) * FLIP_THRESHOLD * 2.0
 	if absf(facing_x) > FLIP_THRESHOLD:
-		_head.position.x = -_head_x - _head.size.x if facing_x < 0.0 else _head_x
+		_sprite.flip_h = facing_x < 0.0
+
+
+## Howls once while telegraphing, drags while holding a sheep, otherwise runs or stands.
+func _update_animation() -> void:
+	var animation := &"idle"
+	if _state == State.TELEGRAPH:
+		animation = &"howl"
+	elif _prey:
+		animation = &"drag"
+	elif velocity.length() > 0.0:
+		animation = &"run"
+	if _sprite.animation != animation:
+		_sprite.play(animation)
 
 
 ## The sheep farthest from the flock center (stragglers first).
@@ -227,11 +259,6 @@ func _most_isolated_sheep() -> Sheep:
 			farthest = distance
 			best = sheep
 	return best
-
-
-func _nearest_sheep_distance() -> float:
-	var nearest := _nearest_sheep()
-	return global_position.distance_to(nearest.global_position) if nearest else INF
 
 
 func _nearest_sheep() -> Sheep:

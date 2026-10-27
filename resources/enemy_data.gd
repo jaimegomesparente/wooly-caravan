@@ -9,11 +9,9 @@ extends Resource
 @export_group("Approach")
 ## Walking speed (px/s) while coming in from off-screen, and when leaving empty-handed.
 @export var prowl_speed: float = 30.0
-## Stops to telegraph once this close (px) to any sheep and visible on screen.
-@export var prowl_distance: float = 70.0
 ## How fast it turns (rad/s) outside the charge.
 @export var turn_rate: float = 5.0
-## Time (s) it stands still with a blinking "!" before charging.
+## Minimum time (s) it stands still with a blinking "!" before charging (also lasts the whole howl).
 @export var telegraph_time: float = 1.2
 
 @export_group("Charge")
@@ -29,5 +27,3 @@ extends Resource
 @export var carry_speed: float = 20.0
 ## The shepherd frees the sheep by coming this close (px).
 @export var rescue_radius: float = 16.0
-## Distance (px) of the dragged sheep behind the wolf.
-@export var carry_offset: float = 8.0
