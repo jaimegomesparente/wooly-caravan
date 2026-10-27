@@ -1,14 +1,17 @@
 class_name Wolf
 extends CharacterBody2D
-## Comes out of the forest edge beside the most isolated sheep and howls there with a blinking "!"
-## (at the screen edge while the wolf is off screen), charges until it catches a sheep, then backs
-## away to the nearest edge, dragging it. The shepherd frees it by reaching the wolf first; once the
-## sheep crosses the edge, it is lost. A bark from the dog makes it drop the sheep or give up.
+## Sent by the AttackDirector for one attack: comes out of a forest edge beside the most isolated
+## sheep on its side of the flock and howls there with a blinking "!" (at the screen edge while the
+## wolf is off screen), charges until it catches a sheep, then backs away to the nearest edge,
+## dragging it. The shepherd frees it by reaching the wolf first; once the sheep crosses the edge,
+## it is lost. A bark from the dog makes it drop the sheep or give up. Gone once out of sight.
 
 signal sheep_captured(sheep: Sheep)
 signal sheep_lost(sheep: Sheep)
 
-enum State { HIDDEN, PROWL, TELEGRAPH, CHARGE, CARRY, LEAVE }
+enum State { WAITING, PROWL, TELEGRAPH, CHARGE, CARRY, LEAVE }
+## Which forest edge it comes out of: the one nearest its target, or a given one.
+enum Edge { NEAREST, TOP, BOTTOM }
 
 ## Spawns and despawns this far (px) outside the visible screen.
 const OFFSCREEN_MARGIN := 24.0
@@ -24,7 +27,9 @@ const RETARGET_MARGIN := 16.0
 
 @export var data: EnemyData
 
-var _state: State = State.HIDDEN
+var _state: State = State.WAITING
+## Its forest edge, and its half of the flock (top or bottom) when picking a target.
+var _edge: Edge = Edge.NEAREST
 var _timer: float = 0.0
 var _heading: float = 0.0
 var _leave_speed: float = 0.0
@@ -37,8 +42,20 @@ var _prey: Sheep
 @onready var _prey_point: Marker2D = $PreyPoint
 
 
-func _ready() -> void:
-	_hide(data.first_attack_delay)
+## Starts the attack from `edge`; returns the edge taken (never NEAREST). With no sheep left, the
+## wolf is freed at once.
+func attack(edge: Edge = Edge.NEAREST) -> Edge:
+	_edge = edge
+	_target = _most_isolated_sheep()
+	if _target == null:
+		queue_free()
+		return Edge.TOP
+	if _edge == Edge.NEAREST:
+		var band := _band()
+		var y := _target.global_position.y
+		_edge = Edge.TOP if y - band.position.y < band.end.y - y else Edge.BOTTOM
+	_appear()
+	return _edge
 
 
 ## True while charging or dragging a sheep: nearby sheep panic.
@@ -67,9 +84,8 @@ func _physics_process(delta: float) -> void:
 		_prey = null
 	_timer -= delta
 	match _state:
-		State.HIDDEN:
-			if _timer <= 0.0:
-				_appear()
+		State.WAITING:
+			return
 		State.PROWL:
 			_prowl(delta)
 		State.TELEGRAPH:
@@ -88,7 +104,7 @@ func _physics_process(delta: float) -> void:
 			_drag_prey()
 			var out_of_band := not _band().has_point(global_position)
 			if out_of_band and not _view_rect().grow(OFFSCREEN_MARGIN).has_point(global_position):
-				_hide(data.attack_interval)
+				_vanish()
 	move_and_slide()
 	_update_facing()
 	_update_animation()
@@ -109,18 +125,13 @@ func _draw() -> void:
 
 
 func _appear() -> void:
-	_target = _most_isolated_sheep()
-	if _target == null:
-		_timer = data.attack_interval
-		return
 	var view := _view_rect()
 	var trail := _trail()
 	if trail:
-		# Come out of the forest edge nearest the target, beside it and out of sight.
+		# Come out of its forest edge, beside the target and out of sight.
 		var band := trail.bounds()
 		var x := clampf(_target.global_position.x + randf_range(-40.0, 40.0), band.position.x, band.end.x)
-		var from_top := _target.global_position.y - band.position.y < band.end.y - _target.global_position.y
-		var y := minf(band.position.y, view.position.y) - OFFSCREEN_MARGIN if from_top \
+		var y := minf(band.position.y, view.position.y) - OFFSCREEN_MARGIN if _edge == Edge.TOP \
 				else maxf(band.end.y, view.end.y) + OFFSCREEN_MARGIN
 		global_position = Vector2(x, y)
 	else:
@@ -225,15 +236,11 @@ func _leave(speed: float) -> void:
 	_state = State.LEAVE
 
 
-func _hide(delay: float) -> void:
+## Out of sight after the attack: gone, with the lost sheep it may still drag.
+func _vanish() -> void:
 	if _prey:
 		_prey.queue_free()
-		_prey = null
-	_state = State.HIDDEN
-	_timer = delay
-	_target = null
-	velocity = Vector2.ZERO
-	visible = false
+	queue_free()
 
 
 ## Turn toward `direction` at a limited rate and move at `speed`.
@@ -267,16 +274,25 @@ func _update_animation() -> void:
 		_sprite.play(animation)
 
 
-## The sheep farthest from the flock center (stragglers first).
+## The sheep farthest from the flock center (stragglers first), in the wolf's half of the flock
+## (any sheep when that half is empty or the side is not chosen yet).
 func _most_isolated_sheep() -> Sheep:
 	var center := _flock_center()
 	var best: Sheep = null
 	var farthest := -1.0
 	for sheep: Sheep in get_tree().get_nodes_in_group("sheep"):
+		var above := sheep.global_position.y <= center.y
+		if (_edge == Edge.TOP and not above) or (_edge == Edge.BOTTOM and above):
+			continue
 		var distance := sheep.global_position.distance_to(center)
 		if distance > farthest:
 			farthest = distance
 			best = sheep
+	if best == null and _edge != Edge.NEAREST:
+		var edge := _edge
+		_edge = Edge.NEAREST
+		best = _most_isolated_sheep()
+		_edge = edge
 	return best
 
 

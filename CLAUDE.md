@@ -12,7 +12,7 @@ In scope:
 - One trip drawn in code (`scenes/main/ground.gd`): a band walked left to right, taller than the screen, start and end pastures, walls and forest edges at top and bottom; grass tufts and stones, no tilemap (decor sprites will come from Aseprite)
 - Camera following the shepherd, leaning toward the flock, whole-pixel positions (`scenes/main/flock_camera.gd`)
 
-Added since: a wolf (step 4), the trip band with an end screen (R restarts), the dog (step 5) with three modes cycled with Space: Gather, Rear guard, Hunt (a chased wolf is barked at and runs off, dropping its sheep), shown top left.
+Added since: a wolf (step 4), the trip band with an end screen (R restarts), the dog (step 5) with three modes cycled with Space: Gather, Rear guard, Hunt (a chased wolf is barked at and runs off, dropping its sheep), shown top left. Wolves come as packs sent by `AttackDirector` (`scenes/main/attack_director.gd`) at attack points spread along the trail, never in the pastures, each wolf making one attack.
 
 Out of scope until explicitly requested: other dog postures (Vanguard, Circle) and the one-shot orders, other enemies, powers, shop, map, meta-progression, menus, tilemaps, shadows, other particles (only running dust exists), sound.
 

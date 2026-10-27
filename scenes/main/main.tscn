@@ -12,13 +12,13 @@
 [ext_resource type="PackedScene" path="res://ui/end_screen.tscn" id="10_end"]
 [ext_resource type="PackedScene" uid="uid://c67pgonbomrfh" path="res://entities/dog/dog.tscn" id="11_dog"]
 [ext_resource type="Script" path="res://ui/dog_mode_label.gd" id="12_dog_mode"]
+[ext_resource type="Script" path="res://scenes/main/attack_director.gd" id="13_attacks"]
 
 [node name="Main" type="Node2D" unique_id=536968002]
 y_sort_enabled = true
 script = ExtResource("1_script")
 sheep_scene = ExtResource("3_sheep")
 sheep_count = 40
-wolf_scene = ExtResource("8_wolf")
 dog_scene = ExtResource("11_dog")
 
 [node name="Ground" type="Node2D" parent="." unique_id=1590427545]
@@ -38,6 +38,10 @@ flock_config = ExtResource("7_config")
 
 [node name="Trip" type="Node" parent="." unique_id=1414957768]
 script = ExtResource("9_trip")
+
+[node name="AttackDirector" type="Node" parent="."]
+script = ExtResource("13_attacks")
+wolf_scene = ExtResource("8_wolf")
 
 [node name="Hud" type="CanvasLayer" parent="."]
 

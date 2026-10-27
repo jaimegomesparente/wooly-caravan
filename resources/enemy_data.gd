@@ -1,11 +1,6 @@
 class_name EnemyData
 extends Resource
 
-@export_group("Timing")
-## Seconds before the first attack, then between the end of an attack and the next one.
-@export var first_attack_delay: float = 6.0
-@export var attack_interval: float = 12.0
-
 @export_group("Approach")
 ## Walking speed (px/s) while coming in from off-screen, and when leaving empty-handed.
 @export var prowl_speed: float = 30.0
