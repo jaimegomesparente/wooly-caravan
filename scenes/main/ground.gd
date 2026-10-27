@@ -36,13 +36,13 @@ const OBSTACLE_LAYER := 1 << 4
 @export var stone_count: int = 72
 
 @export_group("Palette")
-@export var grass_color: Color = Color(0.385, 0.65, 0.318, 1.0)
-@export var patch_color: Color = Color(0.45, 0.72, 0.34)
+@export var grass_color: Color = Color(0.605, 0.68, 0.415, 1.0)
+@export var patch_color: Color = Color(0.503, 0.714, 0.359, 1.0)
 @export var edge_color: Color = Color(0.12, 0.27, 0.14)
 @export var edge_line_color: Color = Color(0.08, 0.19, 0.1)
-@export var tuft_dark_color: Color = Color(0.25, 0.52, 0.2)
-@export var tuft_light_color: Color = Color(0.5, 0.77, 0.32)
-@export var tuft_bright_color: Color = Color(0.66, 0.86, 0.35)
+@export var tuft_dark_color: Color = Color(0.46, 0.544, 0.289)
+@export var tuft_light_color: Color = Color(0.775, 0.806, 0.446)
+@export var tuft_bright_color: Color = Color(0.9, 0.85, 0.493)
 @export var stone_color: Color = Color(0.7, 0.68, 0.6)
 @export var stone_shade_color: Color = Color(0.46, 0.45, 0.42)
 
