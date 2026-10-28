@@ -12,6 +12,9 @@ at a time. What can be played today is a single escort trip.
 - **The flock**: 40 sheep moving as boids. They follow the shepherd in a column, graze and wander at
   rest, gather into a group when the column stops, step aside from the shepherd, and panic and
   flee toward the flock when an enemy comes.
+- **The shepherd's crook**: left click lobs a clod of earth at the mouse; its shadow shows how high
+  it flies. An enemy hit lets go of its sheep or gives up, as when the dog barks; it has a limited
+  reach and a cooldown.
 - **The dog**: three modes, cycled with Space. *Gather* brings stragglers back, *Rear guard* stays
   behind the flock and chases enemies coming near it, *Hunt* chases any enemy. A bark makes an
   enemy drop the sheep it holds.
@@ -23,9 +26,9 @@ at a time. What can be played today is a single escort trip.
     then drags the sheep back to the forest. The shepherd frees it by reaching the wolf.
   - **The eagle**: its shadow crosses the screen, a red sight locks on the most isolated sheep on
     screen, it dives from the top right and carries the sheep off to the left. Send the dog under
-    it before the sheep is gone.
+    it, or hit it with a clod, before the sheep is gone.
 
-Not there yet: weapons (sling), other enemies, wool, powers, shop, map, menus, sound.
+Not there yet: other weapons, other enemies, wool, powers, shop, map, menus, sound.
 
 ## Running
 
@@ -42,6 +45,7 @@ Check the scripts without opening the editor: `godot --headless --quit`.
 | Key | Action |
 | --- | --- |
 | Arrows / WASD | Move the shepherd |
+| Left click | Lob a clod with the crook at the mouse |
 | Space | Next dog mode (Gather, Rear guard, Hunt) |
 | R | Restart the trip (end screen) |
 | F3 | Debug overlay: sheep states and targets, flight zones, shepherd trail |
@@ -56,16 +60,18 @@ Every weight and speed is exposed in a resource, editable in the Godot inspector
 - `resources/dog.tres` (`DogData`): dog speeds, reach, modes
 - `resources/wolf.tres` (`EnemyData`): wolf approach, charge, carry
 - `resources/eagle.tres` (`EagleData`): eagle pass, dive, carry, shadow
+- `entities/clod/clod.tscn`: clod speed, reach and arc; `Shepherd` (`entities/shepherd/shepherd.tscn`):
+  walking speed and throw cooldown
 - `AttackDirector` node in `scenes/main/main.tscn`: wolves and eagles of each attack
 
 ## Project layout
 
 - `art/`: sprite sheets (made in Aseprite)
-- `entities/`: one folder per entity, scene and script (`sheep`, `shepherd`, `dog`, `wolf`, `eagle`,
-  and `enemy`, the base shared by enemies)
+- `entities/`: one folder per entity, scene and script (`sheep`, `shepherd`, `clod`, `dog`, `wolf`,
+  `eagle`, and `enemy`, the base shared by enemies)
 - `scenes/main/`: the trip scene, its ground, forest, camera, attack director, debug overlay
 - `resources/`: tunable `Resource` scripts and their `.tres` data
-- `effects/`: running dust, ground shadows
+- `effects/`: running dust, ground shadows, clod crumbs
 - `ui/`: dog mode label, end screen
 
 `CLAUDE.md` holds the full game design, the art and technical rules and the build order.
