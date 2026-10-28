@@ -34,6 +34,8 @@ stone_count = 27
 y_sort_enabled = true
 script = ExtResource("14_forest")
 tree_texture = ExtResource("15_trees")
+lone_trees = 6
+groves = 2
 
 [node name="Shepherd" parent="." unique_id=1167479979 instance=ExtResource("2_shepherd")]
 position = Vector2(120, 150)

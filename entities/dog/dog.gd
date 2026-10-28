@@ -204,7 +204,7 @@ func _push_point(shepherd: Node2D) -> Vector2:
 
 
 ## Heading turned at a limited rate, speed eased down near the goal. Unless pushing, it curves
-## around the sheep so it does not scatter the flock on its way.
+## around the sheep so it does not scatter the flock on its way; it always curves around trees.
 func _move_to(point: Vector2, delta: float) -> void:
 	var to_point := point - global_position
 	var distance := to_point.length()
@@ -214,6 +214,11 @@ func _move_to(point: Vector2, delta: float) -> void:
 		# Chasing is urgent: straight through the flock (curving around it could keep it circling).
 		if not is_pushing() and _state != State.CHASE:
 			direction += _avoid_flock() * data.avoid_strength
+		# Always around the trail trees, even chasing, so it never gets stuck on a trunk.
+		var forest := get_tree().get_first_node_in_group("forest") as Forest
+		if forest:
+			direction += forest.avoidance(global_position, direction.normalized(), data.tree_avoid_radius) \
+					* data.tree_avoid_strength
 		_heading = rotate_toward(_heading, direction.angle(), data.turn_rate * delta)
 	else:
 		wanted = 0.0

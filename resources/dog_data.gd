@@ -43,3 +43,8 @@ extends Resource
 @export var guard_radius: float = 64.0
 ## Stops and barks this close (px) to the chased wolf; the wolf runs off once the bark is over.
 @export var bark_distance: float = 24.0
+
+@export_group("Obstacles")
+## Trail trees closer than this (px) ahead make the dog veer aside, harder the closer they are.
+@export var tree_avoid_radius: float = 16.0
+@export var tree_avoid_strength: float = 1.5

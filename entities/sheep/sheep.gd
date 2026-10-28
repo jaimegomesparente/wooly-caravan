@@ -164,6 +164,7 @@ func _physics_process(delta: float) -> void:
 	# A startled sheep turns and speeds up faster.
 	var reflex := config.flight_reflex if _fleeing or _panicking else 1.0
 	if desired != Vector2.ZERO:
+		desired = _avoid_trees(desired)
 		_heading = rotate_toward(_heading, desired.angle(), config.turn_rate * reflex * delta)
 	_speed = move_toward(_speed, desired.length(), config.acceleration * reflex * delta)
 	velocity = Vector2.from_angle(_heading) * _speed
@@ -598,6 +599,17 @@ func _nearest_neighbor_distance() -> float:
 		if other != self:
 			nearest = minf(nearest, global_position.distance_to(other.global_position))
 	return nearest
+
+
+## The desired velocity veered around the trail trees ahead, at the same pace.
+func _avoid_trees(desired: Vector2) -> Vector2:
+	var forest := get_tree().get_first_node_in_group("forest") as Forest
+	if forest == null:
+		return desired
+	var direction := desired.normalized()
+	var steered := direction + forest.avoidance(global_position, direction, config.tree_avoid_radius) \
+			* config.tree_avoid_strength
+	return desired if steered.length() < 0.01 else steered.normalized() * desired.length()
 
 
 ## Push away from sheep closer than separation_radius; magnitude fades from 1 to 0 across the radius.

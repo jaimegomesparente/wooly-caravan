@@ -86,7 +86,7 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(12, 16)
+size = Vector2(8, 4)
 
 [node name="Shepherd" type="CharacterBody2D" unique_id=1739534669 groups=["shepherd"]]
 collision_mask = 16
@@ -104,5 +104,5 @@ animation = &"idle"
 autoplay = "idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1564870084]
-position = Vector2(0, -8)
+position = Vector2(0, -2)
 shape = SubResource("RectangleShape2D_body")

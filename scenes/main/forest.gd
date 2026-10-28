@@ -4,7 +4,9 @@ extends Node2D
 ## stands up to `overflow` px on the walkable band and recedes here and there (a smooth noise), with
 ## clearings where no tree grows. Its trees are y-sorted with the sheep, the dog and the wolves (keep
 ## it a direct child of a y-sorted node): the bottom rows hide what walks behind them. Trees and the
-## ground under them darken by levels toward the back.
+## ground under them darken by levels toward the back. Between the pastures, lone trees and small
+## groves stand on the walkable band, their trunks blocking the shepherd, the sheep and the dog (the
+## sheep and the dog steer around them with `avoidance()`), with a flattened shade under each.
 
 enum Wall { TOP, BOTTOM, LEFT, RIGHT }
 
@@ -42,13 +44,41 @@ enum Wall { TOP, BOTTOM, LEFT, RIGHT }
 @export var shade_starts: Array[float] = [-4.0, 4.0, 16.0]
 @export var shade_colors: Array[Color] = [Color(0.43, 0.52, 0.31), Color(0.3, 0.4, 0.23), Color(0.17, 0.22, 0.17)]
 
+@export_group("Trail trees")
+@export var lone_trees: int = 24
+@export var groves: int = 8
+@export var grove_size_min: int = 6
+@export var grove_size_max: int = 12
+## Trunks of a grove stand within grove_radius (px) of its center, at least grove_spacing apart.
+@export var grove_radius: float = 18.0
+@export var grove_spacing: float = 9.0
+## Minimum distance (px) between trunks of different groves or lone trees, so passages remain.
+@export var min_gap: float = 40.0
+## Minimum distance (px) from the top and bottom walls and from the pastures.
+@export var wall_clearance: float = 32.0
+## Collision box (px) at the foot of each trail tree.
+@export var trunk_size: Vector2 = Vector2(4, 3)
+## Shade of the trail trees: each trunk casts a strength fading from 1 to 0 across
+## trail_shade_radius (px; vertical distances divided by trail_shade_squash, for a flat oval), the
+## strengths add up, and each shade level starts at its threshold (colors: `shade_colors`).
+@export var trail_shade_radius: float = 14.0
+@export var trail_shade_squash: float = 0.5
+@export var trail_shade_levels: Array[float] = [0.2, 0.9, 1.8]
+
+## Collision layer 5 (obstacle).
+const OBSTACLE_LAYER := 1 << 4
+
 var _trail: Ground
+## Feet of the trail trees, all together and by grove (a lone tree is a grove of one).
+var _trunks: Array[Vector2] = []
+var _groves: Array[Array] = []
 var _edge_noise := FastNoiseLite.new()
 var _clearing_noise := FastNoiseLite.new()
 
 
 func _ready() -> void:
 	y_sort_enabled = true
+	add_to_group("forest")
 	_trail = get_tree().get_first_node_in_group("trail") as Ground
 	if _trail == null or tree_texture == null:
 		return
@@ -75,6 +105,8 @@ func _ready() -> void:
 				along += spacing
 			depth += row_spacing
 
+	_plant_trail(rng)
+
 	var shade := Node2D.new()
 	# Below the trees and the entities, above the ground.
 	shade.z_index = -1
@@ -86,14 +118,72 @@ func _plant(rng: RandomNumberGenerator, foot: Vector2, depth: float) -> void:
 	foot = foot.round()
 	if _clearing_noise.get_noise_2dv(foot) > clearing_threshold:
 		return
+	_add_tree(rng, foot, tint_colors[_level(tint_starts, depth)] if not tint_colors.is_empty() else Color.WHITE)
+
+
+func _add_tree(rng: RandomNumberGenerator, foot: Vector2, tint: Color) -> void:
 	var tree := Sprite2D.new()
 	tree.texture = tree_texture
 	tree.hframes = sheet_cells
 	tree.frame = rng.randi() % variants
 	tree.offset = Vector2(cell_size / 2.0 - trunk_x, -cell_size / 2.0)
-	tree.modulate = tint_colors[_level(tint_starts, depth)] if not tint_colors.is_empty() else Color.WHITE
+	tree.modulate = tint
 	tree.position = foot
 	add_child(tree)
+
+
+## Groves first, then lone trees, each at a random free spot (given up after a few tries).
+func _plant_trail(rng: RandomNumberGenerator) -> void:
+	var area := Rect2(_trail.patch_width + wall_clearance, wall_clearance,
+			_trail.length - 2.0 * (_trail.patch_width + wall_clearance), _trail.height - 2.0 * wall_clearance)
+	if area.size.x <= 0.0 or area.size.y <= 0.0:
+		return
+	var body := StaticBody2D.new()
+	body.collision_layer = OBSTACLE_LAYER
+	body.collision_mask = 0
+	for i in groves + lone_trees:
+		var grove := i < groves
+		var clearance := min_gap + (grove_radius if grove else 0.0)
+		for attempt in 20:
+			var center := Vector2(rng.randf_range(area.position.x, area.end.x), rng.randf_range(area.position.y, area.end.y)).round()
+			if _trunks.any(func(trunk: Vector2) -> bool: return trunk.distance_to(center) < clearance):
+				continue
+			var feet: Array[Vector2] = [center]
+			if grove:
+				var size := rng.randi_range(grove_size_min, grove_size_max)
+				for try in size * 10:
+					if feet.size() >= size:
+						break
+					var foot := (center + Vector2.from_angle(rng.randf() * TAU) * sqrt(rng.randf()) * grove_radius).round()
+					if not feet.any(func(other: Vector2) -> bool: return other.distance_to(foot) < grove_spacing):
+						feet.append(foot)
+			for foot in feet:
+				_add_tree(rng, foot, Color.WHITE)
+				var shape := RectangleShape2D.new()
+				shape.size = trunk_size
+				var collision := CollisionShape2D.new()
+				collision.shape = shape
+				collision.position = foot - Vector2(0.0, trunk_size.y / 2.0)
+				body.add_child(collision)
+			_trunks.append_array(feet)
+			_groves.append(feet)
+			break
+	add_child(body)
+
+
+## Sideways push away from the trail trees ahead of a body at `from` heading `direction` (unit
+## vector), each fading from 1 to 0 across radius (px). A trunk dead ahead pushes to the right.
+func avoidance(from: Vector2, direction: Vector2, radius: float) -> Vector2:
+	var push := Vector2.ZERO
+	var side := direction.orthogonal()
+	for trunk in _trunks:
+		var to_trunk := trunk - from
+		var distance := to_trunk.length()
+		if distance >= radius or to_trunk.dot(direction) <= 0.0:
+			continue
+		var lateral := to_trunk.dot(side)
+		push -= side * (signf(lateral) if lateral != 0.0 else -1.0) * (1.0 - distance / radius)
+	return push
 
 
 ## Range covered along a side: the top and bottom rows run past the corners, under the side rows.
@@ -142,3 +232,33 @@ func _draw_shade(canvas: Node2D) -> void:
 				var from := _point(side, along, out)
 				var to := _point(side, along + 1, far)
 				canvas.draw_rect(Rect2(from, to - from).abs(), shade_colors[level])
+	for feet: Array in _groves:
+		_draw_grove_shade(canvas, feet)
+
+
+## Summed trunk strengths over the grove's box, drawn line by line, a run of one level per rect.
+func _draw_grove_shade(canvas: Node2D, feet: Array) -> void:
+	var box := Rect2(feet[0], Vector2.ZERO)
+	for foot: Vector2 in feet:
+		box = box.expand(foot)
+	var reach := Vector2(trail_shade_radius, trail_shade_radius * trail_shade_squash)
+	box = box.grow_individual(reach.x, reach.y, reach.x, reach.y)
+	var levels := mini(trail_shade_levels.size(), shade_colors.size())
+	for y in range(floori(box.position.y), ceili(box.end.y)):
+		var run_start := 0
+		var run_level := -1
+		for x in range(floori(box.position.x), ceili(box.end.x) + 1):
+			var level := -1
+			if x < ceili(box.end.x):
+				var strength := 0.0
+				for foot: Vector2 in feet:
+					var offset := (Vector2(x, y) + Vector2(0.5, 0.5) - foot) / reach
+					strength += maxf(0.0, 1.0 - offset.length_squared()) ** 2
+				for i in levels:
+					if strength >= trail_shade_levels[i]:
+						level = i
+			if level != run_level:
+				if run_level >= 0:
+					canvas.draw_rect(Rect2(run_start, y, x - run_start, 1), shade_colors[run_level])
+				run_start = x
+				run_level = level
