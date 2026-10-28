@@ -1,20 +1,15 @@
 class_name Wolf
-extends CharacterBody2D
+extends Enemy
 ## Sent by the AttackDirector for one attack: comes out of a forest edge beside the most isolated
 ## sheep on its side of the flock and howls there with a blinking "!" (at the screen edge while the
 ## wolf is off screen), charges until it catches a sheep, then backs away to the nearest edge,
 ## dragging it. The shepherd frees it by reaching the wolf first; once the sheep crosses the edge,
 ## it is lost. A bark from the dog makes it drop the sheep or give up. Gone once out of sight.
 
-signal sheep_captured(sheep: Sheep)
-signal sheep_lost(sheep: Sheep)
-
 enum State { WAITING, PROWL, TELEGRAPH, CHARGE, CARRY, LEAVE }
 ## Which forest edge it comes out of: the one nearest its target, or a given one.
 enum Edge { NEAREST, TOP, BOTTOM }
 
-## Spawns and despawns this far (px) outside the visible screen.
-const OFFSCREEN_MARGIN := 24.0
 ## The "!" stays this far (px) inside the screen edge.
 const ALERT_MARGIN := 8.0
 ## The "!" above the head, from the wolf's feet.
@@ -307,16 +302,6 @@ func _nearest_sheep() -> Sheep:
 	return nearest
 
 
-func _flock_center() -> Vector2:
-	var flock := get_tree().get_nodes_in_group("sheep")
-	if flock.is_empty():
-		return global_position
-	var center := Vector2.ZERO
-	for sheep: Node2D in flock:
-		center += sheep.global_position
-	return center / flock.size()
-
-
 func _trail() -> Ground:
 	return get_tree().get_first_node_in_group("trail") as Ground
 
@@ -333,13 +318,3 @@ func _exit_direction() -> Vector2:
 		return global_position - _flock_center()
 	var band := _band()
 	return Vector2.UP if global_position.y - band.position.y < band.end.y - global_position.y else Vector2.DOWN
-
-
-## The part of the world visible on screen at normal zoom (the debug zoom never changes where the
-## wolf appears or telegraphs).
-func _view_rect() -> Rect2:
-	var size := get_viewport_rect().size
-	var camera := get_viewport().get_camera_2d()
-	if camera == null:
-		return Rect2(Vector2.ZERO, size)
-	return Rect2(camera.get_screen_center_position() - size * 0.5, size)

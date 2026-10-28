@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://bqilwa470fm3t" path="res://scenes/main/debug_overlay.gd" id="6_debug"]
 [ext_resource type="Resource" uid="uid://cqv7e475qv2o1" path="res://resources/flock_config.tres" id="7_config"]
 [ext_resource type="PackedScene" uid="uid://dsla4jtx1mnqu" path="res://entities/wolf/wolf.tscn" id="8_wolf"]
+[ext_resource type="PackedScene" path="res://entities/eagle/eagle.tscn" id="16_eagle"]
 [ext_resource type="Script" uid="uid://bo1b31a41aamx" path="res://scenes/main/trip.gd" id="9_trip"]
 [ext_resource type="PackedScene" path="res://ui/end_screen.tscn" id="10_end"]
 [ext_resource type="PackedScene" uid="uid://c67pgonbomrfh" path="res://entities/dog/dog.tscn" id="11_dog"]
@@ -54,6 +55,9 @@ script = ExtResource("9_trip")
 [node name="AttackDirector" type="Node" parent="." unique_id=471395806]
 script = ExtResource("13_attacks")
 wolf_scene = ExtResource("8_wolf")
+eagle_scene = ExtResource("16_eagle")
+packs = Array[int]([0, 2, 1])
+eagles = Array[int]([1, 0, 1])
 
 [node name="Hud" type="CanvasLayer" parent="." unique_id=1486859162]
 

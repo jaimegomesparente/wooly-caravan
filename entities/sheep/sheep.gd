@@ -70,6 +70,7 @@ var _sprite_offset_y: float = 0.0
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _shape: CollisionShape2D = $CollisionShape2D
+@onready var _shadow: Node2D = $Shadow
 
 
 func _ready() -> void:
@@ -179,9 +180,14 @@ func _temper(direction: float) -> float:
 	return 1.0 + config.temperament_strength * _boldness * direction
 
 
-## Called by an enemy that grabs this sheep: it leaves the flock until released.
-func capture(by: Node2D) -> void:
+## Called by an enemy that grabs this sheep: it leaves the flock until released. Lifted off the
+## ground, it has no shadow and is drawn just above the captor (in front of its talons and above
+## its shadow).
+func capture(by: Node2D, lifted: bool = false) -> void:
 	_captor = by
+	if lifted:
+		_shadow.visible = false
+		z_index = by.z_index + 1
 	remove_from_group("sheep")
 	_fleeing = false
 	_panicking = false
@@ -195,6 +201,8 @@ func release() -> void:
 	_scare_point = _captor.global_position if _captor else global_position
 	_scare_timer = config.release_panic_time
 	_captor = null
+	_shadow.visible = true
+	z_index = 0
 	add_to_group("sheep")
 	_enter_rest()
 
@@ -517,7 +525,7 @@ func _neighbors_center() -> Vector2:
 func _nearest_threat() -> Node2D:
 	var nearest: Node2D = null
 	var nearest_distance := INF
-	for enemy: Wolf in get_tree().get_nodes_in_group("enemy"):
+	for enemy: Enemy in get_tree().get_nodes_in_group("enemy"):
 		if not enemy.is_dangerous():
 			continue
 		var distance := global_position.distance_to(enemy.global_position)

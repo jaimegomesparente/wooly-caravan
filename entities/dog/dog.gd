@@ -29,8 +29,8 @@ var _following: bool = false
 var _target: Sheep
 ## True while running around the flock to get behind the target (avoids sheep on the way).
 var _flanking: bool = false
-## The chased wolf, and true once barking at it.
-var _wolf: Wolf
+## The chased enemy, and true once barking at it.
+var _enemy: Enemy
 var _barking: bool = false
 var _goal: Vector2
 var _heading: float = 0.0
@@ -70,8 +70,8 @@ func _physics_process(delta: float) -> void:
 				_target = null
 				_flanking = false
 	elif _state != State.CHASE:
-		_wolf = _threat(rearmost)
-		if _wolf:
+		_enemy = _threat(rearmost)
+		if _enemy:
 			_state = State.CHASE
 		else:
 			_state = State.GUARD if _mode == Mode.REAR_GUARD and rearmost else State.WAIT
@@ -102,42 +102,42 @@ func next_mode() -> void:
 	_switch_time = 0.0
 	_target = null
 	_flanking = false
-	_wolf = null
+	_enemy = null
 	_barking = false
 	play_bark()
 	mode_changed.emit(MODE_NAMES[_mode])
 
 
-## The nearest wolf to chase: any threat in Hunt, only one near the rearmost sheep or the dog in
+## The nearest enemy to chase: any threat in Hunt, only one near the rearmost sheep or the dog in
 ## Rear guard.
-func _threat(rearmost: Sheep) -> Wolf:
-	var nearest: Wolf = null
-	for enemy in get_tree().get_nodes_in_group("enemy"):
-		var wolf := enemy as Wolf
-		if wolf == null or not wolf.is_threat():
+func _threat(rearmost: Sheep) -> Enemy:
+	var nearest: Enemy = null
+	for node in get_tree().get_nodes_in_group("enemy"):
+		var enemy := node as Enemy
+		if enemy == null or not enemy.is_threat():
 			continue
-		var distance := global_position.distance_to(wolf.global_position)
+		var distance := global_position.distance_to(enemy.global_position)
 		if _mode == Mode.REAR_GUARD and distance > data.guard_radius and (rearmost == null \
-				or rearmost.global_position.distance_to(wolf.global_position) > data.guard_radius):
+				or rearmost.global_position.distance_to(enemy.global_position) > data.guard_radius):
 			continue
 		if nearest == null or distance < global_position.distance_to(nearest.global_position):
-			nearest = wolf
+			nearest = enemy
 	return nearest
 
 
-## Runs at the wolf; within bark_distance, stops and barks, and scares it once the bark is over.
-## Gives up when the wolf is no longer a threat (the mode then picks the next state).
+## Runs at the enemy; within bark_distance, stops and barks, and scares it once the bark is over.
+## Gives up when the enemy is no longer a threat (the mode then picks the next state).
 func _chase() -> void:
-	if not is_instance_valid(_wolf) or not _wolf.is_threat():
+	if not is_instance_valid(_enemy) or not _enemy.is_threat():
 		_stop_chase()
 		return
 	if _barking:
 		_goal = global_position
 		if _sprite.animation != &"bark" or not _sprite.is_playing():
-			_wolf.scare()
+			_enemy.scare()
 			_stop_chase()
 		return
-	_goal = _wolf.global_position
+	_goal = _enemy.global_position
 	if global_position.distance_to(_goal) <= data.bark_distance:
 		_barking = true
 		_goal = global_position
@@ -146,7 +146,7 @@ func _chase() -> void:
 
 func _stop_chase() -> void:
 	_state = State.WAIT
-	_wolf = null
+	_enemy = null
 	_barking = false
 	_goal = global_position
 
