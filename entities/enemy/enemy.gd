@@ -12,12 +12,18 @@ const OFFSCREEN_MARGIN := 24.0
 const FLINCH_TIME := 0.12
 const FLINCH_RECOIL := 2.0
 const TINT_SHADER := preload("res://effects/enemy_tint.gdshader")
+## Strongest slow from mud (fraction of its speed lost).
+const MAX_MUD_SLOW := 0.8
 
 ## Hits (clods) it takes before it runs off; a bark makes it run off whatever is left.
 @export var health: int = 1
 
-## The sprite's tint (flash, grey), made on the first hit.
+## The sprite's tint (flash, grey, mud), made on the first hit.
 var _tint: ShaderMaterial
+## 1, or less while slowed by mud: each enemy multiplies its speeds by it.
+var _speed_scale: float = 1.0
+## Mud slows still running (a new hit restarts the count, the last one to end lifts the slow).
+var _mud_slows: int = 0
 
 
 ## True while nearby sheep should panic.
@@ -36,15 +42,33 @@ func scare() -> void:
 
 
 ## Hit by a clod flying along `direction`: flashes and loses `damage` health; at none it turns grey
-## and runs off, otherwise it recoils and goes on with what it was doing.
-func hit(direction: Vector2, damage: int = 1) -> void:
+## and runs off, otherwise it recoils and goes on with what it was doing. A muddy clod also slows it
+## by `mud_slow` for `mud_time` s.
+func hit(direction: Vector2, damage: int = 1, mud_slow: float = 0.0, mud_time: float = 0.0) -> void:
 	health -= damage
 	_flash()
+	if mud_slow > 0.0 and mud_time > 0.0:
+		_slow(mud_slow, mud_time)
 	if health <= 0:
 		_set_tint(&"grey", 1.0)
 		scare()
 		return
 	global_position += direction.normalized() * FLINCH_RECOIL
+
+
+func _slow(amount: float, time: float) -> void:
+	_speed_scale = 1.0 - minf(amount, MAX_MUD_SLOW)
+	_mud_slows += 1
+	_set_tint(&"mud", 1.0)
+	# Pauses with the game; never called once this enemy is gone.
+	get_tree().create_timer(time, false).timeout.connect(_end_slow)
+
+
+func _end_slow() -> void:
+	_mud_slows -= 1
+	if _mud_slows == 0:
+		_speed_scale = 1.0
+		_set_tint(&"mud", 0.0)
 
 
 func _flash() -> void:

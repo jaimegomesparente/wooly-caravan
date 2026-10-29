@@ -17,6 +17,8 @@ var _arc: float = 0.0
 var _duration: float = 1.0
 var _time: float = 0.0
 var _damage: int = 1
+var _mud_slow: float = 0.0
+var _mud_time: float = 0.0
 var _size: Vector2 = Vector2(2, 2)
 
 @onready var _shadow: Node2D = $Shadow
@@ -36,6 +38,8 @@ func launch(crook: CrookData, from: Vector2, target: Vector2, start_height: floa
 	_arc = minf(distance * crook.arc_per_px, crook.max_arc)
 	_duration = maxf(distance / crook.speed, 0.05)
 	_damage = crook.damage
+	_mud_slow = crook.mud_slow
+	_mud_time = crook.mud_time
 	_size = Vector2(crook.clod_size, crook.clod_size)
 	# Its own shape (the scene's one is shared by every clod), a pixel wider than the clod.
 	var collision := $CollisionShape2D as CollisionShape2D
@@ -69,7 +73,7 @@ func _on_body_entered(body: Node2D) -> void:
 	var enemy := body as Enemy
 	# Enemies on their way out (or still out of reach, like a passing eagle) let it fly through.
 	if enemy and enemy.is_threat():
-		enemy.hit(_to - _from, _damage)
+		enemy.hit(_to - _from, _damage, _mud_slow, _mud_time)
 		_crumble()
 
 

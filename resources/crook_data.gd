@@ -16,3 +16,6 @@ extends Resource
 @export var clod_count: int = 1
 @export var spread: float = 16.0
 @export var clod_size: int = 2
+## A clod also slows the enemy it hits: its speed is cut by mud_slow (0: no mud) for mud_time s.
+@export var mud_slow: float = 0.0
+@export var mud_time: float = 2.0

@@ -23,8 +23,8 @@ between two trips.
   around it, lone trees and groves to steer around. The trip ends when every remaining sheep stands
   in the end pasture; an end screen gives the result.
 - **The run**: the flock that arrives starts the next trip. Between two trips, on the pasture, pick
-  one of three upgrades for the crook (Heavy Clod, Extra Clod, Quick Throw, Long Throw); they add
-  up when taken again. The run ends after the third trip, or when no sheep is left.
+  one of three upgrades for the crook (Heavy Clod, Extra Clod, Quick Throw, Long Throw, Flat Throw,
+  Mudball); they add up when taken again. The run ends after the third trip, or when no sheep is left.
 - **Enemies**, sent at attack points along the trail:
   - **Wolves**, in packs: each one comes out of the forest edge beside a straggler, howls, charges,
     then drags the sheep back to the forest. The shepherd frees it by reaching the wolf.

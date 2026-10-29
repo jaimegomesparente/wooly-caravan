@@ -4,9 +4,9 @@ extends Enemy
 ## shadow); `_altitude` lifts the bird above it. Only its shadow shows at first, crossing the screen
 ## from left to right; then it picks the most isolated sheep on screen (none free on screen: it
 ## passes again up to max_passes, then gives up), puts a sight on it, and dives from the top right
-## corner of the screen, its shadow growing below it, grabbing it wherever it is. The caught sheep is
-## carried off to the left, climbing: lost once out of the screen or too high. A bark from the dog
-## below makes it drop the sheep or give up the dive. It always flies off toward the top left
+## corner of the screen, its shadow growing below it, grabbing it wherever it is. The caught sheep
+## is carried off to the left, climbing: lost once out of the screen or too high. A bark from the
+## dog below makes it drop the sheep or give up the dive. It always flies off toward the top left
 ## corner, gone once out of sight.
 
 enum State { WAITING, PASS, TELEGRAPH, DIVE, CARRY, LEAVE }
@@ -99,8 +99,8 @@ func _physics_process(delta: float) -> void:
 		State.CARRY:
 			_carry(delta)
 		State.LEAVE:
-			global_position.x -= data.leave_speed * delta
-			_altitude += data.leave_speed * 0.5 * delta
+			global_position.x -= data.leave_speed * _speed_scale * delta
+			_altitude += data.leave_speed * 0.5 * _speed_scale * delta
 			_hold_prey()
 			if global_position.x < _view_rect().position.x - OFFSCREEN_MARGIN:
 				if _prey:
@@ -190,8 +190,9 @@ func _carry(delta: float) -> void:
 	if _prey == null:
 		_leave()
 		return
-	global_position.x -= data.carry_speed * delta
-	_altitude += data.climb_speed * delta
+	# Slowed by mud, it climbs and flies off more slowly too.
+	global_position.x -= data.carry_speed * _speed_scale * delta
+	_altitude += data.climb_speed * _speed_scale * delta
 	_hold_prey()
 	if _altitude >= data.carry_altitude_max or global_position.x < _view_rect().position.x:
 		sheep_lost.emit(_prey)

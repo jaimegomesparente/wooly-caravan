@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="PowerData" format=3]
+
+[ext_resource type="Script" path="res://resources/power_data.gd" id="1_power"]
+[ext_resource type="Script" path="res://resources/power_effect.gd" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_0"]
+script = ExtResource("2_effect")
+property = &"speed"
+multiplier = 1.4
+bonus = 0.0
+
+[sub_resource type="Resource" id="Effect_1"]
+script = ExtResource("2_effect")
+property = &"arc_per_px"
+multiplier = 0.6
+bonus = 0.0
+
+[sub_resource type="Resource" id="Effect_2"]
+script = ExtResource("2_effect")
+property = &"max_arc"
+multiplier = 0.6
+bonus = 0.0
+
+[resource]
+script = ExtResource("1_power")
+title = "Flat Throw"
+description = "Lower arc, clods fly 40% faster."
+effects = Array[ExtResource("2_effect")]([SubResource("Effect_0"), SubResource("Effect_1"), SubResource("Effect_2")])

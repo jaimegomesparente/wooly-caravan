@@ -238,11 +238,11 @@ func _vanish() -> void:
 	queue_free()
 
 
-## Turn toward `direction` at a limited rate and move at `speed`.
+## Turn toward `direction` at a limited rate and move at `speed` (less while slowed by mud).
 func _steer(direction: Vector2, speed: float, turn_rate: float, delta: float) -> void:
 	if direction != Vector2.ZERO:
 		_heading = rotate_toward(_heading, direction.angle(), turn_rate * delta)
-	velocity = Vector2.from_angle(_heading) * speed
+	velocity = Vector2.from_angle(_heading) * speed * _speed_scale
 
 
 func _update_facing() -> void:
