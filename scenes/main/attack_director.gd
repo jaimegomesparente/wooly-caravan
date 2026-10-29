@@ -19,9 +19,13 @@ signal sheep_lost(sheep: Sheep)
 var _next_attack: int = 0
 ## True while a pack is still coming out.
 var _sending: bool = false
+## Set once the flock is on the end pasture: no attack comes anymore.
+var stopped: bool = false
 
 
 func _physics_process(_delta: float) -> void:
+	if stopped:
+		return
 	if Input.is_action_just_pressed("spawn_eagle"):
 		_send_eagle()
 	if Input.is_action_just_pressed("spawn_wolf"):

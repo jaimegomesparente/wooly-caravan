@@ -14,11 +14,16 @@ const GUIDE_KEEP_SLACK := 1.25
 ## A wander step ends this close (px) to its target, or after this many seconds.
 const WANDER_ARRIVE_DISTANCE := 2.0
 const WANDER_TIMEOUT := 3.0
+const SHEAR_HOP_TIME := 0.15
 
 ## Toggled by the debug overlay (F3): each sheep draws a line to its target and a state dot.
 static var debug_draw: bool = false
 
 @export var config: FlockConfig
+
+## Shorn on the pasture: plays the `_shaved` animations; the wool may grow back at the end of each
+## graze (regrow_chance).
+var shaved: bool = false
 
 var _gait: Gait = Gait.REST
 var _rest: Rest = Rest.STAND
@@ -67,6 +72,9 @@ var _animation_started: bool = false
 var _sprite_offset_x: float = 0.0
 var _shape_offset_x: float = 0.0
 var _sprite_offset_y: float = 0.0
+var _regrow_chance: float = 0.0
+## Time (s) left of the 1 px hop on being shorn.
+var _shear_hop: float = 0.0
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _shape: CollisionShape2D = $CollisionShape2D
@@ -112,6 +120,7 @@ func _physics_process(delta: float) -> void:
 		_think()
 
 	_push_timer = maxf(_push_timer - delta, 0.0)
+	_shear_hop = maxf(_shear_hop - delta, 0.0)
 	_scare_timer = maxf(_scare_timer - delta, 0.0)
 	# Pressure, checked every frame so a running sheep is never stuck behind a slow one: a pushed
 	# sheep running in from behind makes this one run on too (head up at once, whatever its gait),
@@ -194,6 +203,13 @@ func capture(by: Node2D, lifted: bool = false) -> void:
 	_gait = Gait.REST
 	_set_rest(Rest.STAND)
 	_pending_gait = Gait.REST
+
+
+## Shorn on the pasture: hops, then its wool may grow back at the end of each graze.
+func shear() -> void:
+	shaved = true
+	_regrow_chance = config.regrow_chance
+	_shear_hop = SHEAR_HOP_TIME
 
 
 ## Called by the enemy when the shepherd frees this sheep: it rejoins the flock.
@@ -384,6 +400,8 @@ func _rest_step(delta: float, separation: Vector2) -> Vector2:
 		Rest.GRAZING:
 			_rest_timer -= delta
 			if _rest_timer <= 0.0:
+				if shaved and randf() < _regrow_chance:
+					shaved = false
 				_set_rest(Rest.RAISING)
 	return Vector2.ZERO
 
@@ -646,9 +664,15 @@ func _update_animation() -> void:
 
 	# Trot = 1 px hop on the second run frame (capped leg cadence would otherwise hide it).
 	var hop := 1.0 if _gait == Gait.TROT and _sprite.animation == &"run" and _sprite.frame == 1 else 0.0
+	if _shear_hop > 0.0:
+		hop = 1.0
 	_sprite.position.y = _sprite_offset_y - hop
 
 	if _speed > GUIDE_STOPPED_SPEED:
+		# No run_shaved yet: a shorn sheep would show its wool while it moves, so it keeps idle_shaved.
+		if shaved and not _has_frames(&"run_shaved"):
+			_play(&"idle", 1.0)
+			return
 		# Leg cadence follows real speed so feet do not slide, capped so the trot does not flicker.
 		_play(&"run", minf(_speed / config.walk_speed, config.max_run_anim_scale))
 		return
@@ -663,7 +687,12 @@ func _update_animation() -> void:
 		Rest.GRAZING:
 			_play(&"graze", 1.0)
 		Rest.RAISING:
-			_play(&"finished_graze", config.raise_speed_scale if _pending_gait != Gait.REST else 1.0)
+			var raise_scale := config.raise_speed_scale if _pending_gait != Gait.REST else 1.0
+			# No finished_graze_shaved yet: the head comes up through to_graze_shaved played backward.
+			if shaved and not _has_frames(&"finished_graze_shaved"):
+				_play(&"to_graze_shaved", raise_scale, true)
+			else:
+				_play(&"finished_graze", raise_scale)
 
 
 func _set_facing_left(left: bool) -> void:
@@ -678,12 +707,19 @@ func _has_frames(animation: StringName) -> bool:
 	return frames != null and frames.has_animation(animation) and frames.get_frame_count(animation) > 0
 
 
-func _play(animation: StringName, speed_scale: float) -> void:
+## Plays `animation`, or its `_shaved` version when shorn and it exists.
+func _play(animation: StringName, speed_scale: float, backward: bool = false) -> void:
+	var shaved_animation := StringName(String(animation) + "_shaved")
+	if shaved and _has_frames(shaved_animation):
+		animation = shaved_animation
 	if not _has_frames(animation):
 		return
 	_sprite.speed_scale = speed_scale
 	if _sprite.animation != animation or not _sprite.is_playing():
-		_sprite.play(animation)
+		if backward:
+			_sprite.play_backwards(animation)
+		else:
+			_sprite.play(animation)
 		if not _animation_started:
 			_animation_started = true
 			_sprite.frame = randi() % _sprite.sprite_frames.get_frame_count(animation)

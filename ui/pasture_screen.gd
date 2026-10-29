@@ -1,13 +1,14 @@
 class_name PastureScreen
 extends CanvasLayer
-## Between two trips, over a dark veil: the flock that arrived rests on the pasture and one power is
-## chosen out of a few cards; the choice starts the next trip with those sheep. P (testing aid)
-## opens it during a trip with every power: the one clicked applies at once and the trip goes on.
+## Between two trips, over a light veil (the shorn flock grazes behind it): one power is chosen out
+## of a few cards, then the screen hides (`chosen`). P (testing aid) opens it during a trip with every
+## power: the one clicked applies at once and the trip goes on.
+
+signal chosen
 
 const CHOICES := 3
 const CARD_SIZE := Vector2(88, 64)
 
-var _saved: int = 0
 ## True when opened with P during a trip.
 var _testing: bool = false
 
@@ -27,7 +28,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func show_choice(saved: int) -> void:
-	_saved = saved
 	_testing = false
 	_show("Trip %d/%d done: %d sheep\nChoose an upgrade" % [RunManager.trip, RunManager.TRIPS, saved],
 			RunManager.offer(CHOICES))
@@ -50,9 +50,8 @@ func _show(title: String, powers: Array[PowerData]) -> void:
 
 func _choose(power: PowerData) -> void:
 	RunManager.take(power)
-	get_tree().paused = false
+	visible = false
 	if _testing:
-		visible = false
+		get_tree().paused = false
 		return
-	RunManager.next_trip(_saved)
-	get_tree().reload_current_scene()
+	chosen.emit()

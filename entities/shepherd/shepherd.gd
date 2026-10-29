@@ -21,6 +21,8 @@ const THROW_HEIGHT := 10.0
 ## Past positions, oldest first. The front sheep walk along it instead of cutting toward him.
 var _trail: PackedVector2Array = []
 var _throw_timer: float = 0.0
+## On the pasture between two trips: stands still and takes no input.
+var resting: bool = false
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -31,6 +33,10 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if resting:
+		velocity = Vector2.ZERO
+		_update_animation()
+		return
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = direction * speed
 	move_and_slide()

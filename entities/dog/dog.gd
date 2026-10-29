@@ -35,6 +35,8 @@ var _barking: bool = false
 var _goal: Vector2
 var _heading: float = 0.0
 var _speed: float = 0.0
+## On the pasture between two trips: stops where it is and waits.
+var resting: bool = false
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -45,6 +47,11 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if resting:
+		_state = State.WAIT
+		_move_to(global_position, delta)
+		_update_animation()
+		return
 	var shepherd := get_tree().get_first_node_in_group("shepherd") as Node2D
 	if shepherd == null:
 		return

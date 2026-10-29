@@ -26,6 +26,14 @@ region = Rect2(60, 0, 10, 10)
 atlas = ExtResource("3_fxwg6")
 region = Rect2(70, 0, 10, 10)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_d3f2x"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(120, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ous34"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(130, 0, 10, 10)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_v5fba"]
 atlas = ExtResource("3_fxwg6")
 region = Rect2(0, 0, 10, 10)
@@ -33,6 +41,14 @@ region = Rect2(0, 0, 10, 10)
 [sub_resource type="AtlasTexture" id="AtlasTexture_tklyc"]
 atlas = ExtResource("3_fxwg6")
 region = Rect2(10, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s3648"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(80, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uod13"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(90, 0, 10, 10)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_e7ufl"]
 atlas = ExtResource("3_fxwg6")
@@ -53,6 +69,18 @@ region = Rect2(50, 0, 10, 10)
 [sub_resource type="AtlasTexture" id="AtlasTexture_uhibe"]
 atlas = ExtResource("3_fxwg6")
 region = Rect2(60, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g0coo"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(100, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o5xum"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(110, 0, 10, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mseuq"]
+atlas = ExtResource("3_fxwg6")
+region = Rect2(120, 0, 10, 10)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_sheep"]
 animations = [{
@@ -83,6 +111,17 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_d3f2x")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ous34")
+}],
+"loop": 1,
+"name": &"graze_shaved",
+"speed": 2.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_v5fba")
 }, {
 "duration": 1.0,
@@ -90,6 +129,17 @@ animations = [{
 }],
 "loop": 1,
 "name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s3648")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uod13")
+}],
+"loop": 1,
+"name": &"idle_shaved",
 "speed": 5.0
 }, {
 "frames": [{
@@ -116,6 +166,20 @@ animations = [{
 "loop": 0,
 "name": &"to_graze",
 "speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g0coo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o5xum")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mseuq")
+}],
+"loop": 0,
+"name": &"to_graze_shaved",
+"speed": 3.0
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_lpfwp"]
@@ -128,18 +192,17 @@ motion_mode = 1
 script = ExtResource("1_script")
 config = ExtResource("2_config")
 
-[node name="Shadow" parent="." node_paths=PackedStringArray("sprite") unique_id=1487742616 instance=ExtResource("shadow_fx")]
+[node name="Shadow" parent="." unique_id=1487742616 node_paths=PackedStringArray("sprite") instance=ExtResource("shadow_fx")]
+instance_shader_parameters/size = Vector2(10, 3)
 position = Vector2(-1, 0)
 sprite = NodePath("../AnimatedSprite2D")
-instance_shader_parameters/size = Vector2(10, 3)
 
 [node name="Dust" parent="." unique_id=1443843709 instance=ExtResource("4_dust")]
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=796859497]
 position = Vector2(1, -5)
 sprite_frames = SubResource("SpriteFrames_sheep")
-animation = &"idle"
-frame_progress = 0.8937422
+animation = &"finished_graze"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1814773326]
 position = Vector2(-0.5, -4)

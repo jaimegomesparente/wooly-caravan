@@ -17,6 +17,14 @@
 [ext_resource type="Script" uid="uid://btvxehkrfvnr3" path="res://scenes/main/attack_director.gd" id="13_attacks"]
 [ext_resource type="Script" uid="uid://d02ut0adswhae" path="res://scenes/main/forest.gd" id="14_forest"]
 [ext_resource type="Texture2D" uid="uid://k3g1uuc7bcwu" path="res://art/sprites/environment/trees.png" id="15_trees"]
+[ext_resource type="Script" path="res://scenes/main/shearing.gd" id="18_shearing"]
+[ext_resource type="PackedScene" path="res://effects/wool_fluff.tscn" id="19_fluff"]
+[ext_resource type="Script" path="res://ui/wool_counter.gd" id="20_wool"]
+[ext_resource type="Texture2D" uid="uid://b26x52vwyo2r4" path="res://art/sprites/others/items.png" id="21_items"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wool"]
+atlas = ExtResource("21_items")
+region = Rect2(0, 0, 16, 16)
 
 [node name="Main" type="Node2D" unique_id=536968002]
 y_sort_enabled = true
@@ -60,6 +68,12 @@ eagle_scene = ExtResource("16_eagle")
 packs = Array[int]([2, 3, 3])
 eagles = Array[int]([1, 1, 2])
 
+[node name="Shearing" type="Node" parent="." node_paths=PackedStringArray("attacks", "counter")]
+script = ExtResource("18_shearing")
+attacks = NodePath("../AttackDirector")
+counter = NodePath("../Hud/Wool")
+fluff_scene = ExtResource("19_fluff")
+
 [node name="Hud" type="CanvasLayer" parent="." unique_id=1486859162]
 
 [node name="DogMode" type="Label" parent="Hud" unique_id=1556889770]
@@ -78,6 +92,30 @@ offset_right = -4.0
 grow_horizontal = 0
 theme_override_font_sizes/font_size = 8
 horizontal_alignment = 2
+
+[node name="Wool" type="Control" parent="Hud"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4.0
+offset_top = 14.0
+offset_right = 44.0
+offset_bottom = 30.0
+mouse_filter = 2
+script = ExtResource("20_wool")
+
+[node name="Icon" type="TextureRect" parent="Hud/Wool"]
+layout_mode = 0
+offset_right = 16.0
+offset_bottom = 16.0
+pivot_offset = Vector2(8, 8)
+mouse_filter = 2
+texture = SubResource("AtlasTexture_wool")
+
+[node name="Label" type="Label" parent="Hud/Wool"]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 2.0
+theme_override_font_sizes/font_size = 8
 
 [node name="EndScreen" parent="." unique_id=798652235 instance=ExtResource("10_end")]
 

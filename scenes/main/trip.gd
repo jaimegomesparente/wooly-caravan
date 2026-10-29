@@ -1,7 +1,7 @@
 class_name Trip
 extends Node
 ## One trip: ends when every remaining sheep stands in the end pasture (none being dragged away),
-## or when no sheep is left. Pauses the game and reports the result.
+## or when no sheep is left. Reports the result.
 
 signal finished(arrived: bool, saved: int, total: int)
 
@@ -43,5 +43,4 @@ func _physics_process(_delta: float) -> void:
 
 func _finish(arrived: bool, saved: int) -> void:
 	_running = false
-	get_tree().paused = true
 	finished.emit(arrived, saved, _total)

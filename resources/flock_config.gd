@@ -107,6 +107,10 @@ extends Resource
 ## finished_graze speed when the sheep has to leave (head comes up faster).
 @export var raise_speed_scale: float = 3.0
 
+@export_group("Wool")
+## Chance, at the end of each graze, that a shorn sheep gets its wool back.
+@export_range(0.0, 1.0) var regrow_chance: float = 0.1
+
 @export_group("Variety")
 ## Each sheep gets a temperament from timid to bold; this scales how much it changes: a timid sheep
 ## reacts faster, has larger flight zones and stays closer to the others; a bold one reacts slower,
