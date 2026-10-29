@@ -5,9 +5,9 @@ extends CharacterBody2D
 signal dog_mode_called
 
 @export var speed: float = 32.0
-## Left click: lobs a clod with the crook at the mouse, at most once every throw_cooldown s.
+## Left click: lobs a clod with the crook at the mouse (settings in `crook`).
 @export var clod_scene: PackedScene
-@export var throw_cooldown: float = 0.7
+@export var crook: CrookData
 ## A trail point is recorded every time the shepherd has walked this far (px).
 @export var trail_spacing: float = 6.0
 @export var trail_max_points: int = 60
@@ -33,17 +33,17 @@ func _physics_process(delta: float) -> void:
 		play_call()
 		dog_mode_called.emit()
 	_throw_timer = maxf(_throw_timer - delta, 0.0)
-	if Input.is_action_just_pressed("throw") and _throw_timer <= 0.0 and clod_scene:
+	if Input.is_action_just_pressed("throw") and _throw_timer <= 0.0 and clod_scene and crook:
 		_throw(get_global_mouse_position())
 	_update_animation()
 
 
 ## A clod lobbed from the crook to `target`; turns toward it (walking keeps facing the walk).
 func _throw(target: Vector2) -> void:
-	_throw_timer = throw_cooldown
+	_throw_timer = crook.throw_cooldown
 	var clod := clod_scene.instantiate() as Clod
 	add_sibling(clod)
-	clod.launch(global_position, target, THROW_HEIGHT)
+	clod.launch(crook, global_position, target, THROW_HEIGHT)
 	play_call()
 	if target.x != global_position.x:
 		_sprite.flip_h = target.x < global_position.x

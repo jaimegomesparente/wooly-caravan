@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://brydiksr72vi5" path="res://art/sprites/shepherd/shepherd-Sheet.png" id="2_hg5gq"]
 [ext_resource type="PackedScene" path="res://effects/shadow.tscn" id="shadow_fx"]
 [ext_resource type="PackedScene" path="res://entities/clod/clod.tscn" id="clod_scene"]
+[ext_resource type="Resource" path="res://resources/crook.tres" id="crook_data"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_lkgrd"]
 atlas = ExtResource("2_hg5gq")
@@ -94,6 +95,7 @@ collision_mask = 16
 motion_mode = 1
 script = ExtResource("1_script")
 clod_scene = ExtResource("clod_scene")
+crook = ExtResource("crook_data")
 
 [node name="Shadow" parent="." node_paths=PackedStringArray("sprite") instance=ExtResource("shadow_fx")]
 sprite = NodePath("../AnimatedSprite2D")

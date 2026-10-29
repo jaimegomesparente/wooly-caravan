@@ -61,8 +61,8 @@ Every weight and speed is exposed in a resource, editable in the Godot inspector
 - `resources/wolf.tres` (`EnemyData`): wolf approach, charge, carry; health on each enemy scene
   (`entities/wolf/wolf.tscn`, `entities/eagle/eagle.tscn`)
 - `resources/eagle.tres` (`EagleData`): eagle pass, dive, carry, shadow
-- `entities/clod/clod.tscn`: clod speed, reach and arc; `Shepherd` (`entities/shepherd/shepherd.tscn`):
-  walking speed and throw cooldown
+- `resources/crook.tres` (`CrookData`): throw cooldown, clod speed, reach and arc; `Shepherd`
+  (`entities/shepherd/shepherd.tscn`): walking speed
 - `AttackDirector` node in `scenes/main/main.tscn`: wolves and eagles of each attack
 
 ## Project layout

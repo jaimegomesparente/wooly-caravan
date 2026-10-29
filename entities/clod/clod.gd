@@ -1,17 +1,11 @@
 class_name Clod
 extends Area2D
 ## A clod of earth lobbed by the shepherd's crook. Its point on the ground goes straight from the
-## shepherd's feet to the aimed spot (at most max_range px away) while the clod rises and falls
+## shepherd's feet to the aimed spot (at most the crook's max_range px away) while the clod rises and falls
 ## along an arc, higher for a longer throw; its shadow stays on that ground point, showing how high
 ## it is. It hits what it is seen over: an attacking enemy whose body it crosses takes a hit (it
 ## flinches, or runs off once out of health). It crumbles on hitting or on landing.
 
-## Speed (px/s) of the ground point, and longest throw (px).
-@export var speed: float = 160.0
-@export var max_range: float = 140.0
-## Top of the arc (px) for each px of throw, and highest top.
-@export var arc_per_px: float = 0.25
-@export var max_arc: float = 30.0
 @export var crumble_scene: PackedScene
 
 const SIZE := Vector2(2, 2)
@@ -31,14 +25,15 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 
-## Thrown from `start_height` px above `from` (on the ground) toward `target`, landing there.
-func launch(from: Vector2, target: Vector2, start_height: float) -> void:
+## Thrown by `crook` from `start_height` px above `from` (on the ground) toward `target`, landing
+## there.
+func launch(crook: CrookData, from: Vector2, target: Vector2, start_height: float) -> void:
 	_from = from
-	_to = from + (target - from).limit_length(max_range)
+	_to = from + (target - from).limit_length(crook.max_range)
 	_start_height = start_height
 	var distance := _from.distance_to(_to)
-	_arc = minf(distance * arc_per_px, max_arc)
-	_duration = maxf(distance / speed, 0.05)
+	_arc = minf(distance * crook.arc_per_px, crook.max_arc)
+	_duration = maxf(distance / crook.speed, 0.05)
 	_place(0.0)
 	reset_physics_interpolation()
 
