@@ -56,14 +56,16 @@ enum Wall { TOP, BOTTOM, LEFT, RIGHT }
 @export var min_gap: float = 40.0
 ## Minimum distance (px) from the top and bottom walls and from the pastures.
 @export var wall_clearance: float = 32.0
-## Collision box (px) at the foot of each trail tree.
+## Collision box (px) at the foot of each trail tree; a grove blocks the whole outline of its
+## trunks, so nothing gets in between them.
 @export var trunk_size: Vector2 = Vector2(4, 3)
-## Shade of the trail trees: each trunk casts a strength fading from 1 to 0 across
-## trail_shade_radius (px; vertical distances divided by trail_shade_squash, for a flat oval), the
-## strengths add up, and each shade level starts at its threshold (colors: `shade_colors`).
+## Shade of the trail trees: the whole inside of a grove (the outline of its trunks) is shaded, and
+## the shade fades out across trail_shade_radius (px; vertical distances divided by
+## trail_shade_squash, for a flat oval) around it; strength 1 inside, 0 at the radius, each level
+## starting at its threshold (colors: `shade_colors`).
 @export var trail_shade_radius: float = 14.0
 @export var trail_shade_squash: float = 0.5
-@export var trail_shade_levels: Array[float] = [0.2, 0.9, 1.8]
+@export var trail_shade_levels: Array[float] = [0.05, 0.45, 0.8]
 
 ## Collision layer 5 (obstacle).
 const OBSTACLE_LAYER := 1 << 4
@@ -72,6 +74,8 @@ var _trail: Ground
 ## Feet of the trail trees, all together and by grove (a lone tree is a grove of one).
 var _trunks: Array[Vector2] = []
 var _groves: Array[Array] = []
+## What bodies steer around: one disc per grove (x, y: center; z: radius, px).
+var _obstacles: Array[Vector3] = []
 var _edge_noise := FastNoiseLite.new()
 var _clearing_noise := FastNoiseLite.new()
 
@@ -157,32 +161,40 @@ func _plant_trail(rng: RandomNumberGenerator) -> void:
 					var foot := (center + Vector2.from_angle(rng.randf() * TAU) * sqrt(rng.randf()) * grove_radius).round()
 					if not feet.any(func(other: Vector2) -> bool: return other.distance_to(foot) < grove_spacing):
 						feet.append(foot)
+			var corners := PackedVector2Array()
+			var middle := Vector2.ZERO
 			for foot in feet:
 				_add_tree(rng, foot, Color.WHITE)
-				var shape := RectangleShape2D.new()
-				shape.size = trunk_size
-				var collision := CollisionShape2D.new()
-				collision.shape = shape
-				collision.position = foot - Vector2(0.0, trunk_size.y / 2.0)
-				body.add_child(collision)
+				middle += foot / feet.size()
+				var box := Rect2(foot - Vector2(trunk_size.x / 2.0, trunk_size.y), trunk_size)
+				corners.append_array([box.position, Vector2(box.end.x, box.position.y), box.end,
+						Vector2(box.position.x, box.end.y)])
+			var collision := CollisionPolygon2D.new()
+			collision.polygon = Geometry2D.convex_hull(corners)
+			body.add_child(collision)
+			var reach := 0.0
+			for corner in corners:
+				reach = maxf(reach, corner.distance_to(middle))
+			_obstacles.append(Vector3(middle.x, middle.y, reach))
 			_trunks.append_array(feet)
 			_groves.append(feet)
 			break
 	add_child(body)
 
 
-## Sideways push away from the trail trees ahead of a body at `from` heading `direction` (unit
-## vector), each fading from 1 to 0 across radius (px). A trunk dead ahead pushes to the right.
+## Sideways push away from the groves and lone trees ahead of a body at `from` heading `direction`
+## (unit vector), each fading from 1 at its edge to 0 radius px away from it. One dead ahead pushes
+## to the right.
 func avoidance(from: Vector2, direction: Vector2, radius: float) -> Vector2:
 	var push := Vector2.ZERO
 	var side := direction.orthogonal()
-	for trunk in _trunks:
-		var to_trunk := trunk - from
-		var distance := to_trunk.length()
-		if distance >= radius or to_trunk.dot(direction) <= 0.0:
+	for obstacle in _obstacles:
+		var to_center := Vector2(obstacle.x, obstacle.y) - from
+		var gap := maxf(to_center.length() - obstacle.z, 0.0)
+		if gap >= radius or to_center.dot(direction) <= 0.0:
 			continue
-		var lateral := to_trunk.dot(side)
-		push -= side * (signf(lateral) if lateral != 0.0 else -1.0) * (1.0 - distance / radius)
+		var lateral := to_center.dot(side)
+		push -= side * (signf(lateral) if lateral != 0.0 else -1.0) * (1.0 - gap / radius)
 	return push
 
 
@@ -236,11 +248,15 @@ func _draw_shade(canvas: Node2D) -> void:
 		_draw_grove_shade(canvas, feet)
 
 
-## Summed trunk strengths over the grove's box, drawn line by line, a run of one level per rect.
+## The grove's outline in flattened space (y divided by trail_shade_squash): strength 1 inside,
+## fading to 0 trail_shade_radius away from it; drawn line by line, a run of one level per rect.
 func _draw_grove_shade(canvas: Node2D, feet: Array) -> void:
+	var flat := PackedVector2Array()
 	var box := Rect2(feet[0], Vector2.ZERO)
 	for foot: Vector2 in feet:
 		box = box.expand(foot)
+		flat.append(Vector2(foot.x, foot.y / trail_shade_squash))
+	var outline := Geometry2D.convex_hull(flat) if flat.size() >= 3 else flat
 	var reach := Vector2(trail_shade_radius, trail_shade_radius * trail_shade_squash)
 	box = box.grow_individual(reach.x, reach.y, reach.x, reach.y)
 	var levels := mini(trail_shade_levels.size(), shade_colors.size())
@@ -250,10 +266,8 @@ func _draw_grove_shade(canvas: Node2D, feet: Array) -> void:
 		for x in range(floori(box.position.x), ceili(box.end.x) + 1):
 			var level := -1
 			if x < ceili(box.end.x):
-				var strength := 0.0
-				for foot: Vector2 in feet:
-					var offset := (Vector2(x, y) + Vector2(0.5, 0.5) - foot) / reach
-					strength += maxf(0.0, 1.0 - offset.length_squared()) ** 2
+				var point := Vector2(x + 0.5, (y + 0.5) / trail_shade_squash)
+				var strength := 1.0 - _outline_distance(outline, point) / trail_shade_radius
 				for i in levels:
 					if strength >= trail_shade_levels[i]:
 						level = i
@@ -262,3 +276,16 @@ func _draw_grove_shade(canvas: Node2D, feet: Array) -> void:
 					canvas.draw_rect(Rect2(run_start, y, x - run_start, 1), shade_colors[run_level])
 				run_start = x
 				run_level = level
+
+
+## 0 inside the outline (a closed convex polygon, or one or two points), else the distance to it.
+func _outline_distance(outline: PackedVector2Array, point: Vector2) -> float:
+	if outline.size() >= 4 and Geometry2D.is_point_in_polygon(point, outline):
+		return 0.0
+	if outline.size() == 1:
+		return point.distance_to(outline[0])
+	var nearest := INF
+	for i in outline.size() - 1:
+		var closest := Geometry2D.get_closest_point_to_segment(point, outline[i], outline[i + 1])
+		nearest = minf(nearest, point.distance_to(closest))
+	return nearest
