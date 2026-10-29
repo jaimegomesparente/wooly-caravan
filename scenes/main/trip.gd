@@ -38,8 +38,12 @@ func _skip_to_pasture() -> void:
 	for dog: Dog in get_tree().get_nodes_in_group("dog"):
 		dog.global_position = middle - Vector2(SKIP_RADIUS * 1.5, 0)
 		dog.reset_physics_interpolation()
+	# Sheep first (they joined the group first), so each lamb lands by its mother.
 	for sheep: Sheep in get_tree().get_nodes_in_group("sheep"):
-		sheep.teleport(middle + Vector2.from_angle(randf() * TAU) * randf() * SKIP_RADIUS)
+		if sheep.lamb and sheep.mother and is_instance_valid(sheep.mother):
+			sheep.teleport(sheep.mother.global_position + Vector2(-6, 2))
+		else:
+			sheep.teleport(middle + Vector2.from_angle(randf() * TAU) * randf() * SKIP_RADIUS)
 
 
 func on_sheep_lost(_sheep: Sheep) -> void:

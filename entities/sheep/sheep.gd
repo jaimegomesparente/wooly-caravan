@@ -14,12 +14,19 @@ const GUIDE_KEEP_SLACK := 1.25
 ## A wander step ends this close (px) to its target, or after this many seconds.
 const WANDER_ARRIVE_DISTANCE := 2.0
 const WANDER_TIMEOUT := 3.0
-const SHEAR_HOP_TIME := 0.15
+## Time (s) of a 1 px hop: on being shorn, or a lamb's little jump at rest.
+const HOP_TIME := 0.15
 
 ## Toggled by the debug overlay (F3): each sheep draws a line to its target and a state dot.
 static var debug_draw: bool = false
 
 @export var config: FlockConfig
+## A lamb sticks to its mother instead of following the column, and grows into a sheep after
+## grow_trips trips (Shearing swaps it for a sheep on the pasture).
+@export var lamb: bool = false
+
+var mother: Sheep
+var grow_trips: int = 0
 
 ## Shorn on the pasture: plays the `_shaved` animations; the wool may grow back at the end of each
 ## graze (regrow_chance).
@@ -73,8 +80,10 @@ var _sprite_offset_x: float = 0.0
 var _shape_offset_x: float = 0.0
 var _sprite_offset_y: float = 0.0
 var _regrow_chance: float = 0.0
-## Time (s) left of the 1 px hop on being shorn.
-var _shear_hop: float = 0.0
+## Time (s) left of a 1 px hop.
+var _hop_timer: float = 0.0
+## Distance (px) covered since it last started moving: paces the hops of config.hop_height.
+var _hop_distance: float = 0.0
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _shape: CollisionShape2D = $CollisionShape2D
@@ -120,7 +129,7 @@ func _physics_process(delta: float) -> void:
 		_think()
 
 	_push_timer = maxf(_push_timer - delta, 0.0)
-	_shear_hop = maxf(_shear_hop - delta, 0.0)
+	_hop_timer = maxf(_hop_timer - delta, 0.0)
 	_scare_timer = maxf(_scare_timer - delta, 0.0)
 	# Pressure, checked every frame so a running sheep is never stuck behind a slow one: a pushed
 	# sheep running in from behind makes this one run on too (head up at once, whatever its gait),
@@ -177,6 +186,7 @@ func _physics_process(delta: float) -> void:
 		desired = _avoid_trees(desired)
 		_heading = rotate_toward(_heading, desired.angle(), config.turn_rate * reflex * delta)
 	_speed = move_toward(_speed, desired.length(), config.acceleration * reflex * delta)
+	_hop_distance = _hop_distance + _speed * delta if _speed > GUIDE_STOPPED_SPEED else 0.0
 	velocity = Vector2.from_angle(_heading) * _speed
 	move_and_slide()
 	_update_animation()
@@ -209,7 +219,7 @@ func capture(by: Node2D, lifted: bool = false) -> void:
 func shear() -> void:
 	shaved = true
 	_regrow_chance = config.regrow_chance
-	_shear_hop = SHEAR_HOP_TIME
+	_hop_timer = HOP_TIME
 
 
 ## Moved at once (testing aid): settles there.
@@ -265,13 +275,18 @@ func _debug_color() -> Color:
 ## Keep or pick a guide (shepherd or the nearest sheep ahead) and decide whether to set off.
 func _think() -> void:
 	var my_distance := global_position.distance_to(_shepherd.global_position)
-	if not _guide_still_valid(my_distance):
+	if lamb and _find_mother():
+		_guide = mother
+	elif not _guide_still_valid(my_distance):
 		_guide = _pick_guide(my_distance)
 
 	if _gait == Gait.REST or _gait == Gait.WANDER:
 		var distance := global_position.distance_to(_guide_target())
 		var set_off := false
-		if _guide == _shepherd:
+		if _guide == mother:
+			# A lamb runs after its mother as soon as she is a little too far.
+			set_off = distance > _gap() + config.follow_start_margin * 2.0
+		elif _guide == _shepherd:
 			# Front sheep set off once the shepherd's trail has really moved since they settled;
 			# a straggler with no sheep ahead in view sets off when it is far from the trail.
 			set_off = _rest_anchor.distance_to(_shepherd.trail_point(config.trail_lag)) > config.shepherd_start_margin \
@@ -281,6 +296,20 @@ func _think() -> void:
 			set_off = distance > _gap() and randf() < config.imitation_chance
 		if set_off:
 			_request_gait(Gait.TROT if distance > _gap() + config.trot_margin else Gait.WALK)
+
+
+## Keeps its mother, or (she was taken) adopts the nearest sheep. False if there is none.
+func _find_mother() -> bool:
+	if mother != null and is_instance_valid(mother) and mother.is_in_group("sheep"):
+		return true
+	mother = null
+	var nearest := INF
+	for other: Sheep in get_tree().get_nodes_in_group("sheep"):
+		var distance := global_position.distance_to(other.global_position)
+		if not other.lamb and distance < nearest:
+			nearest = distance
+			mother = other
+	return mother != null
 
 
 func _is_pushed() -> bool:
@@ -316,7 +345,7 @@ func _guide_still_valid(my_distance: float) -> bool:
 		return false
 	if _guide == _shepherd:
 		return my_distance <= config.lead_radius * GUIDE_KEEP_SLACK
-	if not _guide.is_in_group("sheep"):
+	if not _guide.is_in_group("sheep") or (_guide as Sheep).lamb:
 		return false
 	var ahead := _guide.global_position.distance_to(_shepherd.global_position) < my_distance
 	return ahead and global_position.distance_to(_guide.global_position) <= config.view_radius * GUIDE_KEEP_SLACK
@@ -327,8 +356,8 @@ func _pick_guide(my_distance: float) -> Node2D:
 		return _shepherd
 	var guide: Node2D = _shepherd
 	var nearest := config.view_radius
-	for other: Node2D in get_tree().get_nodes_in_group("sheep"):
-		if other == self:
+	for other: Sheep in get_tree().get_nodes_in_group("sheep"):
+		if other == self or other.lamb:
 			continue
 		if other.global_position.distance_to(_shepherd.global_position) > my_distance - GUIDE_AHEAD_MARGIN:
 			continue
@@ -410,6 +439,8 @@ func _rest_step(delta: float, separation: Vector2) -> Vector2:
 			if _rest_timer <= 0.0:
 				if shaved and randf() < _regrow_chance:
 					shaved = false
+				if lamb:
+					_hop_timer = HOP_TIME
 				_set_rest(Rest.RAISING)
 	return Vector2.ZERO
 
@@ -481,7 +512,8 @@ func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: floa
 func _panic_step(separation: Vector2) -> Vector2:
 	var threat := _nearest_threat()
 	var radius := config.panic_radius * _temper(-1.0) + (config.panic_margin if _panicking else 0.0)
-	var to_center := _flock_center() - global_position
+	var to_mother := lamb and mother != null and is_instance_valid(mother)
+	var to_center := (mother.global_position if to_mother else _flock_center()) - global_position
 	var packed_radius := config.follow_gap * sqrt(get_tree().get_node_count_in_group("sheep")) * 0.6
 	var danger := Vector2.INF
 	var scared := false
@@ -508,7 +540,7 @@ func _panic_step(separation: Vector2) -> Vector2:
 	# The pull toward the center fades out inside the space a packed flock takes up, so the sheep
 	# bunch up as a flock instead of all running to the same spot. A freed sheep, alone, keeps the
 	# full pull until it reaches the others.
-	var pull := 1.0 if scared else clampf((to_center.length() - packed_radius) / packed_radius, 0.0, 1.0)
+	var pull := 1.0 if scared or to_mother else clampf((to_center.length() - packed_radius) / packed_radius, 0.0, 1.0)
 	if to_center != Vector2.ZERO:
 		direction += to_center.normalized() * config.panic_center_weight * pull
 	# Remove any part pointing at the enemy (the center can lie beyond it).
@@ -574,13 +606,15 @@ func _startle() -> void:
 ## through it, at its pace, until the push wears off. Returns the desired velocity.
 func _follow_step(separation: Vector2) -> Vector2:
 	var guide_moving := _is_travelling(_guide)
-	var target := _guide_target() if guide_moving else _shepherd.trail_point(config.trail_lag)
-	var gap := _gap() if guide_moving else _shepherd_gap
+	# A lamb always heads for its mother, and stops by her side whatever the crowd.
+	var by_mother := _guide != null and _guide == mother
+	var target := _guide_target() if guide_moving or by_mother else _shepherd.trail_point(config.trail_lag)
+	var gap := _gap() if guide_moving or by_mother else _shepherd_gap
 	var to_guide := target - global_position
 	var distance := to_guide.length()
 	var pushed := _is_pushed()
 	if not guide_moving and (distance < gap + config.follow_start_margin \
-			or (not pushed and separation.length() > config.crowd_stop_threshold)):
+			or (not pushed and not by_mother and separation.length() > config.crowd_stop_threshold)):
 		_enter_rest()
 		return Vector2.ZERO
 	if _gait == Gait.WALK and distance > gap + config.trot_margin:
@@ -654,15 +688,17 @@ func _separation() -> Vector2:
 	var shepherd_radius := config.shepherd_push_radius
 	if from_shepherd.length() < shepherd_radius and from_shepherd != Vector2.ZERO:
 		push += from_shepherd.normalized() * (1.0 - from_shepherd.length() / shepherd_radius)
-	for other: Node2D in get_tree().get_nodes_in_group("sheep"):
+	for other: Sheep in get_tree().get_nodes_in_group("sheep"):
 		if other == self:
 			continue
 		var away := global_position - other.global_position
 		var distance := away.length()
-		if distance >= config.separation_radius:
+		# The smaller of the two radii, so a lamb and its mother can stay close.
+		var radius := minf(config.separation_radius, other.config.separation_radius)
+		if distance >= radius:
 			continue
 		var direction := Vector2.from_angle(randf() * TAU) if distance == 0.0 else away / distance
-		push += direction * (1.0 - distance / config.separation_radius)
+		push += direction * (1.0 - distance / radius)
 	return push
 
 
@@ -672,8 +708,11 @@ func _update_animation() -> void:
 
 	# Trot = 1 px hop on the second run frame (capped leg cadence would otherwise hide it).
 	var hop := 1.0 if _gait == Gait.TROT and _sprite.animation == &"run" and _sprite.frame == 1 else 0.0
-	if _shear_hop > 0.0:
+	if _hop_timer > 0.0:
 		hop = 1.0
+	if config.hop_height > 0.0 and _speed > GUIDE_STOPPED_SPEED:
+		# Moves in hops: one every hop_length px covered.
+		hop = roundf(absf(sin(_hop_distance * PI / config.hop_length)) * config.hop_height)
 	_sprite.position.y = _sprite_offset_y - hop
 
 	if _speed > GUIDE_STOPPED_SPEED:

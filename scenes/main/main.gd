@@ -2,6 +2,11 @@ extends Node2D
 
 @export var sheep_scene: PackedScene
 @export var sheep_count: int = 10
+@export var lamb_scene: PackedScene
+## Share of the starting sheep that have a lamb.
+@export_range(0.0, 1.0) var lamb_ratio: float = 0.3
+## A lamb grows into a sheep after this many trips (drawn between min and max).
+@export var lamb_grow_trips: Vector2i = Vector2i(2, 4)
 @export var spawn_radius: float = 60.0
 @export var dog_scene: PackedScene
 
@@ -25,13 +30,28 @@ func _ready() -> void:
 	_camera.limit_right = int(view.end.x)
 	_camera.limit_bottom = int(view.end.y)
 
-	# The first trip of a run starts with sheep_count sheep, the next ones with those that arrived.
-	var count := RunManager.sheep if RunManager.sheep >= 0 else sheep_count
-	for i in count:
-		var sheep := sheep_scene.instantiate() as Node2D
+	# The first trip of a run starts with sheep_count sheep and their lambs, the next ones with
+	# those that arrived. Each lamb is put by a mother of its own (as long as there are enough).
+	if RunManager.sheep < 0:
+		RunManager.start_flock(sheep_count, lamb_ratio, lamb_grow_trips)
+	var mothers: Array[Sheep] = []
+	for i in RunManager.sheep:
+		var sheep := sheep_scene.instantiate() as Sheep
 		var offset := Vector2.from_angle(randf() * TAU) * randf_range(spawn_radius * 0.5, spawn_radius)
 		sheep.position = _shepherd.position + offset
 		add_child(sheep)
+		mothers.append(sheep)
+	mothers.shuffle()
+	for i in RunManager.lambs.size():
+		var lamb := lamb_scene.instantiate() as Sheep
+		lamb.grow_trips = RunManager.lambs[i]
+		if mothers.is_empty():
+			lamb.position = _shepherd.position + Vector2(-spawn_radius * 0.5, 0)
+		else:
+			lamb.mother = mothers[i % mothers.size()]
+			lamb.position = lamb.mother.position + Vector2(-6, 2)
+		add_child(lamb)
+	var count := RunManager.sheep + RunManager.lambs.size()
 	if dog_scene:
 		var dog := dog_scene.instantiate() as Dog
 		dog.position = _shepherd.position + Vector2(-16, 0)
@@ -54,4 +74,4 @@ func _on_trip_finished(arrived: bool, saved: int, _total: int) -> void:
 		_shearing.start()
 	else:
 		get_tree().paused = true
-		_end_screen.show_result(arrived, saved, sheep_count)
+		_end_screen.show_result(arrived, saved, RunManager.flock_size)

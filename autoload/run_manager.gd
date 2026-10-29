@@ -21,6 +21,10 @@ const POWERS: Array[PowerData] = [
 var trip: int = 1
 ## Sheep that start the current trip (-1: the first trip, Main's own count).
 var sheep: int = -1
+## Lambs that start the current trip: for each, the trips left before it grows into a sheep.
+var lambs: Array[int] = []
+## Head count (sheep and lambs) the run started with.
+var flock_size: int = 0
 ## Powers taken, in order (a power can appear several times).
 var powers: Array[PowerData] = []
 ## Drawn at random for each run; every trip lays out its ground and forest from it.
@@ -48,6 +52,7 @@ func _ready() -> void:
 func start_run() -> void:
 	trip = 1
 	sheep = -1
+	lambs.clear()
 	powers.clear()
 	wool = 0
 	_crook = null
@@ -59,22 +64,34 @@ func trip_seed() -> int:
 	return map_seed + trip * 7919
 
 
+## The run's starting flock: `count` sheep, and lambs for `lamb_ratio` of them, each growing up
+## after a number of trips drawn in `grow_trips` (min, max).
+func start_flock(count: int, lamb_ratio: float, grow_trips: Vector2i) -> void:
+	sheep = count
+	lambs.clear()
+	for i in roundi(count * lamb_ratio):
+		lambs.append(randi_range(grow_trips.x, grow_trips.y))
+	flock_size = count + lambs.size()
+
+
 func is_last_trip() -> bool:
 	return trip >= TRIPS
 
 
-## The flock that arrived (`saved` sheep) goes on to the next trip.
-func next_trip(saved: int) -> void:
+## The flock that arrived (`saved` sheep and `saved_lambs`, trips left for each) goes on to the
+## next trip.
+func next_trip(saved: int, saved_lambs: Array[int]) -> void:
 	trip += 1
 	sheep = saved
+	lambs = saved_lambs
 
 
-## Fades to black, starts the next trip with the `saved` sheep, then fades back in.
-func go_to_next_trip(saved: int) -> void:
+## Fades to black, starts the next trip with the flock that arrived, then fades back in.
+func go_to_next_trip(saved: int, saved_lambs: Array[int]) -> void:
 	var fade := create_tween()
 	fade.tween_property(_veil, "modulate:a", 1.0, FADE_TIME)
 	await fade.finished
-	next_trip(saved)
+	next_trip(saved, saved_lambs)
 	get_tree().reload_current_scene()
 	await get_tree().process_frame
 	fade = create_tween()

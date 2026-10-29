@@ -130,6 +130,9 @@ extends Resource
 @export var flip_threshold: float = 5.0
 ## Highest run animation speed_scale (1 = walk cadence); above it the trot shows as a 1 px hop.
 @export var max_run_anim_scale: float = 1.4
+## Height (px) of the hops while moving (0 = walks; lambs hop), one every hop_length px covered.
+@export var hop_height: float = 0.0
+@export var hop_length: float = 6.0
 
 @export_group("Obstacles")
 ## Trail trees closer than this (px) ahead make the sheep veer aside, harder the closer they are.

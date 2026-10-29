@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FlockConfig" format=3]
+
+[ext_resource type="Script" uid="uid://ccasphw2cbb07" path="res://resources/flock_config.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+walk_speed = 26.0
+trot_speed = 54.0
+follow_gap = 7.0
+follow_start_margin = 3.0
+trot_margin = 12.0
+separation_radius = 6.0
+wander_chance = 0.0
+edge_wander_chance = 0.0
+hop_height = 2.0
+hop_length = 6.0

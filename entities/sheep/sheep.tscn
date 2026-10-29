@@ -193,8 +193,9 @@ script = ExtResource("1_script")
 config = ExtResource("2_config")
 
 [node name="Shadow" parent="." unique_id=1487742616 node_paths=PackedStringArray("sprite") instance=ExtResource("shadow_fx")]
-instance_shader_parameters/size = Vector2(10, 3)
+instance_shader_parameters/size = Vector2(9, 3)
 position = Vector2(-1, 0)
+size = Vector2i(9, 3)
 sprite = NodePath("../AnimatedSprite2D")
 
 [node name="Dust" parent="." unique_id=1443843709 instance=ExtResource("4_dust")]

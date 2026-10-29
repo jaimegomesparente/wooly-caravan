@@ -21,6 +21,7 @@
 [ext_resource type="PackedScene" path="res://effects/wool_fluff.tscn" id="19_fluff"]
 [ext_resource type="Script" path="res://ui/wool_counter.gd" id="20_wool"]
 [ext_resource type="Texture2D" uid="uid://b26x52vwyo2r4" path="res://art/sprites/others/items.png" id="21_items"]
+[ext_resource type="PackedScene" path="res://entities/sheep/lamb.tscn" id="22_lamb"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wool"]
 atlas = ExtResource("21_items")
@@ -32,6 +33,7 @@ script = ExtResource("1_script")
 sheep_scene = ExtResource("3_sheep")
 sheep_count = 40
 dog_scene = ExtResource("11_dog")
+lamb_scene = ExtResource("22_lamb")
 
 [node name="Ground" type="Node2D" parent="." unique_id=1590427545]
 z_index = -2
@@ -73,6 +75,7 @@ script = ExtResource("18_shearing")
 attacks = NodePath("../AttackDirector")
 counter = NodePath("../Hud/Wool")
 fluff_scene = ExtResource("19_fluff")
+sheep_scene = ExtResource("3_sheep")
 
 [node name="Hud" type="CanvasLayer" parent="." unique_id=1486859162]
 
