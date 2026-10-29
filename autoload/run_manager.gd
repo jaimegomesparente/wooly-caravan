@@ -18,6 +18,8 @@ var trip: int = 1
 var sheep: int = -1
 ## Powers taken, in order (a power can appear several times).
 var powers: Array[PowerData] = []
+## Drawn at random for each run; every trip lays out its ground and forest from it.
+var map_seed: int = randi()
 
 var _crook: CrookData
 
@@ -28,6 +30,12 @@ func start_run() -> void:
 	sheep = -1
 	powers.clear()
 	_crook = null
+	map_seed = randi()
+
+
+## Seed of this trip's layout (ground tufts and stones, forest, trail trees): another one each trip.
+func trip_seed() -> int:
+	return map_seed + trip * 7919
 
 
 func is_last_trip() -> bool:

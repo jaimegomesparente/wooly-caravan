@@ -25,7 +25,7 @@ enum Wall { TOP, BOTTOM, LEFT, RIGHT }
 @export var row_spacing: float = 12.0
 ## Random shift (px) of each tree, along its row and away from the path.
 @export var jitter: float = 4.0
-## Same seed = same forest every run.
+## Added to the trip's seed (RunManager.trip_seed(), another forest each trip of each run).
 @export var layout_seed: int = 1
 
 @export_group("Edge")
@@ -86,12 +86,13 @@ func _ready() -> void:
 	_trail = get_tree().get_first_node_in_group("trail") as Ground
 	if _trail == null or tree_texture == null:
 		return
-	_edge_noise.seed = layout_seed
+	var seed_value := layout_seed + RunManager.trip_seed()
+	_edge_noise.seed = seed_value
 	_edge_noise.frequency = edge_frequency
-	_clearing_noise.seed = layout_seed + 1
+	_clearing_noise.seed = seed_value + 1
 	_clearing_noise.frequency = clearing_frequency
 	var rng := RandomNumberGenerator.new()
-	rng.seed = layout_seed
+	rng.seed = seed_value
 	var e := _trail.edge_depth
 	# How far out (px from the wall) trees still show: past -edge_depth a whole tree is above the
 	# camera limit; a crown (cell_size tall, about half a cell wide) shows from farther below or beside.

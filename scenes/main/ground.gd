@@ -30,7 +30,7 @@ const OBSTACLE_LAYER := 1 << 4
 @export var edge_depth: float = 48.0
 ## Width (px) of the start and end pastures.
 @export var patch_width: float = 240.0
-## Same seed = same layout every run.
+## Added to the trip's seed (RunManager.trip_seed(), another one each trip of each run).
 @export var layout_seed: int = 1
 @export var tuft_count: int = 840
 @export var stone_count: int = 72
@@ -79,7 +79,7 @@ func _draw() -> void:
 	draw_rect(Rect2(length - patch_width, 0, patch_width + e, height), patch_color)
 
 	var rng := RandomNumberGenerator.new()
-	rng.seed = layout_seed
+	rng.seed = layout_seed + RunManager.trip_seed()
 	for i in tuft_count:
 		var spot := _random_spot(rng)
 		var roll := rng.randf()
