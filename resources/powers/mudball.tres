@@ -1,12 +1,11 @@
-[gd_resource type="Resource" script_class="PowerData" format=3]
+[gd_resource type="Resource" script_class="PowerData" format=3 uid="uid://0af4wqi26hwq"]
 
-[ext_resource type="Script" path="res://resources/power_data.gd" id="1_power"]
-[ext_resource type="Script" path="res://resources/power_effect.gd" id="2_effect"]
+[ext_resource type="Script" uid="uid://s22e4781oe0x" path="res://resources/power_data.gd" id="1_power"]
+[ext_resource type="Script" uid="uid://8ow8iv2n82rm" path="res://resources/power_effect.gd" id="2_effect"]
 
 [sub_resource type="Resource" id="Effect_0"]
 script = ExtResource("2_effect")
 property = &"mud_slow"
-multiplier = 1.0
 bonus = 0.4
 
 [resource]

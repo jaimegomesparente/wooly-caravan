@@ -1,25 +1,22 @@
-[gd_resource type="Resource" script_class="PowerData" format=3]
+[gd_resource type="Resource" script_class="PowerData" format=3 uid="uid://cmlefp0414v6i"]
 
-[ext_resource type="Script" path="res://resources/power_data.gd" id="1_power"]
-[ext_resource type="Script" path="res://resources/power_effect.gd" id="2_effect"]
+[ext_resource type="Script" uid="uid://s22e4781oe0x" path="res://resources/power_data.gd" id="1_power"]
+[ext_resource type="Script" uid="uid://8ow8iv2n82rm" path="res://resources/power_effect.gd" id="2_effect"]
 
 [sub_resource type="Resource" id="Effect_0"]
 script = ExtResource("2_effect")
 property = &"damage"
-multiplier = 1.0
 bonus = 1.0
 
 [sub_resource type="Resource" id="Effect_1"]
 script = ExtResource("2_effect")
 property = &"clod_size"
-multiplier = 1.0
 bonus = 1.0
 
 [sub_resource type="Resource" id="Effect_2"]
 script = ExtResource("2_effect")
 property = &"throw_cooldown"
 multiplier = 1.5
-bonus = 0.0
 
 [resource]
 script = ExtResource("1_power")
