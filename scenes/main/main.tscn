@@ -57,8 +57,8 @@ script = ExtResource("9_trip")
 script = ExtResource("13_attacks")
 wolf_scene = ExtResource("8_wolf")
 eagle_scene = ExtResource("16_eagle")
-packs = Array[int]([0, 2, 1])
-eagles = Array[int]([1, 0, 1])
+packs = Array[int]([2, 3, 3])
+eagles = Array[int]([1, 1, 2])
 
 [node name="Hud" type="CanvasLayer" parent="." unique_id=1486859162]
 
