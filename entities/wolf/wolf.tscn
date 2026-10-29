@@ -224,6 +224,7 @@ collision_layer = 4
 collision_mask = 0
 motion_mode = 1
 script = ExtResource("1_script")
+health = 2
 data = ExtResource("2_data")
 
 [node name="Shadow" parent="." node_paths=PackedStringArray("sprite") instance=ExtResource("shadow_fx")]

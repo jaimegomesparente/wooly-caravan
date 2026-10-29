@@ -3,7 +3,7 @@ extends Node
 ## Sends the attacks of the trip. The attack points are spread evenly between the start and the
 ## end pastures; each time the shepherd passes the next one, and no enemy is left from the previous
 ## attack, that attack comes: its wolf pack, alternating between the top and bottom forest edges,
-## then its eagles. E sends one more eagle at once (testing aid).
+## then its eagles. E sends one more eagle at once, L one more wolf (testing aids).
 
 signal sheep_lost(sheep: Sheep)
 
@@ -24,6 +24,8 @@ var _sending: bool = false
 func _physics_process(_delta: float) -> void:
 	if Input.is_action_just_pressed("spawn_eagle"):
 		_send_eagle()
+	if Input.is_action_just_pressed("spawn_wolf"):
+		_send_wolf()
 	if _sending or _next_attack >= packs.size() or get_tree().get_node_count_in_group("enemy") > 0:
 		return
 	var shepherd := get_tree().get_first_node_in_group("shepherd") as Node2D
@@ -46,13 +48,18 @@ func _send_pack(size: int, eagle_count: int) -> void:
 		if i >= size:
 			_send_eagle()
 			continue
-		var wolf := wolf_scene.instantiate() as Wolf
-		wolf.sheep_lost.connect(sheep_lost.emit)
-		# Beside Main's other children, so it is y-sorted with the sheep.
-		add_sibling(wolf)
-		var taken := wolf.attack(edge)
+		var taken := _send_wolf(edge)
 		edge = Wolf.Edge.BOTTOM if taken == Wolf.Edge.TOP else Wolf.Edge.TOP
 	_sending = false
+
+
+## Returns the forest edge the wolf comes out of.
+func _send_wolf(edge: Wolf.Edge = Wolf.Edge.NEAREST) -> Wolf.Edge:
+	var wolf := wolf_scene.instantiate() as Wolf
+	wolf.sheep_lost.connect(sheep_lost.emit)
+	# Beside Main's other children, so it is y-sorted with the sheep.
+	add_sibling(wolf)
+	return wolf.attack(edge)
 
 
 func _send_eagle() -> void:

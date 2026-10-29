@@ -7,6 +7,17 @@ signal sheep_lost(sheep: Sheep)
 
 ## Spawns and despawns this far (px) outside the visible screen.
 const OFFSCREEN_MARGIN := 24.0
+## Every hit flashes the sprite white, fading over FLINCH_TIME s; a hit that leaves it some health
+## also makes it recoil (px), the last one turns it grey for good.
+const FLINCH_TIME := 0.12
+const FLINCH_RECOIL := 2.0
+const TINT_SHADER := preload("res://effects/enemy_tint.gdshader")
+
+## Hits (clods) it takes before it runs off; a bark makes it run off whatever is left.
+@export var health: int = 1
+
+## The sprite's tint (flash, grey), made on the first hit.
+var _tint: ShaderMaterial
 
 
 ## True while nearby sheep should panic.
@@ -19,9 +30,38 @@ func is_threat() -> bool:
 	return false
 
 
-## Barked at by the dog.
+## Barked at by the dog, or out of health: runs off (each enemy says how).
 func scare() -> void:
 	pass
+
+
+## Hit by a clod flying along `direction`: flashes and loses one health; at none it turns grey and
+## runs off, otherwise it recoils and goes on with what it was doing.
+func hit(direction: Vector2) -> void:
+	health -= 1
+	_flash()
+	if health <= 0:
+		_set_tint(&"grey", 1.0)
+		scare()
+		return
+	global_position += direction.normalized() * FLINCH_RECOIL
+
+
+func _flash() -> void:
+	_set_tint(&"flash", 1.0)
+	if _tint:
+		create_tween().tween_property(_tint, "shader_parameter/flash", 0.0, FLINCH_TIME)
+
+
+func _set_tint(parameter: StringName, value: float) -> void:
+	if _tint == null:
+		var sprite := get_node_or_null("AnimatedSprite2D") as CanvasItem
+		if sprite == null:
+			return
+		_tint = ShaderMaterial.new()
+		_tint.shader = TINT_SHADER
+		sprite.material = _tint
+	_tint.set_shader_parameter(parameter, value)
 
 
 func _flock_center() -> Vector2:

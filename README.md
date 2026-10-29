@@ -13,11 +13,11 @@ at a time. What can be played today is a single escort trip.
   rest, gather into a group when the column stops, step aside from the shepherd, and panic and
   flee toward the flock when an enemy comes.
 - **The shepherd's crook**: left click lobs a clod of earth at the mouse; its shadow shows how high
-  it flies. An enemy hit lets go of its sheep or gives up, as when the dog barks; it has a limited
-  reach and a cooldown.
+  it flies, with a limited reach and a cooldown. Each clod costs an attacking enemy one health
+  (wolf 2, eagle 1): it flinches, then lets go of its sheep or gives up once out of health.
 - **The dog**: three modes, cycled with Space. *Gather* brings stragglers back, *Rear guard* stays
-  behind the flock and chases enemies coming near it, *Hunt* chases any enemy. A bark makes an
-  enemy drop the sheep it holds.
+  behind the flock and chases enemies coming near it, *Hunt* chases any enemy. A bark makes any
+  enemy drop the sheep it holds and run off, whatever its health.
 - **The trip**: a band walked left to right, from a start pasture to an end pasture, with a forest
   around it, lone trees and groves to steer around. The trip ends when every remaining sheep stands
   in the end pasture; an end screen gives the result.
@@ -50,7 +50,7 @@ Check the scripts without opening the editor: `godot --headless --quit`.
 | R | Restart the trip (end screen) |
 | F3 | Debug overlay: sheep states and targets, flight zones, shepherd trail |
 | Mouse wheel / keypad + and - | Zoom out and in (with F3 on) |
-| E | Send an eagle at once (testing aid) |
+| E / L | Send an eagle / a wolf at once (testing aids) |
 
 ## Tuning
 
@@ -58,7 +58,8 @@ Every weight and speed is exposed in a resource, editable in the Godot inspector
 
 - `resources/flock_config.tres` (`FlockConfig`): sheep gaits, following, separation, flight, panic
 - `resources/dog.tres` (`DogData`): dog speeds, reach, modes
-- `resources/wolf.tres` (`EnemyData`): wolf approach, charge, carry
+- `resources/wolf.tres` (`EnemyData`): wolf approach, charge, carry; health on each enemy scene
+  (`entities/wolf/wolf.tscn`, `entities/eagle/eagle.tscn`)
 - `resources/eagle.tres` (`EagleData`): eagle pass, dive, carry, shadow
 - `entities/clod/clod.tscn`: clod speed, reach and arc; `Shepherd` (`entities/shepherd/shepherd.tscn`):
   walking speed and throw cooldown

@@ -3,8 +3,8 @@ extends Area2D
 ## A clod of earth lobbed by the shepherd's crook. Its point on the ground goes straight from the
 ## shepherd's feet to the aimed spot (at most max_range px away) while the clod rises and falls
 ## along an arc, higher for a longer throw; its shadow stays on that ground point, showing how high
-## it is. It hits what it is seen over: an enemy whose body it crosses is scared off, as by a bark
-## (drops the sheep it holds, or gives up its attack). It crumbles on hitting or on landing.
+## it is. It hits what it is seen over: an attacking enemy whose body it crosses takes a hit (it
+## flinches, or runs off once out of health). It crumbles on hitting or on landing.
 
 ## Speed (px/s) of the ground point, and longest throw (px).
 @export var speed: float = 160.0
@@ -64,8 +64,9 @@ func _place(t: float) -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	var enemy := body as Enemy
-	if enemy:
-		enemy.scare()
+	# Enemies on their way out (or still out of reach, like a passing eagle) let it fly through.
+	if enemy and enemy.is_threat():
+		enemy.hit(_to - _from)
 		_crumble()
 
 
