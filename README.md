@@ -56,6 +56,7 @@ Check the scripts without opening the editor: `godot --headless --quit`.
 | F3 | Debug overlay: sheep states and targets, flight zones, shepherd trail |
 | Mouse wheel / keypad + and - | Zoom out and in (with F3 on) |
 | E / L | Send an eagle / a wolf at once (testing aids) |
+| P | Pick any upgrade now, the trip goes on (testing aid) |
 
 ## Tuning
 

@@ -118,7 +118,7 @@ Prototype uses only 2 orders (Go there, Fetch).
 - On the end-of-run screen, R starts a new run
 - Space cycles the dog's mode (Gather, Rear guard, Hunt); the current mode is shown top left
 - Left click lobs a clod at the mouse
-- E sends an eagle at once, L a wolf (testing aids)
+- E sends an eagle at once, L a wolf, P opens a choice of every power (applied at once, the trip goes on) (testing aids)
 - With the F3 overlay on, mouse wheel / keypad + and - zoom the camera out and in (testing aid, gameplay ignores it); F3 also draws the dog's flight zone (brown circle)
 - In game, F3 toggles the debug overlay (shepherd trail, flight zone, each sheep's target line and state color: white stand, yellow-green graze, blue walk, orange trot, purple wander, red flee or panic, magenta captured; magenta line from the wolf or the eagle to its target)
 - If `godot` is not in PATH, use the full path to the executable here: ``C:\Users\jaime\Desktop\Godot\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64_console.exe``
