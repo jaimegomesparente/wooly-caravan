@@ -6,7 +6,7 @@ extends Resource
 @export var throw_cooldown: float = 0.7
 ## Speed (px/s) of a clod's ground point, and longest throw (px).
 @export var speed: float = 160.0
-@export var max_range: float = 140.0
+@export var max_range: float = 70.0
 ## Top of the arc (px) for each px of throw, and highest top.
 @export var arc_per_px: float = 0.25
 @export var max_arc: float = 30.0

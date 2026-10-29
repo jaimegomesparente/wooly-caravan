@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PowerData" format=3]
+
+[ext_resource type="Script" path="res://resources/power_data.gd" id="1_power"]
+[ext_resource type="Script" path="res://resources/power_effect.gd" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_0"]
+script = ExtResource("2_effect")
+property = &"max_range"
+multiplier = 1.33
+bonus = 0.0
+
+[resource]
+script = ExtResource("1_power")
+title = "Long Throw"
+description = "Throw 33% farther."
+effects = Array[ExtResource("2_effect")]([SubResource("Effect_0")])

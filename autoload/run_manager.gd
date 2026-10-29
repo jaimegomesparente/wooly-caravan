@@ -10,6 +10,7 @@ const POWERS: Array[PowerData] = [
 	preload("res://resources/powers/heavy_clod.tres"),
 	preload("res://resources/powers/extra_clod.tres"),
 	preload("res://resources/powers/quick_throw.tres"),
+	preload("res://resources/powers/long_throw.tres"),
 ]
 
 ## Current trip, from 1.
