@@ -4,7 +4,7 @@ extends Node
 ## kept until the run ends. Powers change the run's own copy of the crook settings, never the base
 ## resource. Going from one trip to the next fades to black and back.
 
-const TRIPS := 3
+const TRIPS := 5
 ## Time (s) of the fade to black, and of the fade back in.
 const FADE_TIME := 0.4
 ## Every power that can be offered.
