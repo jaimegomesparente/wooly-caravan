@@ -14,5 +14,5 @@ extends Resource
 ## spots (across the throw), and clod size (px).
 @export var damage: int = 1
 @export var clod_count: int = 1
-@export var spread: float = 12.0
+@export var spread: float = 16.0
 @export var clod_size: int = 2
