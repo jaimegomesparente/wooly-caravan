@@ -10,3 +10,9 @@ extends Resource
 ## Top of the arc (px) for each px of throw, and highest top.
 @export var arc_per_px: float = 0.25
 @export var max_arc: float = 30.0
+## Damage of one clod (enemy health it takes), clods per throw, spread (px) between their landing
+## spots (across the throw), and clod size (px).
+@export var damage: int = 1
+@export var clod_count: int = 1
+@export var spread: float = 12.0
+@export var clod_size: int = 2

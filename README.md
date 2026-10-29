@@ -7,7 +7,8 @@ with the help of your dog.
 ## Status
 
 The flock-guiding prototype is done and judged fun; the game is now growing past it, one small step
-at a time. What can be played today is a single escort trip.
+at a time. What can be played today is a short run: three escort trips in a row, with an upgrade chosen
+between two trips.
 
 - **The flock**: 40 sheep moving as boids. They follow the shepherd in a column, graze and wander at
   rest, gather into a group when the column stops, step aside from the shepherd, and panic and
@@ -21,6 +22,9 @@ at a time. What can be played today is a single escort trip.
 - **The trip**: a band walked left to right, from a start pasture to an end pasture, with a forest
   around it, lone trees and groves to steer around. The trip ends when every remaining sheep stands
   in the end pasture; an end screen gives the result.
+- **The run**: the flock that arrives starts the next trip. Between two trips, on the pasture, pick
+  one of three upgrades for the crook (Heavy Clod, Extra Clod, Quick Throw); they add up when
+  taken again. The run ends after the third trip, or when no sheep is left.
 - **Enemies**, sent at attack points along the trail:
   - **Wolves**, in packs: each one comes out of the forest edge beside a straggler, howls, charges,
     then drags the sheep back to the forest. The shepherd frees it by reaching the wolf.
@@ -28,7 +32,7 @@ at a time. What can be played today is a single escort trip.
     screen, it dives from the top right and carries the sheep off to the left. Send the dog under
     it, or hit it with a clod, before the sheep is gone.
 
-Not there yet: other weapons, other enemies, wool, powers, shop, map, menus, sound.
+Not there yet: other weapons, other enemies, other upgrades, wool, shop, map, menus, sound.
 
 ## Running
 
@@ -47,7 +51,8 @@ Check the scripts without opening the editor: `godot --headless --quit`.
 | Arrows / WASD | Move the shepherd |
 | Left click | Lob a clod with the crook at the mouse |
 | Space | Next dog mode (Gather, Rear guard, Hunt) |
-| R | Restart the trip (end screen) |
+| Mouse | Pick an upgrade (pasture screen) |
+| R | Start a new run (end screen) |
 | F3 | Debug overlay: sheep states and targets, flight zones, shepherd trail |
 | Mouse wheel / keypad + and - | Zoom out and in (with F3 on) |
 | E / L | Send an eagle / a wolf at once (testing aids) |
@@ -63,6 +68,7 @@ Every weight and speed is exposed in a resource, editable in the Godot inspector
 - `resources/eagle.tres` (`EagleData`): eagle pass, dive, carry, shadow
 - `resources/crook.tres` (`CrookData`): throw cooldown, clod speed, reach and arc; `Shepherd`
   (`entities/shepherd/shepherd.tscn`): walking speed
+- `resources/powers/*.tres` (`PowerData`): the upgrades, each a list of setting changes
 - `AttackDirector` node in `scenes/main/main.tscn`: wolves and eagles of each attack
 
 ## Project layout
@@ -71,8 +77,9 @@ Every weight and speed is exposed in a resource, editable in the Godot inspector
 - `entities/`: one folder per entity, scene and script (`sheep`, `shepherd`, `clod`, `dog`, `wolf`,
   `eagle`, and `enemy`, the base shared by enemies)
 - `scenes/main/`: the trip scene, its ground, forest, camera, attack director, debug overlay
-- `resources/`: tunable `Resource` scripts and their `.tres` data
+- `resources/`: tunable `Resource` scripts and their `.tres` data, upgrades in `resources/powers/`
+- `autoload/`: `RunManager`, the state of the run
 - `effects/`: running dust, ground shadows, clod crumbs
-- `ui/`: dog mode label, end screen
+- `ui/`: dog mode label, trip label, pasture (upgrade choice) and end screens
 
 `CLAUDE.md` holds the full game design, the art and technical rules and the build order.

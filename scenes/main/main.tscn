@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" path="res://entities/eagle/eagle.tscn" id="16_eagle"]
 [ext_resource type="Script" uid="uid://bo1b31a41aamx" path="res://scenes/main/trip.gd" id="9_trip"]
 [ext_resource type="PackedScene" path="res://ui/end_screen.tscn" id="10_end"]
+[ext_resource type="PackedScene" path="res://ui/pasture_screen.tscn" id="17_pasture"]
 [ext_resource type="PackedScene" uid="uid://c67pgonbomrfh" path="res://entities/dog/dog.tscn" id="11_dog"]
 [ext_resource type="Script" uid="uid://ptixokqk1ji5" path="res://ui/dog_mode_label.gd" id="12_dog_mode"]
 [ext_resource type="Script" uid="uid://btvxehkrfvnr3" path="res://scenes/main/attack_director.gd" id="13_attacks"]
@@ -67,4 +68,17 @@ offset_top = 2.0
 theme_override_font_sizes/font_size = 8
 script = ExtResource("12_dog_mode")
 
+[node name="TripLabel" type="Label" parent="Hud"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -64.0
+offset_top = 2.0
+offset_right = -4.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 2
+
 [node name="EndScreen" parent="." unique_id=798652235 instance=ExtResource("10_end")]
+
+[node name="PastureScreen" parent="." instance=ExtResource("17_pasture")]

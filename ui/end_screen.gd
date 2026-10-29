@@ -1,5 +1,5 @@
 extends CanvasLayer
-## Trip result over a dark veil; R restarts the trip.
+## Run result over a dark veil (sheep left out of the whole flock); R starts a new run.
 
 @onready var _label: Label = $Label
 
@@ -18,5 +18,6 @@ func show_result(arrived: bool, saved: int, total: int) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if visible and event.is_action_pressed("restart"):
+		RunManager.start_run()
 		get_tree().paused = false
 		get_tree().reload_current_scene()

@@ -35,10 +35,10 @@ func scare() -> void:
 	pass
 
 
-## Hit by a clod flying along `direction`: flashes and loses one health; at none it turns grey and
-## runs off, otherwise it recoils and goes on with what it was doing.
-func hit(direction: Vector2) -> void:
-	health -= 1
+## Hit by a clod flying along `direction`: flashes and loses `damage` health; at none it turns grey
+## and runs off, otherwise it recoils and goes on with what it was doing.
+func hit(direction: Vector2, damage: int = 1) -> void:
+	health -= damage
 	_flash()
 	if health <= 0:
 		_set_tint(&"grey", 1.0)

@@ -5,7 +5,8 @@ extends CharacterBody2D
 signal dog_mode_called
 
 @export var speed: float = 32.0
-## Left click: lobs a clod with the crook at the mouse (settings in `crook`).
+## Left click: lobs clods with the crook at the mouse (base settings in `crook`; the run's powers
+## change its copy, from RunManager).
 @export var clod_scene: PackedScene
 @export var crook: CrookData
 ## A trail point is recorded every time the shepherd has walked this far (px).
@@ -24,6 +25,11 @@ var _throw_timer: float = 0.0
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 
+func _ready() -> void:
+	if crook:
+		crook = RunManager.crook(crook)
+
+
 func _physics_process(delta: float) -> void:
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = direction * speed
@@ -38,12 +44,18 @@ func _physics_process(delta: float) -> void:
 	_update_animation()
 
 
-## A clod lobbed from the crook to `target`; turns toward it (walking keeps facing the walk).
+## clod_count clods lobbed from the crook around `target`, their landing spots `spread` px apart
+## across the throw; turns toward it (walking keeps facing the walk).
 func _throw(target: Vector2) -> void:
 	_throw_timer = crook.throw_cooldown
-	var clod := clod_scene.instantiate() as Clod
-	add_sibling(clod)
-	clod.launch(crook, global_position, target, THROW_HEIGHT)
+	var aim := target - global_position
+	var across := aim.orthogonal().normalized() if aim != Vector2.ZERO else Vector2.DOWN
+	across *= crook.spread
+	for i in crook.clod_count:
+		var landing := target + across * (i - (crook.clod_count - 1) / 2.0)
+		var clod := clod_scene.instantiate() as Clod
+		add_sibling(clod)
+		clod.launch(crook, global_position, landing, THROW_HEIGHT)
 	play_call()
 	if target.x != global_position.x:
 		_sprite.flip_h = target.x < global_position.x

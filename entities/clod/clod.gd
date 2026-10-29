@@ -1,14 +1,13 @@
 class_name Clod
 extends Area2D
 ## A clod of earth lobbed by the shepherd's crook. Its point on the ground goes straight from the
-## shepherd's feet to the aimed spot (at most the crook's max_range px away) while the clod rises and falls
-## along an arc, higher for a longer throw; its shadow stays on that ground point, showing how high
-## it is. It hits what it is seen over: an attacking enemy whose body it crosses takes a hit (it
-## flinches, or runs off once out of health). It crumbles on hitting or on landing.
+## shepherd's feet to the aimed spot (at most the crook's max_range px away) while the clod rises
+## and falls along an arc, higher for a longer throw; its shadow stays on that ground point, showing
+## how high it is. It hits what it is seen over: an attacking enemy whose body it crosses takes a
+## hit (it flinches, or runs off once out of health). It crumbles on hitting or on landing.
 
 @export var crumble_scene: PackedScene
 
-const SIZE := Vector2(2, 2)
 const COLOR := Color("#5b2f1a")
 
 var _from: Vector2
@@ -17,6 +16,8 @@ var _start_height: float = 0.0
 var _arc: float = 0.0
 var _duration: float = 1.0
 var _time: float = 0.0
+var _damage: int = 1
+var _size: Vector2 = Vector2(2, 2)
 
 @onready var _shadow: Node2D = $Shadow
 
@@ -34,6 +35,13 @@ func launch(crook: CrookData, from: Vector2, target: Vector2, start_height: floa
 	var distance := _from.distance_to(_to)
 	_arc = minf(distance * crook.arc_per_px, crook.max_arc)
 	_duration = maxf(distance / crook.speed, 0.05)
+	_damage = crook.damage
+	_size = Vector2(crook.clod_size, crook.clod_size)
+	# Its own shape (the scene's one is shared by every clod), a pixel wider than the clod.
+	var collision := $CollisionShape2D as CollisionShape2D
+	var shape := RectangleShape2D.new()
+	shape.size = _size + Vector2.ONE
+	collision.shape = shape
 	_place(0.0)
 	reset_physics_interpolation()
 
@@ -47,7 +55,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(-SIZE / 2.0, SIZE), COLOR)
+	draw_rect(Rect2(-_size / 2.0, _size), COLOR)
 
 
 ## The clod at `t` (0 to 1) of its flight, its shadow on the ground below.
@@ -61,7 +69,7 @@ func _on_body_entered(body: Node2D) -> void:
 	var enemy := body as Enemy
 	# Enemies on their way out (or still out of reach, like a passing eagle) let it fly through.
 	if enemy and enemy.is_threat():
-		enemy.hit(_to - _from)
+		enemy.hit(_to - _from, _damage)
 		_crumble()
 
 

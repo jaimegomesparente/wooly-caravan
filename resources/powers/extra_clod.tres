@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PowerData" format=3]
+
+[ext_resource type="Script" path="res://resources/power_data.gd" id="1_power"]
+[ext_resource type="Script" path="res://resources/power_effect.gd" id="2_effect"]
+
+[sub_resource type="Resource" id="Effect_0"]
+script = ExtResource("2_effect")
+property = &"clod_count"
+multiplier = 1.0
+bonus = 1.0
+
+[resource]
+script = ExtResource("1_power")
+title = "Extra Clod"
+description = "+1 clod per throw."
+effects = Array[ExtResource("2_effect")]([SubResource("Effect_0")])
