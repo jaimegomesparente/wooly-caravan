@@ -212,6 +212,14 @@ func shear() -> void:
 	_shear_hop = SHEAR_HOP_TIME
 
 
+## Moved at once (testing aid): settles there.
+func teleport(point: Vector2) -> void:
+	global_position = point
+	reset_physics_interpolation()
+	_guide = null
+	_enter_rest()
+
+
 ## Called by the enemy when the shepherd frees this sheep: it rejoins the flock.
 func release() -> void:
 	_scare_point = _captor.global_position if _captor else global_position

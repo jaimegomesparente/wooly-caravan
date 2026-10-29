@@ -6,6 +6,8 @@ extends Camera2D
 @export var max_lean: float = 60.0
 ## Higher = the camera catches up faster.
 @export var smoothing: float = 3.0
+## A target farther than this (px) is jumped to at once (the N testing aid moves everyone).
+@export var snap_distance: float = 400.0
 ## Zoom steps for testing (mouse wheel / keypad + -), only while the F3 debug overlay is on:
 ## 1 = normal, lower = see more. Back to 1 when the overlay is turned off.
 @export var zoom_levels: Array[float] = [1.0, 0.75, 0.5, 0.35, 0.25]
@@ -21,7 +23,12 @@ func _ready() -> void:
 
 # Physics tick, like the bodies it follows; physics interpolation smooths both between ticks.
 func _physics_process(delta: float) -> void:
-	_focus = _focus.lerp(_target(), 1.0 - exp(-smoothing * delta))
+	var target := _target()
+	if _focus.distance_to(target) > snap_distance:
+		_focus = target
+		global_position = _focus
+		reset_physics_interpolation()
+	_focus = _focus.lerp(target, 1.0 - exp(-smoothing * delta))
 	global_position = _focus
 	if not Sheep.debug_draw and _zoom_index != 0:
 		_zoom_index = 0

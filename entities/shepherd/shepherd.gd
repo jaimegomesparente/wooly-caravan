@@ -72,6 +72,13 @@ func play_call() -> void:
 	_sprite.play(&"call")
 
 
+## Moved at once (testing aid): the trail starts afresh there.
+func teleport(point: Vector2) -> void:
+	global_position = point
+	_trail.clear()
+	reset_physics_interpolation()
+
+
 ## The point of the trail `distance_behind` px behind the shepherd, measured along his path.
 func trail_point(distance_behind: float) -> Vector2:
 	var remaining := distance_behind
