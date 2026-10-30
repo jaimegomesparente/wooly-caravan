@@ -33,6 +33,10 @@ var _target: Sheep
 var _prey: Sheep
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var _shape: CollisionShape2D = $CollisionShape2D
+## Horizontal offset of the collision when facing right; flipped, it is mirrored around the
+## sprite's center like the sprite's pixels.
+@onready var _shape_offset_x: float = _shape.position.x
 ## Where the caught sheep stands (its feet), facing right; mirrored when the sprite is flipped.
 @onready var _prey_point: Marker2D = $PreyPoint
 
@@ -269,6 +273,8 @@ func _update_facing() -> void:
 		facing_x = cos(_heading) * FLIP_THRESHOLD * 2.0
 	if absf(facing_x) > FLIP_THRESHOLD:
 		_sprite.flip_h = facing_x < 0.0
+		var axis := _sprite.position.x + _sprite.offset.x
+		_shape.position.x = 2.0 * axis - _shape_offset_x if _sprite.flip_h else _shape_offset_x
 
 
 ## Howls once while telegraphing, drags while holding a sheep, otherwise runs or stands.

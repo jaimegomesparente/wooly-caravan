@@ -142,8 +142,8 @@ sprite = NodePath("../AnimatedSprite2D")
 position = Vector2(4, -8)
 sprite_frames = SubResource("SpriteFrames_ram")
 animation = &"graze"
-frame_progress = 0.4595437
+frame_progress = 0.36457786
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2045204996]
-position = Vector2(0.009765625, -4)
+position = Vector2(0, -5)
 shape = SubResource("RectangleShape2D_ram")

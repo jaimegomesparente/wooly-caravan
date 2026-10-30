@@ -39,6 +39,10 @@ var _speed: float = 0.0
 var resting: bool = false
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var _shape: CollisionShape2D = $CollisionShape2D
+## Horizontal offset of the collision when facing right; flipped, it is mirrored around the
+## sprite's center like the sprite's pixels.
+@onready var _shape_offset_x: float = _shape.position.x
 
 
 func _ready() -> void:
@@ -242,6 +246,8 @@ func play_bark() -> void:
 func _update_animation() -> void:
 	if absf(velocity.x) > FLIP_THRESHOLD:
 		_sprite.flip_h = velocity.x < 0.0
+		var axis := _sprite.position.x + _sprite.offset.x
+		_shape.position.x = 2.0 * axis - _shape_offset_x if _sprite.flip_h else _shape_offset_x
 	var moving := _speed > FLIP_THRESHOLD
 	# Let a bark finish while standing still, or while braking to bark at the wolf.
 	if (not moving or _barking) and _sprite.animation == &"bark" and _sprite.is_playing():
