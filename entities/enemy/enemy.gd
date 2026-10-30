@@ -12,6 +12,7 @@ const OFFSCREEN_MARGIN := 24.0
 const FLINCH_TIME := 0.12
 const FLINCH_RECOIL := 2.0
 const TINT_SHADER := preload("res://effects/enemy_tint.gdshader")
+const STUN_STARS := preload("res://effects/stun_stars.tscn")
 ## Strongest slow from mud (fraction of its speed lost).
 const MAX_MUD_SLOW := 0.8
 ## Time (s) of the push back from a ram's butt.
@@ -19,6 +20,8 @@ const BUTT_PUSH_TIME := 0.15
 
 ## Hits (clods) it takes before it runs off; a bark makes it run off whatever is left.
 @export var health: int = 1
+## Where the stars circle (px from its origin) while it is stunned.
+@export var head_offset: Vector2 = Vector2(0, -14)
 
 ## The sprite's tint (flash, grey, mud), made on the first hit.
 var _tint: ShaderMaterial
@@ -28,10 +31,16 @@ var _speed_scale: float = 1.0
 var _mud_slows: int = 0
 ## Time (s) left stunned by a ram's butt: each enemy says what it does meanwhile.
 var _stun_timer: float = 0.0
+var _stars: StunStars
 
 
 ## True while nearby sheep should panic.
 func is_dangerous() -> bool:
+	return false
+
+
+## True while a ram may charge it (on the ground, within reach).
+func can_be_butted() -> bool:
 	return false
 
 
@@ -61,12 +70,17 @@ func hit(direction: Vector2, damage: int = 1, mud_slow: float = 0.0, mud_time: f
 
 
 ## Butted by a ram along `direction`: hit like by a clod; with health left it is also pushed back
-## `push` px and stunned for `stun_time` s.
+## `push` px and stunned for `stun_time` s, stars circling over its head.
 func butted(direction: Vector2, damage: int, push: float, stun_time: float) -> void:
 	hit(direction, damage)
 	if health <= 0:
 		return
 	_stun_timer = stun_time
+	if _stars == null or not is_instance_valid(_stars):
+		_stars = STUN_STARS.instantiate() as StunStars
+		_stars.position = head_offset
+		add_child(_stars)
+	_stars.time = stun_time
 	var tween := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	tween.tween_property(self, "global_position", global_position + direction.normalized() * push,
 			BUTT_PUSH_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)

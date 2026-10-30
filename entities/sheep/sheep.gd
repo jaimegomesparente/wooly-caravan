@@ -89,6 +89,9 @@ var _regrow_chance: float = 0.0
 var _hop_timer: float = 0.0
 ## Time (s) left before a ram can butt again.
 var _butt_timer: float = 0.0
+## The enemy a ram is charging, and the time (s) left before it gives up.
+var _charge_target: Enemy
+var _charge_timer: float = 0.0
 ## Distance (px) covered since it last started moving: paces the hops of config.hop_height.
 var _hop_distance: float = 0.0
 
@@ -188,8 +191,12 @@ func _physics_process(delta: float) -> void:
 			var pace := 1.0 + sin(_age * TAU / _wobble_period + _wobble_phase) * config.speed_wobble
 			desired = desired.rotated(sway) * pace
 
-	# A startled sheep turns and speeds up faster.
-	var reflex := config.flight_reflex if _fleeing or _panicking else 1.0
+	if ram:
+		var charge := _charge_step(delta)
+		if charge != Vector2.ZERO:
+			desired = charge
+	# A startled sheep (or a charging ram) turns and speeds up faster.
+	var reflex := config.flight_reflex if _fleeing or _panicking or _charge_target else 1.0
 	if desired != Vector2.ZERO:
 		desired = _avoid_trees(desired)
 		_heading = rotate_toward(_heading, desired.angle(), config.turn_rate * reflex * delta)
@@ -221,6 +228,38 @@ func capture(by: Node2D, lifted: bool = false) -> void:
 	_gait = Gait.REST
 	_set_rest(Rest.STAND)
 	_pending_gait = Gait.REST
+
+
+## A ram ready to charge picks the nearest attacking enemy within ram_charge_radius, runs at it and
+## butts it on reaching it. Zero when not charging.
+func _charge_step(delta: float) -> Vector2:
+	if _charge_target != null and (not is_instance_valid(_charge_target) \
+			or not _charge_target.is_dangerous() or _butt_timer > 0.0):
+		_charge_target = null
+	if _charge_target == null:
+		if _butt_timer > 0.0:
+			return Vector2.ZERO
+		var nearest := config.ram_charge_radius
+		for enemy: Enemy in get_tree().get_nodes_in_group("enemy"):
+			var distance := global_position.distance_to(enemy.global_position)
+			if enemy.is_dangerous() and enemy.can_be_butted() and distance < nearest:
+				nearest = distance
+				_charge_target = enemy
+		if _charge_target == null:
+			return Vector2.ZERO
+		_charge_timer = config.ram_charge_time
+	_charge_timer -= delta
+	var to_target := _charge_target.global_position - global_position
+	if to_target.length() <= config.ram_butt_distance:
+		fends_off(_charge_target)
+		_charge_target = null
+		return Vector2.ZERO
+	if _charge_timer <= 0.0:
+		# Gives up and catches its breath before the next charge.
+		_charge_target = null
+		_butt_timer = config.ram_cooldown
+		return Vector2.ZERO
+	return to_target.normalized() * config.ram_charge_speed
 
 
 ## Called by an enemy about to grab this sheep: a ram ready to butt turns to it, hops and butts it
@@ -736,7 +775,7 @@ func _update_animation() -> void:
 		hop = roundf(absf(sin(_hop_distance * PI / config.hop_length)) * config.hop_height)
 	_sprite.position.y = _sprite_offset_y - hop
 
-	if ram and _butt_timer > config.ram_cooldown - BUTT_TIME:
+	if ram and (_charge_target or _butt_timer > config.ram_cooldown - BUTT_TIME):
 		_play(&"butt", 1.0)
 		return
 	if _speed > GUIDE_STOPPED_SPEED:

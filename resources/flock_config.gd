@@ -112,9 +112,15 @@ extends Resource
 @export_range(0.0, 1.0) var regrow_chance: float = 0.1
 
 @export_group("Ram")
-## A ram (bought in the shop) butts an enemy that comes to grab it instead of being caught: the enemy
-## loses ram_damage health and, with some left, is pushed back ram_push px and stunned ram_stun_time
-## s. The ram can butt again after ram_cooldown s; meanwhile it can be caught.
+## A ram (bought in the shop) charges an attacking enemy that comes within ram_charge_radius px, at
+## ram_charge_speed, and butts it on reaching it (ram_butt_distance px), or when the enemy comes to
+## grab it first; it gives up after ram_charge_time s. The enemy loses ram_damage health and, with
+## some left, is pushed back ram_push px and stunned ram_stun_time s. The ram can charge again after
+## ram_cooldown s; meanwhile it can be caught.
+@export var ram_charge_radius: float = 40.0
+@export var ram_charge_speed: float = 60.0
+@export var ram_butt_distance: float = 6.0
+@export var ram_charge_time: float = 1.5
 @export var ram_damage: int = 1
 @export var ram_push: float = 10.0
 @export var ram_stun_time: float = 1.5

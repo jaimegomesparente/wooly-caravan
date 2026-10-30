@@ -58,6 +58,11 @@ func is_dangerous() -> bool:
 	return _state == State.CHARGE or _state == State.CARRY
 
 
+## Charging or dragging a sheep: a ram may charge it.
+func can_be_butted() -> bool:
+	return _state == State.CHARGE or _state == State.CARRY
+
+
 ## True from the moment it shows up until it leaves: the dog may chase it.
 func is_threat() -> bool:
 	return _state == State.PROWL or _state == State.TELEGRAPH or _state == State.CHARGE \
