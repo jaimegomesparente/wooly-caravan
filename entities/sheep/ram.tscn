@@ -1,0 +1,150 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://54f5ttv4q0c" path="res://entities/sheep/sheep.gd" id="1_script"]
+[ext_resource type="Resource" uid="uid://cqv7e475qv2o1" path="res://resources/flock_config.tres" id="2_config"]
+[ext_resource type="Texture2D" uid="uid://o0l3aafdlele" path="res://art/sprites/sheeps/ram-Sheet.png" id="3_sheet"]
+[ext_resource type="PackedScene" path="res://effects/dust.tscn" id="4_dust"]
+[ext_resource type="PackedScene" path="res://effects/shadow.tscn" id="shadow_fx"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r0"]
+atlas = ExtResource("3_sheet")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r1"]
+atlas = ExtResource("3_sheet")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r2"]
+atlas = ExtResource("3_sheet")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r3"]
+atlas = ExtResource("3_sheet")
+region = Rect2(48, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r4"]
+atlas = ExtResource("3_sheet")
+region = Rect2(64, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r5"]
+atlas = ExtResource("3_sheet")
+region = Rect2(80, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r6"]
+atlas = ExtResource("3_sheet")
+region = Rect2(96, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r7"]
+atlas = ExtResource("3_sheet")
+region = Rect2(112, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r8"]
+atlas = ExtResource("3_sheet")
+region = Rect2(128, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_r9"]
+atlas = ExtResource("3_sheet")
+region = Rect2(144, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ram"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r9")
+}],
+"loop": 1,
+"name": &"butt",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r4")
+}],
+"loop": 0,
+"name": &"finished_graze",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r7")
+}],
+"loop": 1,
+"name": &"graze",
+"speed": 2.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r1")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r3")
+}],
+"loop": 1,
+"name": &"run",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r6")
+}],
+"loop": 0,
+"name": &"to_graze",
+"speed": 3.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ram"]
+size = Vector2(7.375, 6)
+
+[node name="Ram" type="CharacterBody2D" groups=["sheep"]]
+collision_layer = 2
+collision_mask = 16
+motion_mode = 1
+script = ExtResource("1_script")
+config = ExtResource("2_config")
+ram = true
+
+[node name="Shadow" parent="." node_paths=PackedStringArray("sprite") instance=ExtResource("shadow_fx")]
+instance_shader_parameters/size = Vector2(9, 3)
+position = Vector2(-1, 0)
+size = Vector2i(9, 3)
+sprite = NodePath("../AnimatedSprite2D")
+
+[node name="Dust" parent="." instance=ExtResource("4_dust")]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(4, -8)
+sprite_frames = SubResource("SpriteFrames_ram")
+animation = &"idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-0.5, -4)
+shape = SubResource("RectangleShape2D_ram")

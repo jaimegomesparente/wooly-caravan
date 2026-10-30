@@ -1,7 +1,7 @@
 class_name Shearing
 extends Node
 ## On the pasture between two trips. The lambs old enough grow into sheep (a burst of fluff), then
-## the flock is shorn one sheep at a time (not the lambs), left to right, faster and faster: a burst of fluff, the sheep turns shorn, and its wool flies to the counter (`shorn`
+## the flock is shorn one sheep at a time (not the lambs nor the rams), left to right, faster and faster: a burst of fluff, the sheep turns shorn, and its wool flies to the counter (`shorn`
 ## once all are done). While the power is chosen and recruits are bought the wool may grow back as
 ## the sheep graze; once the shop is left (`leave`), the next trip starts. Meanwhile the shepherd and the dog stand still, the
 ## enemies left run off and no attack comes.
@@ -15,6 +15,8 @@ signal shorn
 @export var sheep_scene: PackedScene
 ## A lamb bought in the shop.
 @export var lamb_scene: PackedScene
+## What a sheep turns into when a ram is bought in the shop.
+@export var ram_scene: PackedScene
 ## Wool earned per sheep shorn.
 @export var wool_per_sheep: int = 1
 ## Delay (s) between the first two sheep shorn; each next delay is `speed_up` times the last one,
@@ -30,7 +32,7 @@ func start() -> void:
 	get_tree().set_group("shepherd", "resting", true)
 	get_tree().set_group("dog", "resting", true)
 	_grow_lambs()
-	var flock := get_tree().get_nodes_in_group("sheep").filter(func(sheep: Sheep) -> bool: return not sheep.lamb)
+	var flock := get_tree().get_nodes_in_group("sheep").filter(func(sheep: Sheep) -> bool: return not sheep.lamb and not sheep.ram)
 	flock.sort_custom(func(a: Node2D, b: Node2D) -> bool: return a.global_position.x < b.global_position.x)
 	var delay := interval
 	for sheep: Sheep in flock:
@@ -42,8 +44,9 @@ func start() -> void:
 
 
 ## A recruit bought in the shop (`sheep` or `lamb`) joins the flock in a burst of fluff, next to a
-## sheep drawn at random: a sheep with its wool, or a lamb that sheep is the mother of. A `ram` turns
-## a sheep drawn at random among those that are not one yet into a ram.
+## sheep drawn at random: a sheep with its wool, or a lamb that sheep is the mother of. A `ram`
+## takes the place of a sheep drawn at random among those that are not one yet (its lambs follow the
+## ram).
 func recruit(item: StringName) -> void:
 	var flock := get_tree().get_nodes_in_group("sheep")
 	if flock.is_empty():
@@ -52,9 +55,16 @@ func recruit(item: StringName) -> void:
 	if item == &"ram":
 		var ewes := mothers.filter(func(sheep: Sheep) -> bool: return not sheep.ram)
 		if not ewes.is_empty():
-			var ram: Sheep = ewes.pick_random()
-			ram.make_ram()
-			_puff(ram.global_position)
+			var ewe: Sheep = ewes.pick_random()
+			var ram := ram_scene.instantiate() as Sheep
+			ram.position = ewe.global_position
+			ewe.add_sibling(ram)
+			for lamb: Sheep in flock:
+				if lamb.lamb and lamb.mother == ewe:
+					lamb.mother = ram
+			_puff(ewe.global_position)
+			ewe.remove_from_group("sheep")
+			ewe.queue_free()
 		return
 	var beside: Sheep = mothers.pick_random() if not mothers.is_empty() else flock.pick_random()
 	var newcomer: Sheep

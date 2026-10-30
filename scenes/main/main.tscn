@@ -8,21 +8,22 @@
 [ext_resource type="Script" uid="uid://bqilwa470fm3t" path="res://scenes/main/debug_overlay.gd" id="6_debug"]
 [ext_resource type="Resource" uid="uid://cqv7e475qv2o1" path="res://resources/flock_config.tres" id="7_config"]
 [ext_resource type="PackedScene" uid="uid://dsla4jtx1mnqu" path="res://entities/wolf/wolf.tscn" id="8_wolf"]
-[ext_resource type="PackedScene" path="res://entities/eagle/eagle.tscn" id="16_eagle"]
 [ext_resource type="Script" uid="uid://bo1b31a41aamx" path="res://scenes/main/trip.gd" id="9_trip"]
 [ext_resource type="PackedScene" path="res://ui/end_screen.tscn" id="10_end"]
-[ext_resource type="PackedScene" path="res://ui/pasture_screen.tscn" id="17_pasture"]
 [ext_resource type="PackedScene" uid="uid://c67pgonbomrfh" path="res://entities/dog/dog.tscn" id="11_dog"]
 [ext_resource type="Script" uid="uid://ptixokqk1ji5" path="res://ui/dog_mode_label.gd" id="12_dog_mode"]
 [ext_resource type="Script" uid="uid://btvxehkrfvnr3" path="res://scenes/main/attack_director.gd" id="13_attacks"]
 [ext_resource type="Script" uid="uid://d02ut0adswhae" path="res://scenes/main/forest.gd" id="14_forest"]
 [ext_resource type="Texture2D" uid="uid://k3g1uuc7bcwu" path="res://art/sprites/environment/trees.png" id="15_trees"]
-[ext_resource type="Script" path="res://scenes/main/shearing.gd" id="18_shearing"]
+[ext_resource type="PackedScene" uid="uid://dll346jmi8hil" path="res://entities/eagle/eagle.tscn" id="16_eagle"]
+[ext_resource type="PackedScene" path="res://ui/pasture_screen.tscn" id="17_pasture"]
+[ext_resource type="Script" uid="uid://cretwigclyc4g" path="res://scenes/main/shearing.gd" id="18_shearing"]
 [ext_resource type="PackedScene" path="res://effects/wool_fluff.tscn" id="19_fluff"]
-[ext_resource type="Script" path="res://ui/wool_counter.gd" id="20_wool"]
+[ext_resource type="Script" uid="uid://elpsseinxfte" path="res://ui/wool_counter.gd" id="20_wool"]
 [ext_resource type="Texture2D" uid="uid://b26x52vwyo2r4" path="res://art/sprites/others/items.png" id="21_items"]
-[ext_resource type="PackedScene" path="res://entities/sheep/lamb.tscn" id="22_lamb"]
+[ext_resource type="PackedScene" uid="uid://dfuj5vfskm0fp" path="res://entities/sheep/lamb.tscn" id="22_lamb"]
 [ext_resource type="PackedScene" path="res://ui/shop_screen.tscn" id="23_shop"]
+[ext_resource type="PackedScene" path="res://entities/sheep/ram.tscn" id="24_ram"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wool"]
 atlas = ExtResource("21_items")
@@ -32,9 +33,10 @@ region = Rect2(0, 0, 16, 16)
 y_sort_enabled = true
 script = ExtResource("1_script")
 sheep_scene = ExtResource("3_sheep")
-sheep_count = 40
-dog_scene = ExtResource("11_dog")
+sheep_count = 15
 lamb_scene = ExtResource("22_lamb")
+ram_scene = ExtResource("24_ram")
+dog_scene = ExtResource("11_dog")
 
 [node name="Ground" type="Node2D" parent="." unique_id=1590427545]
 z_index = -2
@@ -71,13 +73,14 @@ eagle_scene = ExtResource("16_eagle")
 packs = Array[int]([2, 3, 3])
 eagles = Array[int]([1, 1, 2])
 
-[node name="Shearing" type="Node" parent="." node_paths=PackedStringArray("attacks", "counter")]
+[node name="Shearing" type="Node" parent="." unique_id=1689612079 node_paths=PackedStringArray("attacks", "counter")]
 script = ExtResource("18_shearing")
 attacks = NodePath("../AttackDirector")
 counter = NodePath("../Hud/Wool")
 fluff_scene = ExtResource("19_fluff")
 sheep_scene = ExtResource("3_sheep")
 lamb_scene = ExtResource("22_lamb")
+ram_scene = ExtResource("24_ram")
 
 [node name="Hud" type="CanvasLayer" parent="." unique_id=1486859162]
 
@@ -87,7 +90,7 @@ offset_top = 2.0
 theme_override_font_sizes/font_size = 8
 script = ExtResource("12_dog_mode")
 
-[node name="TripLabel" type="Label" parent="Hud"]
+[node name="TripLabel" type="Label" parent="Hud" unique_id=1587361553]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -98,7 +101,7 @@ grow_horizontal = 0
 theme_override_font_sizes/font_size = 8
 horizontal_alignment = 2
 
-[node name="Wool" type="Control" parent="Hud"]
+[node name="Wool" type="Control" parent="Hud" unique_id=1893674713]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 4.0
@@ -108,7 +111,7 @@ offset_bottom = 30.0
 mouse_filter = 2
 script = ExtResource("20_wool")
 
-[node name="Icon" type="TextureRect" parent="Hud/Wool"]
+[node name="Icon" type="TextureRect" parent="Hud/Wool" unique_id=1428910079]
 layout_mode = 0
 offset_right = 16.0
 offset_bottom = 16.0
@@ -116,7 +119,7 @@ pivot_offset = Vector2(8, 8)
 mouse_filter = 2
 texture = SubResource("AtlasTexture_wool")
 
-[node name="Label" type="Label" parent="Hud/Wool"]
+[node name="Label" type="Label" parent="Hud/Wool" unique_id=737339056]
 layout_mode = 0
 offset_left = 18.0
 offset_top = 2.0
@@ -124,7 +127,7 @@ theme_override_font_sizes/font_size = 8
 
 [node name="EndScreen" parent="." unique_id=798652235 instance=ExtResource("10_end")]
 
-[node name="PastureScreen" parent="." instance=ExtResource("17_pasture")]
+[node name="PastureScreen" parent="." unique_id=182035227 instance=ExtResource("17_pasture")]
 
-[node name="ShopScreen" parent="." node_paths=PackedStringArray("counter") instance=ExtResource("23_shop")]
+[node name="ShopScreen" parent="." unique_id=1205952366 node_paths=PackedStringArray("counter") instance=ExtResource("23_shop")]
 counter = NodePath("../Hud/Wool")

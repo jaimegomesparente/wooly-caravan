@@ -16,6 +16,8 @@ const WANDER_ARRIVE_DISTANCE := 2.0
 const WANDER_TIMEOUT := 3.0
 ## Time (s) of a 1 px hop: on being shorn, or a lamb's little jump at rest.
 const HOP_TIME := 0.15
+## Time (s) a ram plays its butt animation.
+const BUTT_TIME := 0.3
 
 ## Toggled by the debug overlay (F3): each sheep draws a line to its target and a state dot.
 static var debug_draw: bool = false
@@ -27,8 +29,9 @@ static var debug_draw: bool = false
 
 var mother: Sheep
 var grow_trips: int = 0
-## A ram butts away the enemies that come to grab it (see FlockConfig ram_*); set with make_ram().
-var ram: bool = false
+## A ram (`ram.tscn`, bought in the shop) butts away the enemies that come to grab it (see
+## FlockConfig ram_*); it is never shorn.
+@export var ram: bool = false
 
 ## Shorn on the pasture: plays the `_shaved` animations; the wool may grow back at the end of each
 ## graze (regrow_chance).
@@ -109,8 +112,6 @@ func _ready() -> void:
 	_set_facing_left(cos(_heading) < 0.0)
 	_think_timer = randf_range(0.0, config.think_interval_max)
 	_sprite.animation_finished.connect(_on_animation_finished)
-	if ram:
-		_sprite.modulate = config.ram_tint
 	_enter_rest()
 
 
@@ -220,13 +221,6 @@ func capture(by: Node2D, lifted: bool = false) -> void:
 	_gait = Gait.REST
 	_set_rest(Rest.STAND)
 	_pending_gait = Gait.REST
-
-
-## Turns into a ram (tinted until it has a sprite of its own).
-func make_ram() -> void:
-	ram = true
-	if is_node_ready():
-		_sprite.modulate = config.ram_tint
 
 
 ## Called by an enemy about to grab this sheep: a ram ready to butt turns to it, hops and butts it
@@ -742,6 +736,9 @@ func _update_animation() -> void:
 		hop = roundf(absf(sin(_hop_distance * PI / config.hop_length)) * config.hop_height)
 	_sprite.position.y = _sprite_offset_y - hop
 
+	if ram and _butt_timer > config.ram_cooldown - BUTT_TIME:
+		_play(&"butt", 1.0)
+		return
 	if _speed > GUIDE_STOPPED_SPEED:
 		# No run_shaved yet: a shorn sheep would show its wool while it moves, so it keeps idle_shaved.
 		if shaved and not _has_frames(&"run_shaved"):

@@ -3,6 +3,7 @@ extends Node2D
 @export var sheep_scene: PackedScene
 @export var sheep_count: int = 10
 @export var lamb_scene: PackedScene
+@export var ram_scene: PackedScene
 ## Share of the starting sheep that have a lamb.
 @export_range(0.0, 1.0) var lamb_ratio: float = 0.3
 ## A lamb grows into a sheep after this many trips (drawn between min and max).
@@ -37,11 +38,10 @@ func _ready() -> void:
 		RunManager.start_flock(sheep_count, lamb_ratio, lamb_grow_trips)
 	var mothers: Array[Sheep] = []
 	for i in RunManager.sheep:
-		var sheep := sheep_scene.instantiate() as Sheep
+		var scene := ram_scene if i < RunManager.rams else sheep_scene
+		var sheep := scene.instantiate() as Sheep
 		var offset := Vector2.from_angle(randf() * TAU) * randf_range(spawn_radius * 0.5, spawn_radius)
 		sheep.position = _shepherd.position + offset
-		if i < RunManager.rams:
-			sheep.make_ram()
 		add_child(sheep)
 		mothers.append(sheep)
 	mothers.shuffle()

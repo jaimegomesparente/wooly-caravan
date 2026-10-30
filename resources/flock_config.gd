@@ -119,8 +119,6 @@ extends Resource
 @export var ram_push: float = 10.0
 @export var ram_stun_time: float = 1.5
 @export var ram_cooldown: float = 2.0
-## Tint of a ram until it has a sprite of its own.
-@export var ram_tint: Color = Color(0.85, 0.7, 0.5)
 
 @export_group("Variety")
 ## Each sheep gets a temperament from timid to bold; this scales how much it changes: a timid sheep
