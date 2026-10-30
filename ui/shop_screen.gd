@@ -10,9 +10,9 @@ signal closed
 const CARD_SIZE := Vector2(64, 32)
 
 @export var counter: WoolCounter
-@export var sheep_price: int = 4
-@export var lamb_price: int = 2
-@export var ram_price: int = 6
+@export var sheep_price: int = 10
+@export var lamb_price: int = 5
+@export var ram_price: int = 15
 
 @onready var _title: Label = %Title
 @onready var _cards: GridContainer = %Cards
