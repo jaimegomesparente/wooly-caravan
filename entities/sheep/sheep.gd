@@ -27,6 +27,8 @@ static var debug_draw: bool = false
 
 var mother: Sheep
 var grow_trips: int = 0
+## A ram butts away the enemies that come to grab it (see FlockConfig ram_*); set with make_ram().
+var ram: bool = false
 
 ## Shorn on the pasture: plays the `_shaved` animations; the wool may grow back at the end of each
 ## graze (regrow_chance).
@@ -82,6 +84,8 @@ var _sprite_offset_y: float = 0.0
 var _regrow_chance: float = 0.0
 ## Time (s) left of a 1 px hop.
 var _hop_timer: float = 0.0
+## Time (s) left before a ram can butt again.
+var _butt_timer: float = 0.0
 ## Distance (px) covered since it last started moving: paces the hops of config.hop_height.
 var _hop_distance: float = 0.0
 
@@ -105,6 +109,8 @@ func _ready() -> void:
 	_set_facing_left(cos(_heading) < 0.0)
 	_think_timer = randf_range(0.0, config.think_interval_max)
 	_sprite.animation_finished.connect(_on_animation_finished)
+	if ram:
+		_sprite.modulate = config.ram_tint
 	_enter_rest()
 
 
@@ -113,6 +119,7 @@ func _physics_process(delta: float) -> void:
 		_shepherd = get_tree().get_first_node_in_group("shepherd") as Shepherd
 	if _shepherd == null:
 		return
+	_butt_timer = maxf(_butt_timer - delta, 0.0)
 	if _captor:
 		_speed = 0.0
 		velocity = Vector2.ZERO
@@ -213,6 +220,26 @@ func capture(by: Node2D, lifted: bool = false) -> void:
 	_gait = Gait.REST
 	_set_rest(Rest.STAND)
 	_pending_gait = Gait.REST
+
+
+## Turns into a ram (tinted until it has a sprite of its own).
+func make_ram() -> void:
+	ram = true
+	if is_node_ready():
+		_sprite.modulate = config.ram_tint
+
+
+## Called by an enemy about to grab this sheep: a ram ready to butt turns to it, hops and butts it
+## back instead of being caught (true).
+func fends_off(enemy: Enemy) -> bool:
+	if not ram or _butt_timer > 0.0:
+		return false
+	_butt_timer = config.ram_cooldown
+	_hop_timer = HOP_TIME
+	var direction := enemy.global_position - global_position
+	_set_facing_left(direction.x < 0.0)
+	enemy.butted(direction, config.ram_damage, config.ram_push, config.ram_stun_time)
+	return true
 
 
 ## Shorn on the pasture: hops, then its wool may grow back at the end of each graze.

@@ -78,6 +78,14 @@ func _physics_process(delta: float) -> void:
 	if _prey != null and not is_instance_valid(_prey):
 		_prey = null
 	_timer -= delta
+	if _stun_timer > 0.0:
+		# Butted by a ram: stands frozen, then goes on.
+		_stun_timer -= delta
+		velocity = Vector2.ZERO
+		_sprite.pause()
+		if _stun_timer <= 0.0:
+			_sprite.play()
+		return
 	match _state:
 		State.WAITING:
 			return
@@ -180,6 +188,8 @@ func _charge(delta: float) -> void:
 		_target = nearest
 	var to_target := _target.global_position - global_position
 	if to_target.length() <= data.capture_distance:
+		if _target.fends_off(self):
+			return
 		_target.capture(self)
 		_prey = _target
 		sheep_captured.emit(_target)

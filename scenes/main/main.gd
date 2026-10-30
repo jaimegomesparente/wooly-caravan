@@ -40,6 +40,8 @@ func _ready() -> void:
 		var sheep := sheep_scene.instantiate() as Sheep
 		var offset := Vector2.from_angle(randf() * TAU) * randf_range(spawn_radius * 0.5, spawn_radius)
 		sheep.position = _shepherd.position + offset
+		if i < RunManager.rams:
+			sheep.make_ram()
 		add_child(sheep)
 		mothers.append(sheep)
 	mothers.shuffle()

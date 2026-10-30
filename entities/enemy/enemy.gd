@@ -14,6 +14,8 @@ const FLINCH_RECOIL := 2.0
 const TINT_SHADER := preload("res://effects/enemy_tint.gdshader")
 ## Strongest slow from mud (fraction of its speed lost).
 const MAX_MUD_SLOW := 0.8
+## Time (s) of the push back from a ram's butt.
+const BUTT_PUSH_TIME := 0.15
 
 ## Hits (clods) it takes before it runs off; a bark makes it run off whatever is left.
 @export var health: int = 1
@@ -24,6 +26,8 @@ var _tint: ShaderMaterial
 var _speed_scale: float = 1.0
 ## Mud slows still running (a new hit restarts the count, the last one to end lifts the slow).
 var _mud_slows: int = 0
+## Time (s) left stunned by a ram's butt: each enemy says what it does meanwhile.
+var _stun_timer: float = 0.0
 
 
 ## True while nearby sheep should panic.
@@ -54,6 +58,18 @@ func hit(direction: Vector2, damage: int = 1, mud_slow: float = 0.0, mud_time: f
 		scare()
 		return
 	global_position += direction.normalized() * FLINCH_RECOIL
+
+
+## Butted by a ram along `direction`: hit like by a clod; with health left it is also pushed back
+## `push` px and stunned for `stun_time` s.
+func butted(direction: Vector2, damage: int, push: float, stun_time: float) -> void:
+	hit(direction, damage)
+	if health <= 0:
+		return
+	_stun_timer = stun_time
+	var tween := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+	tween.tween_property(self, "global_position", global_position + direction.normalized() * push,
+			BUTT_PUSH_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func _slow(amount: float, time: float) -> void:

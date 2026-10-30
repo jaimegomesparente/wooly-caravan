@@ -42,12 +42,20 @@ func start() -> void:
 
 
 ## A recruit bought in the shop (`sheep` or `lamb`) joins the flock in a burst of fluff, next to a
-## sheep drawn at random: a sheep with its wool, or a lamb that sheep is the mother of.
+## sheep drawn at random: a sheep with its wool, or a lamb that sheep is the mother of. A `ram` turns
+## a sheep drawn at random among those that are not one yet into a ram.
 func recruit(item: StringName) -> void:
 	var flock := get_tree().get_nodes_in_group("sheep")
 	if flock.is_empty():
 		return
 	var mothers := flock.filter(func(sheep: Sheep) -> bool: return not sheep.lamb)
+	if item == &"ram":
+		var ewes := mothers.filter(func(sheep: Sheep) -> bool: return not sheep.ram)
+		if not ewes.is_empty():
+			var ram: Sheep = ewes.pick_random()
+			ram.make_ram()
+			_puff(ram.global_position)
+		return
 	var beside: Sheep = mothers.pick_random() if not mothers.is_empty() else flock.pick_random()
 	var newcomer: Sheep
 	if item == &"lamb":
@@ -66,13 +74,16 @@ func recruit(item: StringName) -> void:
 ## The shop is left: on to the next trip with the flock.
 func leave() -> void:
 	var sheep := 0
+	var rams := 0
 	var lambs: Array[int] = []
 	for member: Sheep in get_tree().get_nodes_in_group("sheep"):
 		if member.lamb:
 			lambs.append(member.grow_trips)
 		else:
 			sheep += 1
-	RunManager.go_to_next_trip(sheep, lambs)
+			if member.ram:
+				rams += 1
+	RunManager.go_to_next_trip(sheep, rams, lambs)
 
 
 ## One more trip for every lamb; those that have made enough turn into sheep where they stand.

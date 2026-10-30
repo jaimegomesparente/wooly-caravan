@@ -178,6 +178,10 @@ func _dive() -> void:
 	_altitude = lerpf(_dive_altitude, _prey_point.position.y, t)
 	if t < 1.0:
 		return
+	if _target.fends_off(self):
+		# Butted by a ram: gives up whatever its health.
+		_leave()
+		return
 	_target.capture(self, true)
 	_prey = _target
 	sheep_captured.emit(_prey)

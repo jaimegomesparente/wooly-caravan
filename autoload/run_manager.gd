@@ -21,6 +21,8 @@ const POWERS: Array[PowerData] = [
 var trip: int = 1
 ## Sheep that start the current trip (-1: the first trip, Main's own count).
 var sheep: int = -1
+## Rams among the sheep that start the current trip.
+var rams: int = 0
 ## Lambs that start the current trip: for each, the trips left before it grows into a sheep.
 var lambs: Array[int] = []
 ## A lamb grows into a sheep after a number of trips drawn between these (min, max).
@@ -54,6 +56,7 @@ func _ready() -> void:
 func start_run() -> void:
 	trip = 1
 	sheep = -1
+	rams = 0
 	lambs.clear()
 	powers.clear()
 	wool = 0
@@ -86,20 +89,21 @@ func is_last_trip() -> bool:
 	return trip >= TRIPS
 
 
-## The flock that arrived (`saved` sheep and `saved_lambs`, trips left for each) goes on to the
-## next trip.
-func next_trip(saved: int, saved_lambs: Array[int]) -> void:
+## The flock that arrived (`saved` sheep, `saved_rams` of them rams, and `saved_lambs`, trips left
+## for each) goes on to the next trip.
+func next_trip(saved: int, saved_rams: int, saved_lambs: Array[int]) -> void:
 	trip += 1
 	sheep = saved
+	rams = saved_rams
 	lambs = saved_lambs
 
 
 ## Fades to black, starts the next trip with the flock that arrived, then fades back in.
-func go_to_next_trip(saved: int, saved_lambs: Array[int]) -> void:
+func go_to_next_trip(saved: int, saved_rams: int, saved_lambs: Array[int]) -> void:
 	var fade := create_tween()
 	fade.tween_property(_veil, "modulate:a", 1.0, FADE_TIME)
 	await fade.finished
-	next_trip(saved, saved_lambs)
+	next_trip(saved, saved_rams, saved_lambs)
 	get_tree().reload_current_scene()
 	await get_tree().process_frame
 	fade = create_tween()

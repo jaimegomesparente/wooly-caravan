@@ -111,6 +111,17 @@ extends Resource
 ## Chance, at the end of each graze, that a shorn sheep gets its wool back.
 @export_range(0.0, 1.0) var regrow_chance: float = 0.1
 
+@export_group("Ram")
+## A ram (bought in the shop) butts an enemy that comes to grab it instead of being caught: the enemy
+## loses ram_damage health and, with some left, is pushed back ram_push px and stunned ram_stun_time
+## s. The ram can butt again after ram_cooldown s; meanwhile it can be caught.
+@export var ram_damage: int = 1
+@export var ram_push: float = 10.0
+@export var ram_stun_time: float = 1.5
+@export var ram_cooldown: float = 2.0
+## Tint of a ram until it has a sprite of its own.
+@export var ram_tint: Color = Color(0.85, 0.7, 0.5)
+
 @export_group("Variety")
 ## Each sheep gets a temperament from timid to bold; this scales how much it changes: a timid sheep
 ## reacts faster, has larger flight zones and stays closer to the others; a bold one reacts slower,
