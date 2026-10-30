@@ -2,8 +2,8 @@ class_name Shearing
 extends Node
 ## On the pasture between two trips. The lambs old enough grow into sheep (a burst of fluff), then
 ## the flock is shorn one sheep at a time (not the lambs), left to right, faster and faster: a burst of fluff, the sheep turns shorn, and its wool flies to the counter (`shorn`
-## once all are done). While the power is chosen the wool may grow back as the sheep graze; once
-## chosen (`leave`), the next trip starts. Meanwhile the shepherd and the dog stand still, the
+## once all are done). While the power is chosen and recruits are bought the wool may grow back as
+## the sheep graze; once the shop is left (`leave`), the next trip starts. Meanwhile the shepherd and the dog stand still, the
 ## enemies left run off and no attack comes.
 
 signal shorn
@@ -11,8 +11,10 @@ signal shorn
 @export var attacks: AttackDirector
 @export var counter: WoolCounter
 @export var fluff_scene: PackedScene
-## What a lamb grows into.
+## What a lamb grows into, and a sheep bought in the shop.
 @export var sheep_scene: PackedScene
+## A lamb bought in the shop.
+@export var lamb_scene: PackedScene
 ## Wool earned per sheep shorn.
 @export var wool_per_sheep: int = 1
 ## Delay (s) between the first two sheep shorn; each next delay is `speed_up` times the last one,
@@ -39,7 +41,29 @@ func start() -> void:
 	shorn.emit()
 
 
-## The power is chosen: on to the next trip with the flock.
+## A recruit bought in the shop (`sheep` or `lamb`) joins the flock in a burst of fluff, next to a
+## sheep drawn at random: a sheep with its wool, or a lamb that sheep is the mother of.
+func recruit(item: StringName) -> void:
+	var flock := get_tree().get_nodes_in_group("sheep")
+	if flock.is_empty():
+		return
+	var mothers := flock.filter(func(sheep: Sheep) -> bool: return not sheep.lamb)
+	var beside: Sheep = mothers.pick_random() if not mothers.is_empty() else flock.pick_random()
+	var newcomer: Sheep
+	if item == &"lamb":
+		newcomer = lamb_scene.instantiate() as Sheep
+		newcomer.grow_trips = RunManager.lamb_trips()
+		if not beside.lamb:
+			newcomer.mother = beside
+		newcomer.position = beside.global_position + Vector2(-6, 2)
+	else:
+		newcomer = sheep_scene.instantiate() as Sheep
+		newcomer.position = beside.global_position + Vector2(-12, 4)
+	beside.add_sibling(newcomer)
+	_puff(newcomer.position)
+
+
+## The shop is left: on to the next trip with the flock.
 func leave() -> void:
 	var sheep := 0
 	var lambs: Array[int] = []

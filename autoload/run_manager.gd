@@ -23,6 +23,8 @@ var trip: int = 1
 var sheep: int = -1
 ## Lambs that start the current trip: for each, the trips left before it grows into a sheep.
 var lambs: Array[int] = []
+## A lamb grows into a sheep after a number of trips drawn between these (min, max).
+var grow_trips: Vector2i = Vector2i(2, 4)
 ## Head count (sheep and lambs) the run started with.
 var flock_size: int = 0
 ## Powers taken, in order (a power can appear several times).
@@ -66,12 +68,18 @@ func trip_seed() -> int:
 
 ## The run's starting flock: `count` sheep, and lambs for `lamb_ratio` of them, each growing up
 ## after a number of trips drawn in `grow_trips` (min, max).
-func start_flock(count: int, lamb_ratio: float, grow_trips: Vector2i) -> void:
+func start_flock(count: int, lamb_ratio: float, lamb_grow_trips: Vector2i) -> void:
 	sheep = count
+	grow_trips = lamb_grow_trips
 	lambs.clear()
 	for i in roundi(count * lamb_ratio):
-		lambs.append(randi_range(grow_trips.x, grow_trips.y))
+		lambs.append(lamb_trips())
 	flock_size = count + lambs.size()
+
+
+## Trips a new lamb has to make before it grows into a sheep.
+func lamb_trips() -> int:
+	return randi_range(grow_trips.x, grow_trips.y)
 
 
 func is_last_trip() -> bool:

@@ -22,6 +22,7 @@
 [ext_resource type="Script" path="res://ui/wool_counter.gd" id="20_wool"]
 [ext_resource type="Texture2D" uid="uid://b26x52vwyo2r4" path="res://art/sprites/others/items.png" id="21_items"]
 [ext_resource type="PackedScene" path="res://entities/sheep/lamb.tscn" id="22_lamb"]
+[ext_resource type="PackedScene" path="res://ui/shop_screen.tscn" id="23_shop"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wool"]
 atlas = ExtResource("21_items")
@@ -76,6 +77,7 @@ attacks = NodePath("../AttackDirector")
 counter = NodePath("../Hud/Wool")
 fluff_scene = ExtResource("19_fluff")
 sheep_scene = ExtResource("3_sheep")
+lamb_scene = ExtResource("22_lamb")
 
 [node name="Hud" type="CanvasLayer" parent="." unique_id=1486859162]
 
@@ -123,3 +125,6 @@ theme_override_font_sizes/font_size = 8
 [node name="EndScreen" parent="." unique_id=798652235 instance=ExtResource("10_end")]
 
 [node name="PastureScreen" parent="." instance=ExtResource("17_pasture")]
+
+[node name="ShopScreen" parent="." node_paths=PackedStringArray("counter") instance=ExtResource("23_shop")]
+counter = NodePath("../Hud/Wool")

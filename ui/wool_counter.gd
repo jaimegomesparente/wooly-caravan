@@ -42,6 +42,12 @@ func collect(from: Vector2, amount: int) -> void:
 	tween.tween_callback(_land.bind(icon, amount))
 
 
+## `amount` wool spent: counts down at once.
+func spend(amount: int) -> void:
+	_shown -= amount
+	_label.text = str(_shown)
+
+
 ## Quadratic curve: rises first, then swoops sideways onto the counter.
 func _fly(t: float, icon: Sprite2D, from: Vector2, to: Vector2) -> void:
 	var bend := Vector2(from.x, to.y)

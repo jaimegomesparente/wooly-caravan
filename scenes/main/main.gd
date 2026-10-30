@@ -17,6 +17,7 @@ extends Node2D
 @onready var _attacks: AttackDirector = $AttackDirector
 @onready var _end_screen: CanvasLayer = $EndScreen
 @onready var _pasture: PastureScreen = $PastureScreen
+@onready var _shop: ShopScreen = $ShopScreen
 @onready var _shearing: Shearing = $Shearing
 @onready var _dog_mode: DogModeLabel = $Hud/DogMode
 @onready var _trip_label: Label = $Hud/TripLabel
@@ -62,11 +63,13 @@ func _ready() -> void:
 
 	_trip_label.text = "Trip %d/%d" % [RunManager.trip, RunManager.TRIPS]
 	_trip.finished.connect(_on_trip_finished)
-	_pasture.chosen.connect(_shearing.leave)
+	_pasture.chosen.connect(_shop.open)
+	_shop.bought.connect(_shearing.recruit)
+	_shop.closed.connect(_shearing.leave)
 	_trip.begin(count)
 
 
-## A flock that arrives on the pasture is shorn, then a power is chosen, unless it was the last trip:
+## A flock that arrives on the pasture is shorn, then a power is chosen and recruits bought, unless it was the last trip:
 ## the run is then over, as when no sheep is left.
 func _on_trip_finished(arrived: bool, saved: int, _total: int) -> void:
 	if arrived and not RunManager.is_last_trip():
