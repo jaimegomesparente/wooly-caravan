@@ -78,6 +78,7 @@ func recruit(item: StringName) -> void:
 		newcomer = sheep_scene.instantiate() as Sheep
 		newcomer.position = beside.global_position + Vector2(-12, 4)
 	beside.add_sibling(newcomer)
+	RunManager.flock_size += 1
 	_puff(newcomer.position)
 
 

@@ -11,7 +11,7 @@ func _ready() -> void:
 func show_result(arrived: bool, saved: int, total: int) -> void:
 	var title := "Arrivés au pâturage !" if arrived else "Tout le troupeau est perdu"
 	var lost := total - saved
-	var losses := " — %d emporté%s par le loup" % [lost, "s" if lost > 1 else ""] if lost > 0 else ""
+	var losses := " — %d perdu%s" % [lost, "s" if lost > 1 else ""] if lost > 0 else ""
 	_label.text = "%s\n%d / %d moutons%s\n\nR : recommencer" % [title, saved, total, losses]
 	visible = true
 

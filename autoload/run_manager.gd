@@ -27,7 +27,7 @@ var rams: int = 0
 var lambs: Array[int] = []
 ## A lamb grows into a sheep after a number of trips drawn between these (min, max).
 var grow_trips: Vector2i = Vector2i(2, 4)
-## Head count (sheep and lambs) the run started with.
+## Head count (sheep and lambs) the run started with, plus the recruits bought since.
 var flock_size: int = 0
 ## Powers taken, in order (a power can appear several times).
 var powers: Array[PowerData] = []
