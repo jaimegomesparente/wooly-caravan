@@ -255,9 +255,9 @@ func _charge_step(delta: float) -> Vector2:
 		_charge_target = null
 		return Vector2.ZERO
 	if _charge_timer <= 0.0:
-		# Gives up and catches its breath before the next charge.
+		# Gives up and catches its breath before the next charge (no butt played).
 		_charge_target = null
-		_butt_timer = config.ram_cooldown
+		_butt_timer = config.ram_cooldown - BUTT_TIME
 		return Vector2.ZERO
 	return to_target.normalized() * config.ram_charge_speed
 
