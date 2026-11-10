@@ -49,6 +49,9 @@ func _send_pack(size: int, eagle_count: int) -> void:
 	for i in size + eagle_count:
 		if i > 0:
 			await get_tree().create_timer(pack_stagger, false, true).timeout
+		# The flock reached the pasture meanwhile: the rest of the pack stays in the forest.
+		if stopped:
+			break
 		if i >= size:
 			_send_eagle()
 			continue

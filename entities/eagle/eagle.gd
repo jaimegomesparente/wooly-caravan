@@ -39,6 +39,8 @@ var _dive_altitude: float = 0.0
 var _pass_drift: float = 0.0
 var _pass_shadow_scale: float = 1.0
 var _pass_flap_speed: float = 1.0
+## Scared while passing: it ends the pass, then goes away without aiming.
+var _gave_up: bool = false
 
 ## Flapping silhouette, head to the left like the bird, cast over the ground and everything on it.
 @onready var _shadow: AnimatedSprite2D = $Shadow
@@ -66,7 +68,8 @@ func is_threat() -> bool:
 	return _state == State.DIVE or _state == State.CARRY
 
 
-## Barked at by the dog: drops the carried sheep, or gives up the dive, and flies off.
+## Barked at by the dog: drops the carried sheep, or gives up the dive, and flies off. Scared
+## before diving (the flock reached the pasture), it ends its pass and goes away.
 func scare() -> void:
 	if _state == State.CARRY and _prey:
 		_prey.release()
@@ -74,6 +77,10 @@ func scare() -> void:
 		_leave()
 	elif _state == State.DIVE:
 		_leave()
+	elif _state == State.TELEGRAPH:
+		queue_free()
+	else:
+		_gave_up = true
 
 
 func _physics_process(delta: float) -> void:
@@ -146,6 +153,9 @@ func _start_pass() -> void:
 
 
 func _end_pass() -> void:
+	if _gave_up:
+		queue_free()
+		return
 	_target = _most_isolated_sheep()
 	if _target:
 		_state = State.TELEGRAPH
