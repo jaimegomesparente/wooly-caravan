@@ -72,12 +72,15 @@ func _place(t: float) -> void:
 func _on_body_entered(body: Node2D) -> void:
 	var enemy := body as Enemy
 	# Enemies on their way out (or still out of reach, like a passing eagle) let it fly through.
-	if enemy and enemy.is_threat():
+	# Gone after its first hit (the area still reports bodies until the end of the frame).
+	if enemy and enemy.is_threat() and not is_queued_for_deletion():
 		enemy.hit(_to - _from, _damage, _mud_slow, _mud_time)
 		_crumble()
 
 
 func _crumble() -> void:
+	if is_queued_for_deletion():
+		return
 	if crumble_scene:
 		var crumble := crumble_scene.instantiate() as Node2D
 		# Placed before entering the tree, so the burst starts at the right spot.
