@@ -1,7 +1,7 @@
 class_name PastureScreen
 extends CanvasLayer
 ## Between two trips, over a light veil (the shorn flock grazes behind it): one power is chosen out
-## of a few cards, then the screen hides (`chosen`). P (testing aid) opens it during a trip with every
+## of a few cards (`PowerCard`), then the screen hides (`chosen`). P (testing aid) opens it during a trip with every
 ## power: the one clicked applies at once and the trip goes on.
 
 signal chosen
@@ -38,6 +38,13 @@ func _show(title: String, powers: Array[PowerData]) -> void:
 	for child in _cards.get_children():
 		child.queue_free()
 	for power in powers:
+		if not _testing:
+			var power_card := PowerCard.new()
+			power_card.setup(power)
+			power_card.pressed.connect(_choose.bind(power))
+			_cards.add_child(power_card)
+			continue
+		# Every power at once (P): plain buttons, cards would not fit on screen.
 		var card := Button.new()
 		card.text = "%s\n\n%s" % [power.title, power.description]
 		card.custom_minimum_size = CARD_SIZE
