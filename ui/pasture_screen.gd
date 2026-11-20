@@ -8,6 +8,7 @@ signal chosen
 
 const CHOICES := 3
 const CARD_SIZE := Vector2(88, 64)
+const CARD_SCENE: PackedScene = preload("res://ui/power_card.tscn")
 
 ## True when opened with P during a trip.
 var _testing: bool = false
@@ -39,7 +40,7 @@ func _show(title: String, powers: Array[PowerData]) -> void:
 		child.queue_free()
 	for power in powers:
 		if not _testing:
-			var power_card := PowerCard.new()
+			var power_card := CARD_SCENE.instantiate() as PowerCard
 			power_card.setup(power)
 			power_card.pressed.connect(_choose.bind(power))
 			_cards.add_child(power_card)

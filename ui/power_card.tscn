@@ -1,0 +1,62 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" uid="uid://cmh40v4j52qdi" path="res://ui/power_card.gd" id="1_card"]
+[ext_resource type="Resource" path="res://resources/powers/mudball.tres" id="2_power"]
+[ext_resource type="FontFile" path="res://art/fonts/alagard.ttf" id="3_title"]
+[ext_resource type="FontFile" path="res://art/fonts/m5x7.ttf" id="4_text"]
+
+[node name="PowerCard" type="Button"]
+custom_minimum_size = Vector2(80, 112)
+offset_right = 80.0
+offset_bottom = 112.0
+script = ExtResource("1_card")
+preview_power = ExtResource("2_power")
+
+[node name="Body" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 80.0
+offset_bottom = 112.0
+mouse_filter = 2
+
+[node name="Window" type="ColorRect" parent="Body"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 21.0
+offset_right = 68.0
+offset_bottom = 57.0
+mouse_filter = 2
+color = Color(0.231373, 0.207843, 0.196078, 1)
+
+[node name="Frame" type="TextureRect" parent="Body"]
+layout_mode = 0
+offset_right = 80.0
+offset_bottom = 112.0
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Body"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 4.0
+offset_right = 64.0
+offset_bottom = 15.0
+mouse_filter = 2
+theme_override_fonts/font = ExtResource("3_title")
+theme_override_font_sizes/font_size = 16
+text = "Title"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Text" type="Label" parent="Body"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 61.0
+offset_right = 72.0
+offset_bottom = 98.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.113725, 0.0784314, 0.0627451, 1)
+theme_override_constants/line_spacing = 0
+theme_override_fonts/font = ExtResource("4_text")
+theme_override_font_sizes/font_size = 16
+text = "Description"
+autowrap_mode = 3
