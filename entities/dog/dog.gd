@@ -7,6 +7,7 @@ extends CharacterBody2D
 ## Rear guard posture: stays behind the rearmost sheep without pushing, and chases a wolf coming
 ## near it. Hunt posture: chases any wolf around, otherwise only stays near the shepherd.
 ## Chasing: runs straight at the wolf (the sheep step aside), stops and barks; the wolf runs off.
+## After such a bark the dog chases nothing for bark_cooldown s (the mode-change bark does not count).
 
 signal mode_changed(mode_name: String)
 
@@ -32,6 +33,8 @@ var _flanking: bool = false
 ## The chased enemy, and true once barking at it.
 var _enemy: Enemy
 var _barking: bool = false
+## Time (s) left before the dog may chase again after scaring an enemy off.
+var _bark_cooldown: float = 0.0
 var _goal: Vector2
 var _heading: float = 0.0
 var _speed: float = 0.0
@@ -56,6 +59,7 @@ func _physics_process(delta: float) -> void:
 		_move_to(global_position, delta)
 		_update_animation()
 		return
+	_bark_cooldown = maxf(_bark_cooldown - delta, 0.0)
 	var shepherd := get_tree().get_first_node_in_group("shepherd") as Node2D
 	if shepherd == null:
 		return
@@ -81,7 +85,7 @@ func _physics_process(delta: float) -> void:
 				_target = null
 				_flanking = false
 	elif _state != State.CHASE:
-		_enemy = _threat(rearmost)
+		_enemy = _threat(rearmost) if _bark_cooldown <= 0.0 else null
 		if _enemy:
 			_state = State.CHASE
 		else:
@@ -146,6 +150,7 @@ func _chase() -> void:
 		_goal = global_position
 		if _sprite.animation != &"bark" or not _sprite.is_playing():
 			_enemy.scare()
+			_bark_cooldown = data.bark_cooldown
 			_stop_chase()
 		return
 	_goal = _enemy.global_position

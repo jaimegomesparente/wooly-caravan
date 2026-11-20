@@ -43,6 +43,8 @@ extends Resource
 @export var guard_radius: float = 64.0
 ## Stops and barks this close (px) to the chased wolf; the wolf runs off once the bark is over.
 @export var bark_distance: float = 24.0
+## After a bark that scares an enemy off, the dog chases nothing for this long (s).
+@export var bark_cooldown: float = 6.0
 
 @export_group("Obstacles")
 ## Trail trees closer than this (px) ahead make the dog veer aside, harder the closer they are.
