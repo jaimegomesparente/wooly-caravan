@@ -4,9 +4,10 @@ extends Button
 ## A power shown on the card of its target (sheet `power_cards_frames.png`, one 80x112 card per
 ## `PowerData.Target`): title in the top banner, description on the parchment, artwork behind the
 ## see-through window (a dark backdrop until the artworks come). It comes in rising and fading in
-## (`appear()`), not clickable until it is in place. Hovered it rises 1 px and brightens,
-## pressed it sinks 1 px. Laid out in `power_card.tscn`: in the editor the card shows
-## `preview_power` on the frame of `preview_target`, so its labels can be placed by hand.
+## (`appear()`), not clickable until it is in place, and goes away once a card is picked
+## (`leave()`). Hovered it rises 1 px and brightens, pressed it sinks 1 px. Laid out in
+## `power_card.tscn`: in the editor the card shows `preview_power` on the frame of
+## `preview_target`, so its labels can be placed by hand.
 
 const SIZE := Vector2(80, 112)
 const FRAMES: Texture2D = preload("res://art/ui/power_cards/power_cards_frames.png")
@@ -16,6 +17,14 @@ const HOVER_TINT := Color(1.12, 1.12, 1.12)
 ## Coming in: how far below its place the card starts (px), and how long it takes to rise (s).
 const APPEAR_RISE := 16.0
 const APPEAR_TIME := 0.3
+## Going away: the picked card flashes this bright and rises PICK_RISE px, holds for PICK_HOLD s,
+## then fades out in LEAVE_TIME s; the others sink APPEAR_RISE px while fading out meanwhile.
+const PICK_FLASH := Color(1.6, 1.6, 1.6)
+const PICK_RISE := 4.0
+const PICK_HOLD := 0.25
+const LEAVE_TIME := 0.2
+## Time (s) a card takes to go away, picked or not.
+const LEAVE_TOTAL := PICK_HOLD + LEAVE_TIME
 
 ## Editor preview only: the power whose title and description are shown.
 @export var preview_power: PowerData:
@@ -28,10 +37,11 @@ const APPEAR_TIME := 0.3
 		preview_target = value
 		_preview()
 
-## Offset below its place while it comes in (px).
+## Offset below its place while it comes in or goes away (px, negative = above).
 var _rise: float = 0.0
 ## Hover / press offset: -1 hovered, 1 pressed, 0 otherwise.
 var _lift: float = 0.0
+var _tween: Tween
 
 
 func _init() -> void:
@@ -53,10 +63,30 @@ func appear(delay: float) -> void:
 	modulate.a = 0.0
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_set_rise(APPEAR_RISE)
-	var tween := create_tween().set_parallel()
-	tween.tween_method(_set_rise, APPEAR_RISE, 0.0, APPEAR_TIME).set_delay(delay) 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(self, ^"modulate:a", 1.0, APPEAR_TIME * 0.6).set_delay(delay)
-	tween.chain().tween_callback(func() -> void: mouse_filter = Control.MOUSE_FILTER_STOP)
+	_tween = create_tween().set_parallel()
+	_tween.tween_method(_set_rise, APPEAR_RISE, 0.0, APPEAR_TIME).set_delay(delay) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_tween.tween_property(self, ^"modulate:a", 1.0, APPEAR_TIME * 0.6).set_delay(delay)
+	_tween.chain().tween_callback(func() -> void: mouse_filter = Control.MOUSE_FILTER_STOP)
+
+
+## A card was picked (this one when `picked`): no longer clickable; the picked one flashes, rises
+## and fades out, the others sink and fade out. Over after LEAVE_TOTAL s.
+func leave(picked: bool) -> void:
+	if _tween:
+		_tween.kill()
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tween = create_tween().set_parallel()
+	if picked:
+		modulate = PICK_FLASH
+		_tween.tween_property(self, ^"modulate", Color.WHITE, PICK_HOLD)
+		_tween.tween_method(_set_rise, _rise, -PICK_RISE, PICK_HOLD) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		_tween.chain().tween_property(self, ^"modulate:a", 0.0, LEAVE_TIME)
+	else:
+		_tween.tween_method(_set_rise, _rise, APPEAR_RISE, LEAVE_TIME) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		_tween.tween_property(self, ^"modulate:a", 0.0, LEAVE_TIME)
 
 
 func _set_rise(value: float) -> void:
