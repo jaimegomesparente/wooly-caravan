@@ -27,6 +27,17 @@ const RESCUE_BAR_URGENT_COLOR := Color("c0242c")
 const RESCUE_BAR_OUTLINE := Color("1d1410")
 ## Fraction of the bar left where it turns red and blinks.
 const RESCUE_BAR_URGENT := 0.3
+## Startled by an enemy: a "!" over its head for ALERT_TIME s, at most once every ALERT_COOLDOWN s.
+## Pixels from its feet (x from the sprite's center), outlined.
+const ALERT_TIME := 0.5
+const ALERT_COOLDOWN := 2.0
+const ALERT_PIXELS: Array[Vector2] = [Vector2(0, -17), Vector2(0, -16), Vector2(0, -15), Vector2(0, -13)]
+const ALERT_COLOR := Color("f0c040")
+## A hop of joy (freed, or arrived on the pasture): JOY_HEIGHT px over JOY_TIME s; on arrival each
+## sheep hops after a random delay up to JOY_DELAY_MAX s.
+const JOY_HEIGHT := 3.0
+const JOY_TIME := 0.3
+const JOY_DELAY_MAX := 0.4
 
 ## Toggled by the debug overlay (F3): each sheep draws a line to its target and a state dot.
 static var debug_draw: bool = false
@@ -106,6 +117,14 @@ var _charge_target: Enemy
 var _charge_timer: float = 0.0
 ## Distance (px) covered since it last started moving: paces the hops of config.hop_height.
 var _hop_distance: float = 0.0
+## Time (s) left showing the "!", and before it can show again.
+var _alert_timer: float = 0.0
+var _alert_cooldown: float = 0.0
+## Time (s) left before a hop of joy starts, and of the hop.
+var _joy_delay: float = 0.0
+var _joy_timer: float = 0.0
+## True while something besides the debug lines is drawn (redrawn once more after, to clear it).
+var _overlay_drawn: bool = false
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _shape: CollisionShape2D = $CollisionShape2D
@@ -136,6 +155,13 @@ func _physics_process(delta: float) -> void:
 	if _shepherd == null:
 		return
 	_butt_timer = maxf(_butt_timer - delta, 0.0)
+	_alert_timer = maxf(_alert_timer - delta, 0.0)
+	_alert_cooldown = maxf(_alert_cooldown - delta, 0.0)
+	if _joy_delay > 0.0:
+		_joy_delay -= delta
+		if _joy_delay <= 0.0:
+			_joy_timer = JOY_TIME
+	_joy_timer = maxf(_joy_timer - delta, 0.0)
 	if _captor:
 		_speed = 0.0
 		velocity = Vector2.ZERO
@@ -311,19 +337,33 @@ func release() -> void:
 	z_index = 0
 	add_to_group("sheep")
 	_enter_rest()
+	_joy_timer = JOY_TIME
 	queue_redraw()
 
 
-# Redraw while debugging, plus once after it is turned off to clear the lines.
+## Arrived on the pasture: a hop of joy, after a short random delay.
+func cheer() -> void:
+	_joy_delay = randf_range(0.01, JOY_DELAY_MAX)
+
+
+# Redraw while debugging or showing the "!", plus once after to clear them.
 func _update_debug_draw() -> void:
-	if debug_draw or _debug_drawn:
+	var overlay := _alert_timer > 0.0
+	if debug_draw or _debug_drawn or overlay or _overlay_drawn:
 		queue_redraw()
 	_debug_drawn = debug_draw
+	_overlay_drawn = overlay
 
 
 func _draw() -> void:
 	if _captor:
 		_draw_rescue_bar()
+	elif _alert_timer > 0.0:
+		var at := Vector2(roundf(_sprite.position.x), roundf(_sprite.position.y - _sprite_offset_y))
+		for pixel in ALERT_PIXELS:
+			draw_rect(Rect2(at + pixel - Vector2.ONE, Vector2(3, 3)), RESCUE_BAR_OUTLINE)
+		for pixel in ALERT_PIXELS:
+			draw_rect(Rect2(at + pixel, Vector2.ONE), ALERT_COLOR)
 	if not debug_draw:
 		return
 	if _captor:
@@ -623,6 +663,9 @@ func _panic_step(separation: Vector2) -> Vector2:
 
 	if not _panicking and not _fleeing:
 		_startle()
+		if not scared and _alert_cooldown <= 0.0:
+			_alert_timer = ALERT_TIME
+			_alert_cooldown = ALERT_COOLDOWN
 	_panicking = true
 
 	var away := global_position - danger
@@ -804,6 +847,8 @@ func _update_animation() -> void:
 	if config.hop_height > 0.0 and _speed > GUIDE_STOPPED_SPEED:
 		# Moves in hops: one every hop_length px covered.
 		hop = roundf(absf(sin(_hop_distance * PI / config.hop_length)) * config.hop_height)
+	if _joy_timer > 0.0:
+		hop = maxf(hop, roundf(sin(PI * (1.0 - _joy_timer / JOY_TIME)) * JOY_HEIGHT))
 	_sprite.position.y = _sprite_offset_y - hop
 
 	if ram and (_charge_target or _butt_timer > config.ram_cooldown - BUTT_TIME):

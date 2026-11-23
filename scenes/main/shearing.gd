@@ -1,6 +1,6 @@
 class_name Shearing
 extends Node
-## On the pasture between two trips. The lambs old enough grow into sheep (a burst of fluff), then
+## On the pasture between two trips. The flock hops for joy; the lambs old enough grow into sheep (a burst of fluff), then
 ## the flock is shorn one sheep at a time (not the lambs nor the rams), left to right, faster and faster: a burst of fluff, the sheep turns shorn, and its wool flies to the counter (`shorn`
 ## once all are done). While the power is chosen and recruits are bought the wool may grow back as
 ## the sheep graze; once the shop is left (`leave`), the next trip starts. Meanwhile the shepherd and the dog stand still, the
@@ -31,6 +31,7 @@ func start() -> void:
 	get_tree().call_group("enemy", "scare")
 	get_tree().set_group("shepherd", "resting", true)
 	get_tree().set_group("dog", "resting", true)
+	get_tree().call_group("sheep", "cheer")
 	_grow_lambs()
 	var flock := get_tree().get_nodes_in_group("sheep").filter(func(sheep: Sheep) -> bool: return not sheep.lamb and not sheep.ram)
 	flock.sort_custom(func(a: Node2D, b: Node2D) -> bool: return a.global_position.x < b.global_position.x)
