@@ -64,6 +64,9 @@ func _ready() -> void:
 	_attacks.sheep_lost.connect(_trip.on_sheep_lost)
 
 	_trip_label.text = "Trip %d/%d" % [RunManager.trip, RunManager.TRIPS]
+	var banner := TripBanner.new()
+	add_child(banner)
+	banner.play(_trip_label.text)
 	_trip.finished.connect(_on_trip_finished)
 	_pasture.chosen.connect(_shop.open)
 	_shop.bought.connect(_shearing.recruit)
