@@ -1,7 +1,8 @@
 class_name WoolCounter
 extends Control
 ## The run's wool, top left: icon and count. Wool collected pops out of where it was earned as an
-## icon, flies to the counter along a curve and adds to the count when it lands, with a pop.
+## icon, flies to the counter along a curve and adds to the count when it lands, with a pop. The
+## count rolls one by one toward the wool there is (spent wool counts down).
 
 ## Time (s) and height (px) of the icon's hop out of the sheep, then time of its flight.
 @export var hop_time: float = 0.25
@@ -9,9 +10,15 @@ extends Control
 @export var flight_time: float = 0.6
 ## Scale of the counter icon when wool lands, easing back to 1.
 @export var pop_scale: float = 1.4
+## The count rolls by one every roll_step s, faster when far behind so a roll lasts at most
+## roll_time s.
+@export var roll_step: float = 0.05
+@export var roll_time: float = 0.4
 
-## Count shown: catches up with RunManager.wool as the icons land.
+## Count shown, rolling toward _goal; _goal catches up with RunManager.wool as the icons land.
 var _shown: int = 0
+var _goal: int = 0
+var _roll_timer: float = 0.0
 var _pop: Tween
 
 @onready var _icon: TextureRect = $Icon
@@ -20,6 +27,19 @@ var _pop: Tween
 
 func _ready() -> void:
 	_shown = RunManager.wool
+	_goal = _shown
+	_label.text = str(_shown)
+
+
+func _process(delta: float) -> void:
+	if _shown == _goal:
+		_roll_timer = 0.0
+		return
+	_roll_timer -= delta
+	if _roll_timer > 0.0:
+		return
+	_roll_timer = minf(roll_step, roll_time / absi(_goal - _shown))
+	_shown += signi(_goal - _shown)
 	_label.text = str(_shown)
 
 
@@ -42,10 +62,9 @@ func collect(from: Vector2, amount: int) -> void:
 	tween.tween_callback(_land.bind(icon, amount))
 
 
-## `amount` wool spent: counts down at once.
+## `amount` wool spent: counts down.
 func spend(amount: int) -> void:
-	_shown -= amount
-	_label.text = str(_shown)
+	_goal -= amount
 
 
 ## Quadratic curve: rises first, then swoops sideways onto the counter.
@@ -56,8 +75,7 @@ func _fly(t: float, icon: Sprite2D, from: Vector2, to: Vector2) -> void:
 
 func _land(icon: Sprite2D, amount: int) -> void:
 	icon.queue_free()
-	_shown += amount
-	_label.text = str(_shown)
+	_goal += amount
 	if _pop:
 		_pop.kill()
 	_icon.scale = Vector2.ONE * pop_scale
