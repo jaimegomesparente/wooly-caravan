@@ -5,7 +5,8 @@ extends Button
 ## `PowerData.Target`): title in the top banner, description on the parchment, artwork behind the
 ## see-through window (a dark backdrop until the artworks come). It comes in rising and fading in
 ## (`appear()`), not clickable until it is in place, and goes away once a card is picked
-## (`leave()`). Hovered it rises 1 px and brightens, pressed it sinks 1 px. Laid out in
+## (`leave()`). Hovered it rises 1 px, brightens, and its description gives way to what it would
+## change for this run, before and after (`Cooldown 0.70 » 0.53 s`). Pressed it sinks 1 px. Laid out in
 ## `power_card.tscn`: in the editor the card shows `preview_power` on the frame of
 ## `preview_target`, so its labels can be placed by hand.
 
@@ -25,6 +26,19 @@ const PICK_HOLD := 0.25
 const LEAVE_TIME := 0.2
 ## Time (s) a card takes to go away, picked or not.
 const LEAVE_TOTAL := PICK_HOLD + LEAVE_TIME
+## How each crook setting reads on a hovered card: name, unit, decimals (-1: a percentage). A
+## setting missing here is not shown (arc_per_px goes with max_arc).
+const STATS := {
+	&"throw_cooldown": ["Cooldown", " s", 2],
+	&"max_range": ["Reach", " px", 0],
+	&"speed": ["Speed", " px/s", 0],
+	&"damage": ["Damage", "", 0],
+	&"clod_count": ["Clods", "", 0],
+	&"clod_size": ["Clod size", " px", 0],
+	&"max_arc": ["Arc height", " px", 0],
+	&"mud_slow": ["Slow", "%", -1],
+	&"mud_time": ["Slow time", " s", 1],
+}
 
 ## Editor preview only: the power whose title and description are shown.
 @export var preview_power: PowerData:
@@ -42,6 +56,9 @@ var _rise: float = 0.0
 ## Hover / press offset: -1 hovered, 1 pressed, 0 otherwise.
 var _lift: float = 0.0
 var _tween: Tween
+## The power's description, and what it would change for this run (empty when unknown).
+var _description: String = ""
+var _changes: String = ""
 
 
 func _init() -> void:
@@ -56,6 +73,31 @@ func _ready() -> void:
 
 func setup(power: PowerData) -> void:
 	_show(power, power.target)
+	_description = power.description
+	_changes = changes(power, RunManager.current_crook())
+
+
+## One line per crook setting `power` changes: its value in `crook` now, and after taking it
+## (empty without a crook).
+static func changes(power: PowerData, crook: CrookData) -> String:
+	if crook == null:
+		return ""
+	var after := crook.duplicate() as CrookData
+	power.apply(after)
+	var lines: PackedStringArray = []
+	for effect in power.effects:
+		if not STATS.has(effect.property):
+			continue
+		var stat: Array = STATS[effect.property]
+		lines.append("%s %s » %s%s" % [stat[0], _stat_value(crook.get(effect.property), stat[2]),
+				_stat_value(after.get(effect.property), stat[2]), stat[1]])
+	return "\n".join(lines)
+
+
+static func _stat_value(value: float, decimals: int) -> String:
+	if decimals < 0:
+		return str(roundi(value * 100.0))
+	return ("%." + str(decimals) + "f") % value if decimals > 0 else str(roundi(value))
 
 
 ## Comes in after `delay` s: rises from `APPEAR_RISE` px below with a slight overshoot while fading in.
@@ -122,6 +164,9 @@ func _draw() -> void:
 	var body := get_node("Body") as Control
 	var mode := get_draw_mode()
 	var pressed := mode == DRAW_PRESSED or mode == DRAW_HOVER_PRESSED
+	var hovered := mode == DRAW_HOVER or mode == DRAW_HOVER_PRESSED
 	_lift = 1.0 if pressed else -1.0 if mode == DRAW_HOVER else 0.0
 	_place()
-	body.modulate = HOVER_TINT if mode == DRAW_HOVER or mode == DRAW_HOVER_PRESSED else Color.WHITE
+	body.modulate = HOVER_TINT if hovered else Color.WHITE
+	if not _description.is_empty():
+		(get_node("Body/Text") as Label).text = _changes if hovered and not _changes.is_empty() else _description

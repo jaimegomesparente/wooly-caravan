@@ -136,6 +136,11 @@ func crook(base: CrookData) -> CrookData:
 	return _crook
 
 
+## The run's crook settings as they are now (null before the shepherd first asked for them).
+func current_crook() -> CrookData:
+	return _crook
+
+
 func take(power: PowerData) -> void:
 	powers.append(power)
 	if _crook:
