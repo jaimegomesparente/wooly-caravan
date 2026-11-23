@@ -71,6 +71,8 @@ func _ready() -> void:
 	_attacks.sheep_lost.connect(_trip.on_sheep_lost)
 
 	_trip_label.text = "Trip %d/%d" % [RunManager.trip, RunManager.TRIPS]
+	# The theme's pixel font, at its size.
+	_trip_label.remove_theme_font_size_override(&"font_size")
 	add_child(AimPreview.new())
 	add_child(Crosshair.new())
 	var banner := TripBanner.new()

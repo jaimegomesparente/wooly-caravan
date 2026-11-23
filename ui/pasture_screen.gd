@@ -8,7 +8,8 @@ extends CanvasLayer
 signal chosen
 
 const CHOICES := 3
-const CARD_SIZE := Vector2(88, 64)
+## Size (px) of a button of the testing choice (P).
+const CARD_SIZE := Vector2(96, 20)
 const CARD_SCENE: PackedScene = preload("res://ui/power_card.tscn")
 ## Delay between two cards coming in, left to right (s).
 const CARD_STAGGER := 0.1
@@ -56,12 +57,10 @@ func _show(title: String, powers: Array[PowerData]) -> void:
 			_cards.add_child(power_card)
 			power_card.appear(i * CARD_STAGGER)
 			continue
-		# Every power at once (P): plain buttons, cards would not fit on screen.
+		# Every power at once (P): plain buttons with its name, cards would not fit on screen.
 		var card := Button.new()
-		card.text = "%s\n\n%s" % [power.title, power.description]
+		card.text = power.title
 		card.custom_minimum_size = CARD_SIZE
-		card.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		card.add_theme_font_size_override("font_size", 8)
 		card.pressed.connect(_choose.bind(power, card))
 		_cards.add_child(card)
 	_veil.modulate.a = 0.0

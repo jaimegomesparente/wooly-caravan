@@ -53,7 +53,6 @@ func _add_offer(item: StringName, title: String, price: int) -> void:
 	var card := Button.new()
 	card.text = "%s\n%d wool" % [title, price]
 	card.custom_minimum_size = CARD_SIZE
-	card.add_theme_font_size_override("font_size", 8)
 	card.set_meta(&"item", item)
 	card.set_meta(&"price", price)
 	card.pressed.connect(_buy.bind(card, item, price))

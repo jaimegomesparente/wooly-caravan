@@ -31,6 +31,8 @@ func _ready() -> void:
 	_shown = RunManager.wool
 	_goal = _shown
 	_label.text = str(_shown)
+	# The theme's pixel font, at its size.
+	_label.remove_theme_font_size_override(&"font_size")
 
 
 func _process(delta: float) -> void:

@@ -13,6 +13,8 @@ var _tween: Tween
 
 func _ready() -> void:
 	_home_y = position.y
+	# The theme's pixel font, at its size.
+	remove_theme_font_size_override(&"font_size")
 
 
 func show_mode(mode_name: String) -> void:

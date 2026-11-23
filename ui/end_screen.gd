@@ -18,7 +18,9 @@ var _count: int = 0
 var _restarting: bool = false
 
 @onready var _veil: ColorRect = $Veil
-@onready var _label: Label = $Label
+## The title (in the theme's large pixel font: the title font has no accents), then the lines.
+@onready var _heading: Label = %Title
+@onready var _label: Label = %Label
 
 
 func _ready() -> void:
@@ -60,14 +62,15 @@ func _set_count(count: int) -> void:
 	_render()
 
 
-## Every line is always there (empty until shown), so the text never moves as it grows. The losses
-## show once the count is done.
+## Every line is always there (hidden or empty until shown), so the text never moves as it grows.
+## The losses show once the count is done.
 func _render() -> void:
-	var title := _title if _lines >= 1 else ""
+	_heading.text = _title
+	_heading.modulate.a = 1.0 if _lines >= 1 else 0.0
 	var sheep := ""
 	if _lines >= 2:
 		sheep = "%d / %d moutons" % [_count, _total]
 		if _lines >= 3 and _lost > 0:
-			sheep += " — %d perdu%s" % [_lost, "s" if _lost > 1 else ""]
+			sheep += " - %d perdu%s" % [_lost, "s" if _lost > 1 else ""]
 	var restart := "R : recommencer" if _lines >= 3 else ""
-	_label.text = "%s\n%s\n\n%s" % [title, sheep, restart]
+	_label.text = "%s\n\n%s" % [sheep, restart]

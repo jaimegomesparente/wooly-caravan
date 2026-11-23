@@ -153,6 +153,9 @@ func _show(power: PowerData, target: PowerData.Target) -> void:
 	(get_node("Body/Frame") as TextureRect).texture = atlas
 	var title := get_node("Body/Title") as Label
 	title.add_theme_color_override("font_color", TITLE_COLORS[target])
+	# Printed on the card: no shadow from the game's theme.
+	title.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	(get_node("Body/Text") as Label).add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	title.text = power.title if power else "Title"
 	(get_node("Body/Text") as Label).text = power.description if power else "Description"
 

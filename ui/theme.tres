@@ -1,0 +1,83 @@
+[gd_resource type="Theme" load_steps=8 format=3]
+
+[ext_resource type="FontFile" path="res://art/fonts/m5x7.ttf" id="1_text"]
+[ext_resource type="FontFile" path="res://art/fonts/alagard.ttf" id="2_title"]
+
+[sub_resource type="StyleBoxFlat" id="Button_normal"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 3.0
+bg_color = Color(0.113725, 0.0784314, 0.0627451, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545098, 0.360784, 0.211765, 1)
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="Button_hover"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 3.0
+bg_color = Color(0.215686, 0.145098, 0.1, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85098, 0.596078, 0.333333, 1)
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="Button_pressed"]
+content_margin_left = 6.0
+content_margin_top = 3.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(0.0705882, 0.0470588, 0.0392157, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85098, 0.596078, 0.333333, 1)
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="Button_disabled"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 3.0
+bg_color = Color(0.113725, 0.0784314, 0.0627451, 0.45)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.352941, 0.247059, 0.172549, 0.6)
+anti_aliasing = false
+
+[sub_resource type="StyleBoxEmpty" id="Button_focus"]
+
+[resource]
+default_font = ExtResource("1_text")
+default_font_size = 16
+Button/colors/font_color = Color(0.952941, 0.909804, 0.784314, 1)
+Button/colors/font_disabled_color = Color(0.952941, 0.909804, 0.784314, 0.4)
+Button/colors/font_focus_color = Color(0.952941, 0.909804, 0.784314, 1)
+Button/colors/font_hover_color = Color(1, 0.968627, 0.87451, 1)
+Button/colors/font_hover_pressed_color = Color(1, 0.968627, 0.87451, 1)
+Button/colors/font_pressed_color = Color(0.952941, 0.909804, 0.784314, 1)
+Button/styles/disabled = SubResource("Button_disabled")
+Button/styles/focus = SubResource("Button_focus")
+Button/styles/hover = SubResource("Button_hover")
+Button/styles/hover_pressed = SubResource("Button_pressed")
+Button/styles/normal = SubResource("Button_normal")
+Button/styles/pressed = SubResource("Button_pressed")
+HeadingLabel/base_type = &"Label"
+HeadingLabel/font_sizes/font_size = 32
+Label/colors/font_color = Color(0.952941, 0.909804, 0.784314, 1)
+Label/colors/font_shadow_color = Color(0, 0, 0, 0.6)
+Label/constants/shadow_offset_x = 1
+Label/constants/shadow_offset_y = 1
+TitleLabel/base_type = &"Label"
+TitleLabel/font_sizes/font_size = 16
+TitleLabel/fonts/font = ExtResource("2_title")
