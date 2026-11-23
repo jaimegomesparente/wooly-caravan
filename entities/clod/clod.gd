@@ -35,7 +35,7 @@ func launch(crook: CrookData, from: Vector2, target: Vector2, start_height: floa
 	_to = from + (target - from).limit_length(crook.max_range)
 	_start_height = start_height
 	var distance := _from.distance_to(_to)
-	_arc = minf(distance * crook.arc_per_px, crook.max_arc)
+	_arc = arc_top(crook, distance)
 	_duration = maxf(distance / crook.speed, 0.05)
 	_damage = crook.damage
 	_mud_slow = crook.mud_slow
@@ -48,6 +48,17 @@ func launch(crook: CrookData, from: Vector2, target: Vector2, start_height: floa
 	collision.shape = shape
 	_place(0.0)
 	reset_physics_interpolation()
+
+
+## Top of the arc (px) of a throw of `distance` px by `crook`.
+static func arc_top(crook: CrookData, distance: float) -> float:
+	return minf(distance * crook.arc_per_px, crook.max_arc)
+
+
+## Height (px) above the ground at `t` (0 to 1) of the flight, for a clod leaving at `start_height`
+## px along an arc of top `arc` px.
+static func height_at(start_height: float, arc: float, t: float) -> float:
+	return lerpf(start_height, 0.0, t) + 4.0 * arc * t * (1.0 - t)
 
 
 func _physics_process(delta: float) -> void:
@@ -64,7 +75,7 @@ func _draw() -> void:
 
 ## The clod at `t` (0 to 1) of its flight, its shadow on the ground below.
 func _place(t: float) -> void:
-	var height := lerpf(_start_height, 0.0, t) + 4.0 * _arc * t * (1.0 - t)
+	var height := height_at(_start_height, _arc, t)
 	global_position = _from.lerp(_to, t) - Vector2(0, height)
 	_shadow.position = Vector2(0, roundf(height))
 

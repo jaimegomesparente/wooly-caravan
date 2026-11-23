@@ -64,6 +64,7 @@ func _ready() -> void:
 	_attacks.sheep_lost.connect(_trip.on_sheep_lost)
 
 	_trip_label.text = "Trip %d/%d" % [RunManager.trip, RunManager.TRIPS]
+	add_child(AimPreview.new())
 	add_child(Crosshair.new())
 	var banner := TripBanner.new()
 	add_child(banner)

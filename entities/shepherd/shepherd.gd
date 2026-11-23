@@ -64,17 +64,17 @@ func _throw(target: Vector2) -> void:
 
 
 ## Where the clods of a throw at `target` land: clod_count spots `spread` px apart across the
-## throw, each at most max_range px from his feet.
-func landing_spots(target: Vector2) -> Array[Vector2]:
+## throw, each at most max_range px from his feet (at `from`, his position by default).
+func landing_spots(target: Vector2, from: Vector2 = global_position) -> Array[Vector2]:
 	var spots: Array[Vector2] = []
 	if crook == null:
 		return spots
-	var aim := target - global_position
+	var aim := target - from
 	var across := aim.orthogonal().normalized() if aim != Vector2.ZERO else Vector2.DOWN
 	across *= crook.spread
 	for i in crook.clod_count:
 		var landing := target + across * (i - (crook.clod_count - 1) / 2.0)
-		spots.append(global_position + (landing - global_position).limit_length(crook.max_range))
+		spots.append(from + (landing - from).limit_length(crook.max_range))
 	return spots
 
 

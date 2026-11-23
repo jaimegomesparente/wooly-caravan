@@ -2,9 +2,9 @@ class_name Crosshair
 extends CanvasLayer
 ## The mouse cursor while the shepherd can throw: a pixel crosshair, red when the mouse is beyond
 ## the crook's reach (the clod then falls short). A ring around it fills up during the throw's
-## cooldown and flashes once full. A small cross marks every spot where the clods of a throw would
-## land, unless it is under the crosshair. Elsewhere (screens, pause, pasture) the usual cursor shows.
-## Built in code, drawn in code.
+## cooldown and flashes once full. The arcs and landing spots of the throw are drawn in the world
+## by `AimPreview`. Elsewhere (screens, pause, pasture) the usual cursor shows. Built in code, drawn
+## in code.
 
 const COLOR := Color("f3e8c8")
 const OUT_OF_REACH_COLOR := Color("c0242c")
@@ -21,10 +21,6 @@ const CROSS: Array[Vector2] = [
 const RING_RUNS: Array[int] = [5, 2, 1, 2, 5]
 const RING_EMPTY := Color(0.11, 0.08, 0.06, 0.45)
 const RING_FLASH_TIME := 0.12
-## Landing mark: a small x, drawn when farther than LANDING_MIN_DISTANCE px from the mouse.
-const LANDING: Array[Vector2] = [Vector2(0, 0), Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
-const LANDING_COLOR := Color("5b2f1a")
-const LANDING_MIN_DISTANCE := 3.0
 
 var _canvas: Node2D
 var _readiness: float = 1.0
@@ -67,14 +63,9 @@ func _draw_cursor() -> void:
 		return
 	var mouse := _canvas.get_local_mouse_position().round()
 	var world_mouse := shepherd.get_global_mouse_position()
-	var to_screen := shepherd.get_viewport().get_canvas_transform()
-	for spot in shepherd.landing_spots(world_mouse):
-		var at := (to_screen * spot).round()
-		if at.distance_to(mouse) > LANDING_MIN_DISTANCE:
-			_draw_pixels(at, LANDING, LANDING_COLOR, false)
 	var in_reach := shepherd.crook == null \
 			or world_mouse.distance_to(shepherd.global_position) <= shepherd.crook.max_range
-	_draw_pixels(mouse, CROSS, COLOR if in_reach else OUT_OF_REACH_COLOR, true)
+	_draw_pixels(mouse, CROSS, COLOR if in_reach else OUT_OF_REACH_COLOR)
 	if _readiness < 1.0 or _flash_timer > 0.0:
 		_draw_ring(mouse)
 
@@ -120,10 +111,9 @@ static func _ring_pixels(runs: Array[int]) -> Array[Vector2]:
 	return pixels
 
 
-func _draw_pixels(at: Vector2, pixels: Array[Vector2], color: Color, outlined: bool) -> void:
-	if outlined:
-		for pixel in pixels:
-			_canvas.draw_rect(Rect2(at + pixel - Vector2.ONE, Vector2(3, 3)), OUTLINE)
+func _draw_pixels(at: Vector2, pixels: Array[Vector2], color: Color) -> void:
+	for pixel in pixels:
+		_canvas.draw_rect(Rect2(at + pixel - Vector2.ONE, Vector2(3, 3)), OUTLINE)
 	for pixel in pixels:
 		_canvas.draw_rect(Rect2(at + pixel, Vector2.ONE), color)
 
