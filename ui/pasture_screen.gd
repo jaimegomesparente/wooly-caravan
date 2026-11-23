@@ -9,6 +9,8 @@ signal chosen
 const CHOICES := 3
 const CARD_SIZE := Vector2(88, 64)
 const CARD_SCENE: PackedScene = preload("res://ui/power_card.tscn")
+## Delay between two cards coming in, left to right (s).
+const CARD_STAGGER := 0.1
 
 ## True when opened with P during a trip.
 var _testing: bool = false
@@ -38,12 +40,14 @@ func _show(title: String, powers: Array[PowerData]) -> void:
 	_title.text = title
 	for child in _cards.get_children():
 		child.queue_free()
-	for power in powers:
+	for i in powers.size():
+		var power := powers[i]
 		if not _testing:
 			var power_card := CARD_SCENE.instantiate() as PowerCard
 			power_card.setup(power)
 			power_card.pressed.connect(_choose.bind(power))
 			_cards.add_child(power_card)
+			power_card.appear(i * CARD_STAGGER)
 			continue
 		# Every power at once (P): plain buttons, cards would not fit on screen.
 		var card := Button.new()

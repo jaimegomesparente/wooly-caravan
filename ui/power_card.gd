@@ -3,7 +3,8 @@ class_name PowerCard
 extends Button
 ## A power shown on the card of its target (sheet `power_cards_frames.png`, one 80x112 card per
 ## `PowerData.Target`): title in the top banner, description on the parchment, artwork behind the
-## see-through window (a dark backdrop until the artworks come). Hovered it rises 1 px and brightens,
+## see-through window (a dark backdrop until the artworks come). It comes in rising and fading in
+## (`appear()`), not clickable until it is in place. Hovered it rises 1 px and brightens,
 ## pressed it sinks 1 px. Laid out in `power_card.tscn`: in the editor the card shows
 ## `preview_power` on the frame of `preview_target`, so its labels can be placed by hand.
 
@@ -12,6 +13,9 @@ const FRAMES: Texture2D = preload("res://art/ui/power_cards/power_cards_frames.p
 ## Title color per target: dark on the crook's wood, light on the sheep's and dog's dark banners.
 const TITLE_COLORS: Array[Color] = [Color("1d1410"), Color("f3e8c8"), Color("f3e8c8")]
 const HOVER_TINT := Color(1.12, 1.12, 1.12)
+## Coming in: how far below its place the card starts (px), and how long it takes to rise (s).
+const APPEAR_RISE := 16.0
+const APPEAR_TIME := 0.3
 
 ## Editor preview only: the power whose title and description are shown.
 @export var preview_power: PowerData:
@@ -23,6 +27,11 @@ const HOVER_TINT := Color(1.12, 1.12, 1.12)
 	set(value):
 		preview_target = value
 		_preview()
+
+## Offset below its place while it comes in (px).
+var _rise: float = 0.0
+## Hover / press offset: -1 hovered, 1 pressed, 0 otherwise.
+var _lift: float = 0.0
 
 
 func _init() -> void:
@@ -37,6 +46,27 @@ func _ready() -> void:
 
 func setup(power: PowerData) -> void:
 	_show(power, power.target)
+
+
+## Comes in after `delay` s: rises from `APPEAR_RISE` px below with a slight overshoot while fading in.
+func appear(delay: float) -> void:
+	modulate.a = 0.0
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_set_rise(APPEAR_RISE)
+	var tween := create_tween().set_parallel()
+	tween.tween_method(_set_rise, APPEAR_RISE, 0.0, APPEAR_TIME).set_delay(delay) 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, ^"modulate:a", 1.0, APPEAR_TIME * 0.6).set_delay(delay)
+	tween.chain().tween_callback(func() -> void: mouse_filter = Control.MOUSE_FILTER_STOP)
+
+
+func _set_rise(value: float) -> void:
+	_rise = value
+	_place()
+
+
+## Whole pixels only.
+func _place() -> void:
+	(get_node("Body") as Control).position.y = round(_rise + _lift)
 
 
 func _preview() -> void:
@@ -62,5 +92,6 @@ func _draw() -> void:
 	var body := get_node("Body") as Control
 	var mode := get_draw_mode()
 	var pressed := mode == DRAW_PRESSED or mode == DRAW_HOVER_PRESSED
-	body.position.y = 1.0 if pressed else -1.0 if mode == DRAW_HOVER else 0.0
+	_lift = 1.0 if pressed else -1.0 if mode == DRAW_HOVER else 0.0
+	_place()
 	body.modulate = HOVER_TINT if mode == DRAW_HOVER or mode == DRAW_HOVER_PRESSED else Color.WHITE
