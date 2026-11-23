@@ -23,6 +23,8 @@ const SIGHT_CORNER := 3.0
 const SCREEN_INSET := 16.0
 ## Size (px) of a frame of the shadow mask (as in shadow_mask.gdshader).
 const SHADOW_FRAME := Vector2(32, 48)
+## The screen shakes this much (px) when it grabs a sheep.
+const GRAB_SHAKE := 1.0
 
 @export var data: EagleData
 
@@ -194,6 +196,7 @@ func _dive() -> void:
 		_leave()
 		return
 	_target.capture(self, true)
+	get_tree().call_group("camera", "shake", GRAB_SHAKE)
 	_prey = _target
 	sheep_captured.emit(_prey)
 	_state = State.CARRY

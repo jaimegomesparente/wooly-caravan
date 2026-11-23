@@ -11,14 +11,35 @@ extends Camera2D
 ## Zoom steps for testing (mouse wheel / keypad + -), only while the F3 debug overlay is on:
 ## 1 = normal, lower = see more. Back to 1 when the overlay is turned off.
 @export var zoom_levels: Array[float] = [1.0, 0.75, 0.5, 0.35, 0.25]
+## A shake (`shake()`, group `camera`) lasts this long (s), its strength fading to nothing.
+@export var shake_time: float = 0.2
 
 var _focus: Vector2
 var _zoom_index: int = 0
+var _shake_strength: float = 0.0
+var _shake_timer: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group("camera")
 	_focus = _target()
 	global_position = _focus
+
+
+## Shakes the view up to `strength` px in each direction, by whole pixels (impacts).
+func shake(strength: float) -> void:
+	if _shake_timer > 0.0 and _shake_strength * _shake_timer / shake_time > strength:
+		return
+	_shake_strength = strength
+	_shake_timer = shake_time
+
+
+func _process(delta: float) -> void:
+	if _shake_timer <= 0.0:
+		return
+	_shake_timer -= delta
+	var reach := roundi(_shake_strength * maxf(_shake_timer, 0.0) / shake_time)
+	offset = Vector2(randi_range(-reach, reach), randi_range(-reach, reach))
 
 
 # Physics tick, like the bodies it follows; physics interpolation smooths both between ticks.

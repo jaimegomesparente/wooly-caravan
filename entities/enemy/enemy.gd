@@ -17,6 +17,12 @@ const STUN_STARS := preload("res://effects/stun_stars.tscn")
 const MAX_MUD_SLOW := 0.8
 ## Time (s) of the push back from a ram's butt.
 const BUTT_PUSH_TIME := 0.15
+## Impacts: the game freezes HIT_STOP s on a hit, KO_STOP s on the hit that sends it off (the screen
+## shakes KO_SHAKE px too); a ram's butt shakes it BUTT_SHAKE px.
+const HIT_STOP := 0.05
+const KO_STOP := 0.09
+const KO_SHAKE := 2.0
+const BUTT_SHAKE := 1.0
 
 ## Hits (clods) it takes before it runs off; a bark makes it run off whatever is left.
 @export var health: int = 1
@@ -63,9 +69,12 @@ func hit(direction: Vector2, damage: int = 1, mud_slow: float = 0.0, mud_time: f
 	if mud_slow > 0.0 and mud_time > 0.0:
 		_slow(mud_slow, mud_time)
 	if health <= 0:
+		HitStop.freeze(get_tree(), KO_STOP)
+		get_tree().call_group("camera", "shake", KO_SHAKE)
 		_set_tint(&"grey", 1.0)
 		scare()
 		return
+	HitStop.freeze(get_tree(), HIT_STOP)
 	global_position += direction.normalized() * FLINCH_RECOIL
 
 
@@ -75,6 +84,7 @@ func butted(direction: Vector2, damage: int, push: float, stun_time: float) -> v
 	hit(direction, damage)
 	if health <= 0:
 		return
+	get_tree().call_group("camera", "shake", BUTT_SHAKE)
 	_stun_timer = stun_time
 	if _stars == null or not is_instance_valid(_stars):
 		_stars = STUN_STARS.instantiate() as StunStars
