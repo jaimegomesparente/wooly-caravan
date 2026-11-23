@@ -18,6 +18,15 @@ const WANDER_TIMEOUT := 3.0
 const HOP_TIME := 0.15
 ## Time (s) a ram plays its butt animation.
 const BUTT_TIME := 0.3
+## While caught: a bar over its head empties as it is taken toward where it is lost (the enemy's
+## carry_progress()), red and blinking near the end. Width (px) and left end, from its feet.
+const RESCUE_BAR_WIDTH := 8.0
+const RESCUE_BAR_AT := Vector2(-4, -14)
+const RESCUE_BAR_COLOR := Color("f0c040")
+const RESCUE_BAR_URGENT_COLOR := Color("c0242c")
+const RESCUE_BAR_OUTLINE := Color("1d1410")
+## Fraction of the bar left where it turns red and blinks.
+const RESCUE_BAR_URGENT := 0.3
 
 ## Toggled by the debug overlay (F3): each sheep draws a line to its target and a state dot.
 static var debug_draw: bool = false
@@ -32,6 +41,9 @@ var grow_trips: int = 0
 ## A ram (`ram.tscn`, bought in the shop) butts away the enemies that come to grab it (see
 ## FlockConfig ram_*); it is never shorn.
 @export var ram: bool = false
+
+## Taken too far by its captor: lost for good (the captor takes it out of sight).
+var lost: bool = false
 
 ## Shorn on the pasture: plays the `_shaved` animations; the wool may grow back at the end of each
 ## graze (regrow_chance).
@@ -128,7 +140,7 @@ func _physics_process(delta: float) -> void:
 		_speed = 0.0
 		velocity = Vector2.ZERO
 		_update_animation()
-		_update_debug_draw()
+		queue_redraw()
 		return
 	if _guide != null and not is_instance_valid(_guide):
 		_guide = _shepherd
@@ -299,6 +311,7 @@ func release() -> void:
 	z_index = 0
 	add_to_group("sheep")
 	_enter_rest()
+	queue_redraw()
 
 
 # Redraw while debugging, plus once after it is turned off to clear the lines.
@@ -309,6 +322,8 @@ func _update_debug_draw() -> void:
 
 
 func _draw() -> void:
+	if _captor:
+		_draw_rescue_bar()
 	if not debug_draw:
 		return
 	if _captor:
@@ -317,6 +332,22 @@ func _draw() -> void:
 	var target := _wander_target if _gait == Gait.WANDER else _guide_target() if _guide else global_position
 	draw_line(Vector2.ZERO, to_local(target), _debug_color(), 1.0)
 	draw_rect(Rect2(-1, -15, 3, 3), _debug_color())
+
+
+## What is left of the time to rescue it, outlined so it reads on the grass.
+func _draw_rescue_bar() -> void:
+	var enemy := _captor as Enemy
+	if enemy == null or lost:
+		return
+	var left := 1.0 - enemy.carry_progress()
+	var urgent := left < RESCUE_BAR_URGENT
+	if urgent and Time.get_ticks_msec() / 125 % 2 == 1:
+		return
+	draw_rect(Rect2(RESCUE_BAR_AT - Vector2.ONE, Vector2(RESCUE_BAR_WIDTH + 2.0, 3.0)), RESCUE_BAR_OUTLINE)
+	var width := ceilf(left * RESCUE_BAR_WIDTH)
+	if width > 0.0:
+		draw_rect(Rect2(RESCUE_BAR_AT, Vector2(width, 1.0)),
+				RESCUE_BAR_URGENT_COLOR if urgent else RESCUE_BAR_COLOR)
 
 
 func _debug_color() -> Color:

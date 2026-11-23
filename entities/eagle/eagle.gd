@@ -43,6 +43,9 @@ var _pass_shadow_scale: float = 1.0
 var _pass_flap_speed: float = 1.0
 ## Scared while passing: it ends the pass, then goes away without aiming.
 var _gave_up: bool = false
+## Where it was (x, px) and how high when it grabbed the sheep.
+var _carry_from_x: float = 0.0
+var _carry_from_altitude: float = 0.0
 
 ## Flapping silhouette, head to the left like the bird, cast over the ground and everything on it.
 @onready var _shadow: AnimatedSprite2D = $Shadow
@@ -68,6 +71,15 @@ func is_dangerous() -> bool:
 
 func is_threat() -> bool:
 	return _state == State.DIVE or _state == State.CARRY
+
+
+## Carrying a sheep: how close it is to being out of the screen or too high, whichever comes first.
+func carry_progress() -> float:
+	if _state != State.CARRY or _prey == null:
+		return 0.0
+	var climb := (_altitude - _carry_from_altitude) / maxf(data.carry_altitude_max - _carry_from_altitude, 1.0)
+	var away := (_carry_from_x - global_position.x) / maxf(_carry_from_x - _view_rect().position.x, 1.0)
+	return clampf(maxf(climb, away), 0.0, 1.0)
 
 
 ## Barked at by the dog: drops the carried sheep on the ground below it, or gives up the dive, and
@@ -198,6 +210,8 @@ func _dive() -> void:
 	_target.capture(self, true)
 	get_tree().call_group("camera", "shake", GRAB_SHAKE)
 	_prey = _target
+	_carry_from_x = global_position.x
+	_carry_from_altitude = _altitude
 	sheep_captured.emit(_prey)
 	_state = State.CARRY
 	_sprite.play(&"grab")
@@ -213,7 +227,7 @@ func _carry(delta: float) -> void:
 	_altitude += data.climb_speed * _speed_scale * delta
 	_hold_prey()
 	if _altitude >= data.carry_altitude_max or global_position.x < _view_rect().position.x:
-		sheep_lost.emit(_prey)
+		_lose(_prey)
 		_leave()
 
 

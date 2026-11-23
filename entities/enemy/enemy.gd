@@ -13,6 +13,8 @@ const FLINCH_TIME := 0.12
 const FLINCH_RECOIL := 2.0
 const TINT_SHADER := preload("res://effects/enemy_tint.gdshader")
 const STUN_STARS := preload("res://effects/stun_stars.tscn")
+## Burst of wool where a sheep is lost.
+const LOST_FLUFF := preload("res://effects/wool_fluff.tscn")
 ## Strongest slow from mud (fraction of its speed lost).
 const MAX_MUD_SLOW := 0.8
 ## Time (s) of the push back from a ram's butt.
@@ -55,6 +57,11 @@ func is_threat() -> bool:
 	return false
 
 
+## How close the sheep it holds is to being lost: 0 just caught, 1 lost (0 when holding none).
+func carry_progress() -> float:
+	return 0.0
+
+
 ## Barked at by the dog, or out of health: runs off (each enemy says how).
 func scare() -> void:
 	pass
@@ -94,6 +101,15 @@ func butted(direction: Vector2, damage: int, push: float, stun_time: float) -> v
 	var tween := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	tween.tween_property(self, "global_position", global_position + direction.normalized() * push,
 			BUTT_PUSH_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+## `prey` is lost (no more rescue bar): a burst of wool where it is (`sheep_lost`).
+func _lose(prey: Sheep) -> void:
+	var fluff := LOST_FLUFF.instantiate() as Node2D
+	fluff.position = prey.global_position + Vector2(0, -5)
+	add_sibling(fluff)
+	prey.lost = true
+	sheep_lost.emit(prey)
 
 
 func _slow(amount: float, time: float) -> void:

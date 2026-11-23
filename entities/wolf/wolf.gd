@@ -31,6 +31,8 @@ var _leave_speed: float = 0.0
 var _target: Sheep
 ## The sheep being dragged away (kept after it is lost, until the wolf is out of sight).
 var _prey: Sheep
+## Distance (px) from the caught sheep to the forest edge when it was caught.
+var _carry_from: float = 1.0
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _shape: CollisionShape2D = $CollisionShape2D
@@ -71,6 +73,13 @@ func can_be_butted() -> bool:
 func is_threat() -> bool:
 	return _state == State.PROWL or _state == State.TELEGRAPH or _state == State.CHARGE \
 			or _state == State.CARRY
+
+
+## Dragging a sheep: how much of the way to the forest edge it has been dragged.
+func carry_progress() -> float:
+	if _state != State.CARRY or _prey == null:
+		return 0.0
+	return clampf(1.0 - _edge_distance(_prey) / _carry_from, 0.0, 1.0)
 
 
 ## Barked at by the dog: drops the dragged sheep, or gives up the attack, and runs off.
@@ -207,6 +216,7 @@ func _charge(delta: float) -> void:
 		velocity = Vector2.ZERO
 		_heading = 0.0 if _sprite.flip_h else PI
 		_drag_prey()
+		_carry_from = maxf(_edge_distance(_prey), 1.0)
 		return
 	_steer(to_target, data.charge_speed, data.charge_turn_rate, delta)
 
@@ -221,7 +231,7 @@ func _carry(delta: float) -> void:
 		return
 	if not _band().has_point(_prey.global_position):
 		# Into the forest: the sheep is lost; the wolf keeps dragging it out of sight.
-		sheep_lost.emit(_prey)
+		_lose(_prey)
 		_leave(data.carry_speed)
 		return
 	_steer(_exit_direction(), data.carry_speed, data.turn_rate, delta)
@@ -331,6 +341,13 @@ func _trail() -> Ground:
 func _band() -> Rect2:
 	var trail := _trail()
 	return trail.bounds() if trail else _view_rect()
+
+
+## Distance (px) from `sheep` to the nearest forest edge (top or bottom) of the band.
+func _edge_distance(sheep: Sheep) -> float:
+	var band := _band()
+	var y := sheep.global_position.y
+	return maxf(minf(y - band.position.y, band.end.y - y), 0.0)
 
 
 ## Toward the nearest forest edge (top or bottom), or away from the flock without a trail.
