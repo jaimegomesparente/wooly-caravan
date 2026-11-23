@@ -4,7 +4,9 @@ extends Area2D
 ## It flies from the crook to the aimed point (a point on the ground at most the crook's max_range
 ## px away, and a height: 0 on the ground, or the body of an enemy in the air) along an arc, higher
 ## for a longer throw; if it gets there without hitting anything, it keeps going along the same
-## curve down to the ground. Its shadow stays on its point on the ground, showing how high it is.
+## curve down to the ground. Its position is its point on the ground, where its shadow stays,
+## showing how high it is; the clod is drawn that high above it. So it is sorted in depth with the
+## trees: a tree in front of it hides it.
 ## It hits an attacking enemy whose body it goes through, at its height (`Enemy.is_hit_at()`): the
 ## enemy flinches, or runs off once out of health. A tree's trunk or crown stops it
 ## (`Forest.blocks()`). It crumbles on hitting, on being stopped or on reaching the ground.
@@ -30,6 +32,10 @@ var _mud_slow: float = 0.0
 var _mud_time: float = 0.0
 var _size: Vector2 = Vector2(2, 2)
 var _forest: Forest
+## Its height (px) at the last two physics ticks: drawn in between, like the engine interpolates its
+## position.
+var _height: float = 0.0
+var _last_height: float = 0.0
 
 @onready var _shadow: Node2D = $Shadow
 
@@ -56,6 +62,7 @@ func launch(crook: CrookData, from: Vector2, target: Vector3, start_height: floa
 	_mud_time = crook.mud_time
 	_size = Vector2(crook.clod_size, crook.clod_size)
 	_place(flight(_from, _to, _start_height, _end_height, _arc, 0.0))
+	_last_height = _height
 	reset_physics_interpolation()
 
 
@@ -75,6 +82,7 @@ static func flight(from: Vector2, to: Vector2, start_height: float, end_height: 
 
 func _physics_process(delta: float) -> void:
 	var last_t := _time / _duration
+	_last_height = _height
 	_time += delta
 	var t := _time / _duration
 	if _forest:
@@ -94,14 +102,19 @@ func _physics_process(delta: float) -> void:
 		_crumble()
 
 
+func _process(_delta: float) -> void:
+	queue_redraw()
+
+
 func _draw() -> void:
-	draw_rect(Rect2(-_size / 2.0, _size), COLOR)
+	var height := lerpf(_last_height, _height, Engine.get_physics_interpolation_fraction())
+	draw_rect(Rect2(Vector2(0, -height) - _size / 2.0, _size), COLOR)
 
 
-## The clod at `point` (x, y on the ground, z height), its shadow on the ground below.
+## The clod at `point` (x, y on the ground, z height); its shadow stays at its position.
 func _place(point: Vector3) -> void:
-	global_position = Vector2(point.x, point.y - point.z)
-	_shadow.position = Vector2(0, roundf(point.z))
+	global_position = Vector2(point.x, point.y)
+	_height = point.z
 
 
 ## Hits the first attacking enemy whose body it is in (enemies on their way out, or still out of
@@ -123,6 +136,6 @@ func _crumble() -> void:
 	if crumble_scene:
 		var crumble := crumble_scene.instantiate() as Node2D
 		# Placed before entering the tree, so the burst starts at the right spot.
-		crumble.position = position
+		crumble.position = position - Vector2(0, _height)
 		add_sibling(crumble)
 	queue_free()

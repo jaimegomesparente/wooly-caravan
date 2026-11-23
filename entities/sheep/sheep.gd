@@ -57,6 +57,8 @@ var grow_trips: int = 0
 
 ## Taken too far by its captor: lost for good (the captor takes it out of sight).
 var lost: bool = false
+## Height (px) of its sprite above its position, while held up in the air (`hang()`).
+var lift: float = 0.0
 
 ## Shorn on the pasture: plays the `_shaved` animations; the wool may grow back at the end of each
 ## graze (regrow_chance).
@@ -255,13 +257,11 @@ func _temper(direction: float) -> float:
 
 
 ## Called by an enemy that grabs this sheep: it leaves the flock until released. Lifted off the
-## ground, it has no shadow and is drawn just above the captor (in front of its talons and above
-## its shadow).
+## ground (`hang()`), it has no shadow.
 func capture(by: Node2D, lifted: bool = false) -> void:
 	_captor = by
 	if lifted:
 		_shadow.visible = false
-		z_index = by.z_index + 1
 	remove_from_group("sheep")
 	_fleeing = false
 	_panicking = false
@@ -326,6 +326,13 @@ func shear() -> void:
 		tween.tween_property(_sprite, ^"scale", Vector2(step.x, step.y), step.z)
 
 
+## Held up in the air by a flying captor: its position stays on the ground below it (so it is
+## sorted in depth with the trees, the trees in front hiding it), its sprite `height` px above.
+func hang(ground: Vector2, height: float) -> void:
+	global_position = ground
+	lift = height
+
+
 ## Moved at once (testing aid): settles there.
 func teleport(point: Vector2) -> void:
 	global_position = point
@@ -340,7 +347,7 @@ func release() -> void:
 	_scare_timer = config.release_panic_time
 	_captor = null
 	_shadow.visible = true
-	z_index = 0
+	lift = 0.0
 	add_to_group("sheep")
 	_enter_rest()
 	_joy_timer = JOY_TIME
@@ -373,7 +380,7 @@ func _draw() -> void:
 	if not debug_draw:
 		return
 	if _captor:
-		draw_rect(Rect2(-1, -15, 3, 3), Color.MAGENTA)
+		draw_rect(Rect2(-1, -15 - roundf(lift), 3, 3), Color.MAGENTA)
 		return
 	var target := _wander_target if _gait == Gait.WANDER else _guide_target() if _guide else global_position
 	draw_line(Vector2.ZERO, to_local(target), _debug_color(), 1.0)
@@ -389,10 +396,12 @@ func _draw_rescue_bar() -> void:
 	var urgent := left < RESCUE_BAR_URGENT
 	if urgent and Time.get_ticks_msec() / 125 % 2 == 1:
 		return
-	draw_rect(Rect2(RESCUE_BAR_AT - Vector2.ONE, Vector2(RESCUE_BAR_WIDTH + 2.0, 3.0)), RESCUE_BAR_OUTLINE)
+	# Over its head, lifted with it.
+	var at := RESCUE_BAR_AT - Vector2(0, roundf(lift))
+	draw_rect(Rect2(at - Vector2.ONE, Vector2(RESCUE_BAR_WIDTH + 2.0, 3.0)), RESCUE_BAR_OUTLINE)
 	var width := ceilf(left * RESCUE_BAR_WIDTH)
 	if width > 0.0:
-		draw_rect(Rect2(RESCUE_BAR_AT, Vector2(width, 1.0)),
+		draw_rect(Rect2(at, Vector2(width, 1.0)),
 				RESCUE_BAR_URGENT_COLOR if urgent else RESCUE_BAR_COLOR)
 
 
@@ -856,7 +865,7 @@ func _update_animation() -> void:
 	if _joy_timer > 0.0:
 		hop = maxf(hop, roundf(sin(PI * (1.0 - _joy_timer / JOY_TIME)) * JOY_HEIGHT))
 	# Scaled (squash), the sprite stays on its feet.
-	_sprite.position.y = roundf(_sprite_offset_y * _sprite.scale.y) - hop
+	_sprite.position.y = roundf(_sprite_offset_y * _sprite.scale.y) - hop - roundf(lift)
 
 	if ram and (_charge_target or _butt_timer > config.ram_cooldown - BUTT_TIME):
 		_play(&"butt", 1.0)

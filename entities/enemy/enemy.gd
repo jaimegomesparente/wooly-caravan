@@ -136,7 +136,7 @@ func butted(direction: Vector2, damage: int, push: float, stun_time: float) -> v
 ## `prey` is lost (no more rescue bar): a burst of wool where it is (`sheep_lost`).
 func _lose(prey: Sheep) -> void:
 	var fluff := LOST_FLUFF.instantiate() as Node2D
-	fluff.position = prey.global_position + Vector2(0, -5)
+	fluff.position = prey.global_position + Vector2(0, -5 - prey.lift)
 	add_sibling(fluff)
 	prey.lost = true
 	sheep_lost.emit(prey)

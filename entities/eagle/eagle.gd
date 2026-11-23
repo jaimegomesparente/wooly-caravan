@@ -7,7 +7,8 @@ extends Enemy
 ## corner of the screen, its shadow growing below it, grabbing it wherever it is. The caught sheep
 ## is carried off to the left, climbing: lost once out of the screen or too high. A bark from the
 ## dog below makes it drop the sheep or give up the dive. It always flies off toward the top left
-## corner, gone once out of sight.
+## corner, gone once out of sight. The bird and its sheep are sorted in depth by its point on the
+## ground: a tree in front of it hides them; its shadow is cast over everything.
 
 enum State { WAITING, PASS, TELEGRAPH, DIVE, CARRY, LEAVE }
 
@@ -66,8 +67,6 @@ func _init() -> void:
 
 ## Starts the attack: the first pass.
 func attack() -> void:
-	# Above everything, its shadow (z 1) included.
-	z_index = 2
 	_start_pass()
 
 
@@ -242,9 +241,12 @@ func _carry(delta: float) -> void:
 		_leave()
 
 
+## The carried sheep hangs from its talons; like the bird, it is sorted in depth by its point on the
+## ground (a hair in front of the bird's, so the sheep shows in front of the talons).
 func _hold_prey() -> void:
 	if _prey:
-		_prey.global_position = _prey_point.global_position
+		var talons := _prey_point.global_position
+		_prey.hang(Vector2(talons.x, global_position.y + 0.5), global_position.y - talons.y)
 
 
 func _leave() -> void:
