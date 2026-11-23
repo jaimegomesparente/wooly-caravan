@@ -16,7 +16,7 @@ enum State { WAIT, GATHER, GUARD, CHASE }
 
 ## Minimum |velocity.x| (px/s) to flip the sprite.
 const FLIP_THRESHOLD := 5.0
-const MODE_NAMES: Array[String] = ["Rassemblement", "Arrière-garde", "Chasse"]
+const MODE_NAMES: Array[String] = ["Gather", "Rear guard", "Hunt"]
 ## The bark's ring spreads this far (px) past bark_distance, from this point (px from the feet).
 const BARK_WAVE_MARGIN := 4.0
 const BARK_WAVE_OFFSET := Vector2(0, -4)

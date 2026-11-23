@@ -18,7 +18,7 @@ var _count: int = 0
 var _restarting: bool = false
 
 @onready var _veil: ColorRect = $Veil
-## The title (in the theme's large pixel font: the title font has no accents), then the lines.
+## The title (in the theme's large pixel font), then the lines.
 @onready var _heading: Label = %Title
 @onready var _label: Label = %Label
 
@@ -28,7 +28,7 @@ func _ready() -> void:
 
 
 func show_result(arrived: bool, saved: int, total: int) -> void:
-	_title = "Arrivés au pâturage !" if arrived else "Tout le troupeau est perdu"
+	_title = "The flock made it!" if arrived else "The whole flock is lost"
 	_total = total
 	_lost = total - saved
 	_lines = 0
@@ -69,8 +69,8 @@ func _render() -> void:
 	_heading.modulate.a = 1.0 if _lines >= 1 else 0.0
 	var sheep := ""
 	if _lines >= 2:
-		sheep = "%d / %d moutons" % [_count, _total]
+		sheep = "%d / %d sheep" % [_count, _total]
 		if _lines >= 3 and _lost > 0:
-			sheep += " - %d perdu%s" % [_lost, "s" if _lost > 1 else ""]
-	var restart := "R : recommencer" if _lines >= 3 else ""
+			sheep += " - %d lost" % _lost
+	var restart := "R: restart" if _lines >= 3 else ""
 	_label.text = "%s\n\n%s" % [sheep, restart]

@@ -19,7 +19,7 @@ func _ready() -> void:
 
 func show_mode(mode_name: String) -> void:
 	var first := text.is_empty()
-	text = "Chien : %s" % mode_name
+	text = "Dog: %s" % mode_name
 	if first:
 		return
 	if _tween:
