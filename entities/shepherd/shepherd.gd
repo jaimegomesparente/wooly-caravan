@@ -50,21 +50,39 @@ func _physics_process(delta: float) -> void:
 	_update_animation()
 
 
-## clod_count clods lobbed from the crook around `target`, their landing spots `spread` px apart
-## across the throw; turns toward it (walking keeps facing the walk).
+## clod_count clods lobbed from the crook at `landing_spots(target)`; turns toward it (walking keeps
+## facing the walk).
 func _throw(target: Vector2) -> void:
 	_throw_timer = crook.throw_cooldown
-	var aim := target - global_position
-	var across := aim.orthogonal().normalized() if aim != Vector2.ZERO else Vector2.DOWN
-	across *= crook.spread
-	for i in crook.clod_count:
-		var landing := target + across * (i - (crook.clod_count - 1) / 2.0)
+	for landing in landing_spots(target):
 		var clod := clod_scene.instantiate() as Clod
 		add_sibling(clod)
 		clod.launch(crook, global_position, landing, THROW_HEIGHT)
 	play_call()
 	if target.x != global_position.x:
 		_sprite.flip_h = target.x < global_position.x
+
+
+## Where the clods of a throw at `target` land: clod_count spots `spread` px apart across the
+## throw, each at most max_range px from his feet.
+func landing_spots(target: Vector2) -> Array[Vector2]:
+	var spots: Array[Vector2] = []
+	if crook == null:
+		return spots
+	var aim := target - global_position
+	var across := aim.orthogonal().normalized() if aim != Vector2.ZERO else Vector2.DOWN
+	across *= crook.spread
+	for i in crook.clod_count:
+		var landing := target + across * (i - (crook.clod_count - 1) / 2.0)
+		spots.append(global_position + (landing - global_position).limit_length(crook.max_range))
+	return spots
+
+
+## 1 when a clod can be thrown, rising from 0 through the cooldown after a throw.
+func throw_readiness() -> float:
+	if crook == null or crook.throw_cooldown <= 0.0:
+		return 1.0
+	return 1.0 - _throw_timer / crook.throw_cooldown
 
 
 ## Plays the call animation once (to switch the dog's mode); walking resumes the usual animations.
