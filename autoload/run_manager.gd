@@ -2,7 +2,7 @@ extends Node
 ## State of the run (autoload `RunManager`), kept while the trip scene reloads: a run is TRIPS trips
 ## in a row, the flock that arrives starts the next one, and between two trips one power is chosen,
 ## kept until the run ends. Powers change the run's own copy of the crook settings, never the base
-## resource. Going from one trip to the next fades to black and back.
+## resource. Going from one trip to the next, or to a new run, fades to black and back.
 
 const TRIPS := 5
 ## Time (s) of the fade to black, and of the fade back in.
@@ -100,14 +100,31 @@ func next_trip(saved: int, saved_rams: int, saved_lambs: Array[int]) -> void:
 
 ## Fades to black, starts the next trip with the flock that arrived, then fades back in.
 func go_to_next_trip(saved: int, saved_rams: int, saved_lambs: Array[int]) -> void:
-	var fade := create_tween()
-	fade.tween_property(_veil, "modulate:a", 1.0, FADE_TIME)
-	await fade.finished
+	await _fade(1.0).finished
 	next_trip(saved, saved_rams, saved_lambs)
+	_reload()
+
+
+## Fades to black (the game paused on the end screen), starts a new run, then fades back in.
+func restart() -> void:
+	await _fade(1.0).finished
+	start_run()
+	get_tree().paused = false
+	_reload()
+
+
+## Reloads the trip scene, then fades back in.
+func _reload() -> void:
 	get_tree().reload_current_scene()
 	await get_tree().process_frame
-	fade = create_tween()
-	fade.tween_property(_veil, "modulate:a", 0.0, FADE_TIME)
+	_fade(0.0)
+
+
+## The black veil fades to `alpha`, even while the game is paused.
+func _fade(alpha: float) -> Tween:
+	var fade := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	fade.tween_property(_veil, "modulate:a", alpha, FADE_TIME)
+	return fade
 
 
 ## The crook settings for this run: a copy of `base` with every power taken applied.
