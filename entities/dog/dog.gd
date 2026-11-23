@@ -20,6 +20,18 @@ const MODE_NAMES: Array[String] = ["Rassemblement", "Arrière-garde", "Chasse"]
 ## The bark's ring spreads this far (px) past bark_distance, from this point (px from the feet).
 const BARK_WAVE_MARGIN := 4.0
 const BARK_WAVE_OFFSET := Vector2(0, -4)
+## On a mode change, the new mode's icon (5x5, "#" = pixel, by Mode) shows over the dog's head for
+## MODE_ICON_TIME s, blinking at the end; top-left corner at MODE_ICON_OFFSET px from the feet.
+const MODE_ICONS: Array = [
+	[".###.", "#...#", "#.#.#", "#...#", ".###."],  # Gather: the flock held together
+	["#####", "#####", "#####", ".###.", "..#.."],  # Rear guard: a shield
+	["..#..", "...#.", "#####", "...#.", "..#.."],  # Hunt: an arrow
+]
+const MODE_ICON_TIME := 1.2
+const MODE_ICON_BLINK := 0.4
+const MODE_ICON_OFFSET := Vector2(-2, -21)
+const MODE_ICON_COLOR := Color("f3e8c8")
+const MODE_ICON_OUTLINE := Color("1d1410")
 
 @export var data: DogData
 
@@ -38,6 +50,8 @@ var _enemy: Enemy
 var _barking: bool = false
 ## Time (s) left before the dog may chase again after scaring an enemy off.
 var _bark_cooldown: float = 0.0
+## Time (s) left showing the mode's icon.
+var _mode_icon_timer: float = 0.0
 var _goal: Vector2
 var _heading: float = 0.0
 var _speed: float = 0.0
@@ -57,6 +71,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_mode_icon_timer = maxf(_mode_icon_timer - delta, 0.0)
 	if resting:
 		_state = State.WAIT
 		_move_to(global_position, delta)
@@ -123,6 +138,7 @@ func next_mode() -> void:
 	_enemy = null
 	_barking = false
 	play_bark()
+	_mode_icon_timer = MODE_ICON_TIME
 	mode_changed.emit(MODE_NAMES[_mode])
 
 
@@ -185,8 +201,24 @@ func is_pushing() -> bool:
 
 
 func _draw() -> void:
+	if _mode_icon_timer > 0.0 and (_mode_icon_timer > MODE_ICON_BLINK or int(_mode_icon_timer * 10.0) % 2 == 0):
+		_draw_mode_icon()
 	if Sheep.debug_draw:
 		draw_line(Vector2.ZERO, to_local(_goal), Color.ORANGE_RED if _flanking else Color.SADDLE_BROWN, 1.0)
+
+
+## The current mode's icon, outlined so it reads on the grass.
+func _draw_mode_icon() -> void:
+	var pixels: Array[Vector2] = []
+	var rows: Array = MODE_ICONS[_mode]
+	for y in rows.size():
+		for x in rows[y].length():
+			if rows[y][x] == "#":
+				pixels.append(MODE_ICON_OFFSET + Vector2(x, y))
+	for pixel in pixels:
+		draw_rect(Rect2(pixel - Vector2.ONE, Vector2(3, 3)), MODE_ICON_OUTLINE)
+	for pixel in pixels:
+		draw_rect(Rect2(pixel, Vector2.ONE), MODE_ICON_COLOR)
 
 
 ## Stays where it is while within `reach` of the shepherd. Once farther than reach + follow_slack,
