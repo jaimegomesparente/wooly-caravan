@@ -18,7 +18,7 @@ signal shorn
 ## What a sheep turns into when a ram is bought in the shop.
 @export var ram_scene: PackedScene
 ## Wool earned per sheep shorn.
-@export var wool_per_sheep: int = 1
+@export var wool_per_sheep: int = 2
 ## Delay (s) between the first two sheep shorn; each next delay is `speed_up` times the last one,
 ## down to `interval_min`.
 @export var interval: float = 0.3
