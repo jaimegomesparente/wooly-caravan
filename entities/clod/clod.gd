@@ -6,7 +6,8 @@ extends Area2D
 ## for a longer throw; if it gets there without hitting anything, it keeps going along the same
 ## curve down to the ground. Its shadow stays on its point on the ground, showing how high it is.
 ## It hits an attacking enemy whose body it goes through, at its height (`Enemy.is_hit_at()`): the
-## enemy flinches, or runs off once out of health. It crumbles on hitting or on reaching the ground.
+## enemy flinches, or runs off once out of health. A tree's trunk or crown stops it
+## (`Forest.blocks()`). It crumbles on hitting, on being stopped or on reaching the ground.
 
 @export var crumble_scene: PackedScene
 
@@ -14,6 +15,8 @@ const COLOR := Color("#5b2f1a")
 ## Past this many times its flight to the aimed point, it crumbles wherever it is (a throw straight
 ## up never comes down otherwise).
 const MAX_FLIGHT := 4.0
+## Points of its flight checked against the trees each tick (so it never flies through a trunk).
+const TREE_CHECKS := 3
 
 var _from: Vector2
 var _to: Vector2
@@ -26,6 +29,7 @@ var _damage: int = 1
 var _mud_slow: float = 0.0
 var _mud_time: float = 0.0
 var _size: Vector2 = Vector2(2, 2)
+var _forest: Forest
 
 @onready var _shadow: Node2D = $Shadow
 
@@ -34,6 +38,7 @@ func _ready() -> void:
 	# Hits are found in height by the clod itself, not by the area.
 	monitoring = false
 	monitorable = false
+	_forest = get_tree().get_first_node_in_group("forest") as Forest
 
 
 ## Thrown by `crook` from `start_height` px above `from` (on the ground) toward `target` (x, y: point
@@ -69,8 +74,16 @@ static func flight(from: Vector2, to: Vector2, start_height: float, end_height: 
 
 
 func _physics_process(delta: float) -> void:
+	var last_t := _time / _duration
 	_time += delta
 	var t := _time / _duration
+	if _forest:
+		for i in range(1, TREE_CHECKS + 1):
+			var check := flight(_from, _to, _start_height, _end_height, _arc, lerpf(last_t, t, float(i) / TREE_CHECKS))
+			if _forest.blocks(Vector2(check.x, check.y), check.z, _from):
+				_place(check)
+				_crumble()
+				return
 	var point := flight(_from, _to, _start_height, _end_height, _arc, t)
 	if point.z <= 0.0:
 		point.z = 0.0

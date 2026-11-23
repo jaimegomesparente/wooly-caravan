@@ -1,8 +1,8 @@
 class_name AimPreview
 extends Node2D
 ## While the shepherd can throw: the dotted arc each clod of a throw at the mouse would fly along
-## (`Shepherd.aim()`: onto the ground, or up to an enemy's body), and a small cross where it ends
-## (unless it is under the crosshair). Drawn in the world and
+## (`Shepherd.aim()`: onto the ground, or up to an enemy's body), and a small cross where it ends:
+## there, or where a tree stops it (unless it is under the crosshair). Drawn in the world and
 ## not snapped to the pixel grid, from the shepherd's position interpolated between physics ticks
 ## (as the engine draws him), so it moves smoothly with the sprites. Built in code by Main; the crosshair itself is `Crosshair`.
 
@@ -65,22 +65,30 @@ func _draw() -> void:
 
 
 ## The arc a clod would fly along from the crook to `target` (x, y on the ground, z height; as in
-## Clod), dotted at even distances along its path as seen. Returns where it ends, as seen.
+## Clod), up to the first tree that would stop it, dotted at even distances along its path as seen.
+## Returns where it ends, as seen.
 func _draw_arc(crook: CrookData, from: Vector2, target: Vector3, mouse: Vector2) -> Vector2:
 	var to := Vector2(target.x, target.y)
 	var arc := Clod.arc_top(crook, from.distance_to(to))
-	var end := _seen(Clod.flight(from, to, Shepherd.THROW_HEIGHT, target.z, arc, 1.0))
+	var forest := get_tree().get_first_node_in_group("forest") as Forest
 	var previous := _seen(Clod.flight(from, to, Shepherd.THROW_HEIGHT, target.z, arc, 0.0))
+	var end := previous
+	var dots: Array[Vector2] = []
 	var travelled := 0.0
 	for step in range(1, ARC_STEPS + 1):
-		var point := _seen(Clod.flight(from, to, Shepherd.THROW_HEIGHT, target.z, arc, float(step) / ARC_STEPS))
+		var point3 := Clod.flight(from, to, Shepherd.THROW_HEIGHT, target.z, arc, float(step) / ARC_STEPS)
+		var point := _seen(point3)
+		end = point
+		if forest and forest.blocks(Vector2(point3.x, point3.y), point3.z, from):
+			break
 		travelled += previous.distance_to(point)
 		previous = point
-		if travelled < ARC_SPACING:
-			continue
-		travelled -= ARC_SPACING
-		if point.distance_to(mouse) > ARC_CLEARANCE and point.distance_to(end) > ARC_CLEARANCE:
-			draw_rect(Rect2(point - Vector2(0.5, 0.5), Vector2.ONE), COLOR)
+		if travelled >= ARC_SPACING:
+			travelled -= ARC_SPACING
+			dots.append(point)
+	for dot in dots:
+		if dot.distance_to(mouse) > ARC_CLEARANCE and dot.distance_to(end) > ARC_CLEARANCE:
+			draw_rect(Rect2(dot - Vector2(0.5, 0.5), Vector2.ONE), COLOR)
 	return end
 
 

@@ -7,6 +7,8 @@ extends Node2D
 ## ground under them darken by levels toward the back. Between the pastures, lone trees and small
 ## groves stand on the walkable band, their trunks blocking the shepherd, the sheep and the dog (the
 ## sheep and the dog steer around them with `avoidance()`), with a flattened shade under each.
+## Every tree stops the clods flying through it, as drawn: its silhouette, read from the sheet
+## row by row, is turned round its trunk into a solid (`blocks()`).
 
 enum Wall { TOP, BOTTOM, LEFT, RIGHT }
 
@@ -67,8 +69,17 @@ enum Wall { TOP, BOTTOM, LEFT, RIGHT }
 @export var trail_shade_squash: float = 0.5
 @export var trail_shade_levels: Array[float] = [0.05, 0.45, 0.8]
 
+@export_group("Clod blocking")
+## A clod is stopped inside a tree's silhouette shrunk by this many px (one grazing its edge passes).
+@export var block_margin: float = 1.0
+
 ## Collision layer 5 (obstacle).
 const OBSTACLE_LAYER := 1 << 4
+## Size (px) of a cell of the grid of tree feet used by `blocks()`.
+const BLOCK_CELL := 16.0
+## Farthest (px) the middle of a slice of a tree may be from its trunk, when looking for trees near a
+## clod.
+const PROFILE_SHIFT := 4.0
 
 var _trail: Ground
 ## Feet of the trail trees, all together and by grove (a lone tree is a grove of one).
@@ -76,6 +87,14 @@ var _trunks: Array[Vector2] = []
 var _groves: Array[Array] = []
 ## What bodies steer around: one disc per grove (x, y: center; z: radius, px).
 var _obstacles: Array[Vector3] = []
+## Every tree (edge and trail), by grid cell: Vector2i -> Array of Vector3 (x, y: its foot; z: its
+## variant, the cell of the sheet).
+var _trees_by_cell: Dictionary = {}
+## Solid of each variant, by height above the foot (px): Vector2(x of its middle from the trunk,
+## radius), radius 0 where nothing is drawn.
+var _profiles: Array[PackedVector2Array] = []
+## Widest radius (px) of any variant.
+var _widest: float = 0.0
 var _edge_noise := FastNoiseLite.new()
 var _clearing_noise := FastNoiseLite.new()
 
@@ -86,6 +105,7 @@ func _ready() -> void:
 	_trail = get_tree().get_first_node_in_group("trail") as Ground
 	if _trail == null or tree_texture == null:
 		return
+	_read_profiles()
 	var seed_value := layout_seed + RunManager.trip_seed()
 	_edge_noise.seed = seed_value
 	_edge_noise.frequency = edge_frequency
@@ -131,10 +151,45 @@ func _add_tree(rng: RandomNumberGenerator, foot: Vector2, tint: Color) -> void:
 	tree.texture = tree_texture
 	tree.hframes = sheet_cells
 	tree.frame = rng.randi() % variants
+	_remember(to_global(foot), tree.frame)
 	tree.offset = Vector2(cell_size / 2.0 - trunk_x, -cell_size / 2.0)
 	tree.modulate = tint
 	tree.position = foot
 	add_child(tree)
+
+
+## Keeps a tree for `blocks()`.
+func _remember(foot: Vector2, variant: int) -> void:
+	var cell := Vector2i((foot / BLOCK_CELL).floor())
+	if not _trees_by_cell.has(cell):
+		_trees_by_cell[cell] = []
+	(_trees_by_cell[cell] as Array).append(Vector3(foot.x, foot.y, variant))
+
+
+## Reads the solid of each variant from the sheet: on each row of pixels, the span of what is drawn
+## (its middle and half its width), as a disc around the trunk at that height.
+func _read_profiles() -> void:
+	var image := tree_texture.get_image()
+	if image.is_compressed():
+		image.decompress()
+	for variant in variants:
+		var profile := PackedVector2Array()
+		for height in cell_size:
+			var row := cell_size - 1 - height
+			var left := -1
+			var right := -1
+			for x in cell_size:
+				if image.get_pixel(variant * cell_size + x, row).a > 0.5:
+					if left < 0:
+						left = x
+					right = x
+			if left < 0:
+				profile.append(Vector2.ZERO)
+				continue
+			var radius := (right + 1 - left) / 2.0
+			profile.append(Vector2((left + right + 1) / 2.0 - trunk_x, radius))
+			_widest = maxf(_widest, radius)
+		_profiles.append(profile)
 
 
 ## Groves first, then lone trees, each at a random free spot (given up after a few tries).
@@ -181,6 +236,30 @@ func _plant_trail(rng: RandomNumberGenerator) -> void:
 			_groves.append(feet)
 			break
 	add_child(body)
+
+
+## True when a clod `height` px above `ground` is inside a tree, as drawn (its silhouette at that
+## height, turned round its trunk). A tree spreading over `thrown_from` does not count: a clod
+## thrown from under a tree leaves it.
+func blocks(ground: Vector2, height: float, thrown_from: Vector2) -> bool:
+	var level := int(height)
+	if level < 0 or level >= cell_size or _profiles.is_empty():
+		return false
+	# The widest slice, plus how far off the trunk its middle may be.
+	var reach := Vector2.ONE * (_widest + PROFILE_SHIFT)
+	var from := Vector2i(((ground - reach) / BLOCK_CELL).floor())
+	var to := Vector2i(((ground + reach) / BLOCK_CELL).floor())
+	for cx in range(from.x, to.x + 1):
+		for cy in range(from.y, to.y + 1):
+			for tree: Vector3 in _trees_by_cell.get(Vector2i(cx, cy), []):
+				var foot := Vector2(tree.x, tree.y)
+				var slice := _profiles[int(tree.z)][level]
+				var radius := slice.y - block_margin
+				if radius <= 0.0 or thrown_from.distance_to(foot) < _widest:
+					continue
+				if ground.distance_to(foot + Vector2(slice.x, 0)) <= radius:
+					return true
+	return false
 
 
 ## Sideways push away from the groves and lone trees ahead of a body at `from` heading `direction`
