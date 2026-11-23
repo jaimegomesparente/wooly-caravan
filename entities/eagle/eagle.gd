@@ -58,11 +58,22 @@ var _carry_from_altitude: float = 0.0
 @onready var _body_y: float = _body.position.y
 
 
+func _init() -> void:
+	# Its body, above its talons (from its collision box).
+	hit_half_size = Vector2(10, 4)
+	hit_heights = Vector2(4, 16)
+
+
 ## Starts the attack: the first pass.
 func attack() -> void:
 	# Above everything, its shadow (z 1) included.
 	z_index = 2
 	_start_pass()
+
+
+## Height of its talons above its shadow.
+func altitude() -> float:
+	return _altitude
 
 
 func is_dangerous() -> bool:

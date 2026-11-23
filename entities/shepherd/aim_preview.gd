@@ -1,7 +1,8 @@
 class_name AimPreview
 extends Node2D
-## While the shepherd can throw: the dotted arc each clod of a throw at the mouse would fly along,
-## and a small cross where it would land (unless it is under the crosshair). Drawn in the world and
+## While the shepherd can throw: the dotted arc each clod of a throw at the mouse would fly along
+## (`Shepherd.aim()`: onto the ground, or up to an enemy's body), and a small cross where it ends
+## (unless it is under the crosshair). Drawn in the world and
 ## not snapped to the pixel grid, from the shepherd's position interpolated between physics ticks
 ## (as the engine draws him), so it moves smoothly with the sprites. Built in code by Main; the crosshair itself is `Crosshair`.
 
@@ -56,31 +57,36 @@ func _draw() -> void:
 	var from := shepherd.global_position
 	if _tracking:
 		from = _previous.lerp(_current, Engine.get_physics_interpolation_fraction())
-	var spots := shepherd.landing_spots(mouse, from)
-	for spot in spots:
-		_draw_arc(shepherd.crook, from, spot, mouse)
-	for spot in spots:
-		if spot.distance_to(mouse) > LANDING_MIN_DISTANCE:
+	for spot in shepherd.landing_spots(shepherd.aim(mouse), from):
+		var end := _draw_arc(shepherd.crook, from, spot, mouse)
+		if end.distance_to(mouse) > LANDING_MIN_DISTANCE:
 			for pixel in LANDING:
-				draw_rect(Rect2(spot + pixel - Vector2(0.5, 0.5), Vector2.ONE), COLOR)
+				draw_rect(Rect2(end + pixel - Vector2(0.5, 0.5), Vector2.ONE), COLOR)
 
 
-## The arc a clod would fly along from the crook to `landing` (as in Clod), dotted at even
-## distances along its path.
-func _draw_arc(crook: CrookData, from: Vector2, landing: Vector2, mouse: Vector2) -> void:
-	var arc := Clod.arc_top(crook, from.distance_to(landing))
-	var previous := from - Vector2(0, Shepherd.THROW_HEIGHT)
+## The arc a clod would fly along from the crook to `target` (x, y on the ground, z height; as in
+## Clod), dotted at even distances along its path as seen. Returns where it ends, as seen.
+func _draw_arc(crook: CrookData, from: Vector2, target: Vector3, mouse: Vector2) -> Vector2:
+	var to := Vector2(target.x, target.y)
+	var arc := Clod.arc_top(crook, from.distance_to(to))
+	var end := _seen(Clod.flight(from, to, Shepherd.THROW_HEIGHT, target.z, arc, 1.0))
+	var previous := _seen(Clod.flight(from, to, Shepherd.THROW_HEIGHT, target.z, arc, 0.0))
 	var travelled := 0.0
 	for step in range(1, ARC_STEPS + 1):
-		var t := float(step) / ARC_STEPS
-		var point := from.lerp(landing, t) - Vector2(0, Clod.height_at(Shepherd.THROW_HEIGHT, arc, t))
+		var point := _seen(Clod.flight(from, to, Shepherd.THROW_HEIGHT, target.z, arc, float(step) / ARC_STEPS))
 		travelled += previous.distance_to(point)
 		previous = point
 		if travelled < ARC_SPACING:
 			continue
 		travelled -= ARC_SPACING
-		if point.distance_to(mouse) > ARC_CLEARANCE and point.distance_to(landing) > ARC_CLEARANCE:
+		if point.distance_to(mouse) > ARC_CLEARANCE and point.distance_to(end) > ARC_CLEARANCE:
 			draw_rect(Rect2(point - Vector2(0.5, 0.5), Vector2.ONE), COLOR)
+	return end
+
+
+## A point in height (x, y on the ground, z height) as seen on screen.
+static func _seen(point: Vector3) -> Vector2:
+	return Vector2(point.x, point.y - point.z)
 
 
 func _shepherd() -> Shepherd:

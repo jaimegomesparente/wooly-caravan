@@ -30,6 +30,10 @@ const BUTT_SHAKE := 1.0
 @export var health: int = 1
 ## Where the stars circle (px from its origin) while it is stunned.
 @export var head_offset: Vector2 = Vector2(0, -14)
+## Its body, where a clod hits it: half its width and half its depth (px) on the ground around its
+## origin, and how high (px) it goes, bottom and top, above its altitude.
+@export var hit_half_size: Vector2 = Vector2(8.5, 3.0)
+@export var hit_heights: Vector2 = Vector2(0.0, 10.0)
 
 ## The sprite's tint (flash, grey, mud), made on the first hit.
 var _tint: ShaderMaterial
@@ -55,6 +59,32 @@ func can_be_butted() -> bool:
 ## True while the dog may chase it.
 func is_threat() -> bool:
 	return false
+
+
+## Height (px) of its origin above the ground (its position is the point on the ground below it).
+func altitude() -> float:
+	return 0.0
+
+
+## True when a clod `margin` px wide at `height` px above `ground` is in its body.
+func is_hit_at(ground: Vector2, height: float, margin: float = 0.0) -> bool:
+	var offset := ground - global_position
+	var bottom := altitude() + hit_heights.x
+	var top := altitude() + hit_heights.y
+	var on_ground := absf(offset.x) <= hit_half_size.x + margin and absf(offset.y) <= hit_half_size.y + margin
+	return on_ground and height >= bottom - margin and height <= top + margin
+
+
+## Its body as seen on screen, in world coordinates (the point on the ground lifted by the height).
+func seen_body() -> Rect2:
+	var top := altitude() + hit_heights.y
+	return Rect2(global_position + Vector2(-hit_half_size.x, -top),
+			Vector2(hit_half_size.x * 2.0, hit_heights.y - hit_heights.x))
+
+
+## Height (px) of the middle of its body: where a throw at it aims.
+func aim_height() -> float:
+	return altitude() + (hit_heights.x + hit_heights.y) / 2.0
 
 
 ## How close the sheep it holds is to being lost: 0 just caught, 1 lost (0 when holding none).

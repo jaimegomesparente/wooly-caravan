@@ -7,6 +7,9 @@ extends Resource
 ## Speed (px/s) of a clod's ground point, and longest throw (px).
 @export var speed: float = 160.0
 @export var max_range: float = 70.0
+## Highest point (px above the ground) a clod can be aimed at: an enemy flying higher is out of
+## reach.
+@export var max_height: float = 60.0
 ## Top of the arc (px) for each px of throw, and highest top.
 @export var arc_per_px: float = 0.25
 @export var max_arc: float = 30.0

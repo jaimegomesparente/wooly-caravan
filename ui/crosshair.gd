@@ -1,7 +1,7 @@
 class_name Crosshair
 extends CanvasLayer
-## The mouse cursor while the shepherd can throw: a pixel crosshair, red when the mouse is beyond
-## the crook's reach (the clod then falls short). A ring around it fills up during the throw's
+## The mouse cursor while the shepherd can throw: a pixel crosshair, red when what it aims at is
+## beyond the crook's reach or too high (`Shepherd.can_reach()`: the clod then falls short). A ring around it fills up during the throw's
 ## cooldown and flashes once full. The arcs and landing spots of the throw are drawn in the world
 ## by `AimPreview`. Elsewhere (screens, pause, pasture) the usual cursor shows. Built in code, drawn
 ## in code.
@@ -62,9 +62,7 @@ func _draw_cursor() -> void:
 	if shepherd == null:
 		return
 	var mouse := _canvas.get_local_mouse_position().round()
-	var world_mouse := shepherd.get_global_mouse_position()
-	var in_reach := shepherd.crook == null \
-			or world_mouse.distance_to(shepherd.global_position) <= shepherd.crook.max_range
+	var in_reach := shepherd.can_reach(shepherd.get_global_mouse_position())
 	_draw_pixels(mouse, CROSS, COLOR if in_reach else OUT_OF_REACH_COLOR)
 	if _readiness < 1.0 or _flash_timer > 0.0:
 		_draw_ring(mouse)
