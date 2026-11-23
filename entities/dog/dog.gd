@@ -17,6 +17,9 @@ enum State { WAIT, GATHER, GUARD, CHASE }
 ## Minimum |velocity.x| (px/s) to flip the sprite.
 const FLIP_THRESHOLD := 5.0
 const MODE_NAMES: Array[String] = ["Rassemblement", "Arrière-garde", "Chasse"]
+## The bark's ring spreads this far (px) past bark_distance, from this point (px from the feet).
+const BARK_WAVE_MARGIN := 4.0
+const BARK_WAVE_OFFSET := Vector2(0, -4)
 
 @export var data: DogData
 
@@ -243,9 +246,15 @@ func _move_to(point: Vector2, delta: float) -> void:
 	move_and_slide()
 
 
-## Plays the bark animation once (mode change, wolf chased); moving resumes the usual animations.
+## Plays the bark animation once (mode change, wolf chased), a ring spreading out to the bark's reach
+## where it stands; moving resumes the usual animations.
 func play_bark() -> void:
 	_sprite.play(&"bark")
+	var wave := BarkWave.new()
+	wave.radius = data.bark_distance + BARK_WAVE_MARGIN
+	wave.position = global_position + BARK_WAVE_OFFSET
+	wave.z_index = 1
+	add_sibling(wave)
 
 
 func _update_animation() -> void:
