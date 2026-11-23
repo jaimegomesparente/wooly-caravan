@@ -38,6 +38,8 @@ const ALERT_COLOR := Color("f0c040")
 const JOY_HEIGHT := 3.0
 const JOY_TIME := 0.3
 const JOY_DELAY_MAX := 0.4
+## Shorn: the sprite squashes, stretches, then settles (scale, time in s), its feet kept on the ground.
+const SHEAR_SQUASH: Array[Vector3] = [Vector3(1.3, 0.7, 0.05), Vector3(0.85, 1.2, 0.08), Vector3(1.0, 1.0, 0.12)]
 
 ## Toggled by the debug overlay (F3): each sheep draws a line to its target and a state dot.
 static var debug_draw: bool = false
@@ -313,11 +315,15 @@ func fends_off(enemy: Enemy) -> bool:
 	return true
 
 
-## Shorn on the pasture: hops, then its wool may grow back at the end of each graze.
+## Shorn on the pasture: hops and squashes out of its wool, then its wool may grow back at the end
+## of each graze.
 func shear() -> void:
 	shaved = true
 	_regrow_chance = config.regrow_chance
 	_hop_timer = HOP_TIME
+	var tween := create_tween()
+	for step in SHEAR_SQUASH:
+		tween.tween_property(_sprite, ^"scale", Vector2(step.x, step.y), step.z)
 
 
 ## Moved at once (testing aid): settles there.
@@ -849,7 +855,8 @@ func _update_animation() -> void:
 		hop = roundf(absf(sin(_hop_distance * PI / config.hop_length)) * config.hop_height)
 	if _joy_timer > 0.0:
 		hop = maxf(hop, roundf(sin(PI * (1.0 - _joy_timer / JOY_TIME)) * JOY_HEIGHT))
-	_sprite.position.y = _sprite_offset_y - hop
+	# Scaled (squash), the sprite stays on its feet.
+	_sprite.position.y = roundf(_sprite_offset_y * _sprite.scale.y) - hop
 
 	if ram and (_charge_target or _butt_timer > config.ram_cooldown - BUTT_TIME):
 		_play(&"butt", 1.0)
