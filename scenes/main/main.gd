@@ -22,6 +22,9 @@ extends Node2D
 @onready var _shearing: Shearing = $Shearing
 @onready var _dog_mode: DogModeLabel = $Hud/DogMode
 @onready var _trip_label: Label = $Hud/TripLabel
+@onready var _wool: WoolCounter = $Hud/Wool
+## Hides the HUD during the trip, but on a change and on the pasture.
+var _hud := HudFader.new()
 
 
 func _ready() -> void:
@@ -55,11 +58,15 @@ func _ready() -> void:
 			lamb.position = lamb.mother.position + Vector2(-6, 2)
 		add_child(lamb)
 	var count := RunManager.sheep + RunManager.lambs.size()
+	add_child(_hud)
+	_hud.track([_dog_mode, _trip_label, _wool])
+	_wool.changed.connect(_hud.flash.bind(_wool))
 	if dog_scene:
 		var dog := dog_scene.instantiate() as Dog
 		dog.position = _shepherd.position + Vector2(-16, 0)
 		_shepherd.dog_mode_called.connect(dog.next_mode)
 		dog.mode_changed.connect(_dog_mode.show_mode)
+		dog.mode_changed.connect(func(_mode_name: String) -> void: _hud.flash(_dog_mode))
 		add_child(dog)
 	_attacks.sheep_lost.connect(_trip.on_sheep_lost)
 
@@ -69,6 +76,7 @@ func _ready() -> void:
 	var banner := TripBanner.new()
 	add_child(banner)
 	banner.play(_trip_label.text)
+	_hud.flash()
 	_trip.finished.connect(_on_trip_finished)
 	_pasture.chosen.connect(_shop.open)
 	_shop.bought.connect(_shearing.recruit)
@@ -80,6 +88,7 @@ func _ready() -> void:
 ## the run is then over, as when no sheep is left.
 func _on_trip_finished(arrived: bool, saved: int, _total: int) -> void:
 	if arrived and not RunManager.is_last_trip():
+		_hud.pinned = true
 		_shearing.shorn.connect(_pasture.show_choice.bind(saved), CONNECT_ONE_SHOT)
 		_shearing.start()
 	else:

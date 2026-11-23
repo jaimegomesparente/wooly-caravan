@@ -2,7 +2,9 @@ class_name WoolCounter
 extends Control
 ## The run's wool, top left: icon and count. Wool collected pops out of where it was earned as an
 ## icon, flies to the counter along a curve and adds to the count when it lands, with a pop. The
-## count rolls one by one toward the wool there is (spent wool counts down).
+## count rolls one by one toward the wool there is (spent wool counts down), `changed` at each step.
+
+signal changed
 
 ## Time (s) and height (px) of the icon's hop out of the sheep, then time of its flight.
 @export var hop_time: float = 0.25
@@ -41,6 +43,7 @@ func _process(delta: float) -> void:
 	_roll_timer = minf(roll_step, roll_time / absi(_goal - _shown))
 	_shown += signi(_goal - _shown)
 	_label.text = str(_shown)
+	changed.emit()
 
 
 ## `amount` wool earned at `from` (canvas position): flies in, then counts.
