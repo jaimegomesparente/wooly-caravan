@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dsla4jtx1mnqu"]
 
 [ext_resource type="Script" uid="uid://cbctg6c6s2hbm" path="res://entities/wolf/wolf.gd" id="1_script"]
-[ext_resource type="Resource" path="res://resources/wolf.tres" id="2_data"]
+[ext_resource type="Resource" uid="uid://bermgtp343kji" path="res://resources/wolf.tres" id="2_data"]
 [ext_resource type="PackedScene" path="res://effects/dust.tscn" id="3_dust"]
 [ext_resource type="Texture2D" uid="uid://oow2ajod08ih" path="res://art/sprites/enemies/wolf/wolf-Sheet.png" id="4_yjxua"]
 [ext_resource type="PackedScene" path="res://effects/shadow.tscn" id="shadow_fx"]
@@ -224,12 +224,13 @@ collision_layer = 4
 collision_mask = 0
 motion_mode = 1
 script = ExtResource("1_script")
-health = 2
 data = ExtResource("2_data")
+health = 2
 
-[node name="Shadow" parent="." node_paths=PackedStringArray("sprite") instance=ExtResource("shadow_fx")]
-sprite = NodePath("../AnimatedSprite2D")
+[node name="Shadow" parent="." unique_id=1389044964 node_paths=PackedStringArray("sprite") instance=ExtResource("shadow_fx")]
+instance_shader_parameters/size = Vector2(16, 4)
 size = Vector2i(16, 4)
+sprite = NodePath("../AnimatedSprite2D")
 
 [node name="Dust" parent="." unique_id=1503153962 instance=ExtResource("3_dust")]
 min_speed = 50.0
