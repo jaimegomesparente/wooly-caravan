@@ -1,62 +1,85 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://d1gve467yoh7n"]
 
 [ext_resource type="Script" uid="uid://cmh40v4j52qdi" path="res://ui/power_card.gd" id="1_card"]
-[ext_resource type="Resource" path="res://resources/powers/mudball.tres" id="2_power"]
-[ext_resource type="FontFile" path="res://art/fonts/alagard.ttf" id="3_title"]
-[ext_resource type="FontFile" path="res://art/fonts/m5x7.ttf" id="4_text"]
+[ext_resource type="Resource" uid="uid://0af4wqi26hwq" path="res://resources/powers/mudball.tres" id="2_power"]
+[ext_resource type="Texture2D" uid="uid://qitwe3mtw24t" path="res://art/ui/power_cards/power_cards_frames.png" id="3_j6sfw"]
+[ext_resource type="FontFile" uid="uid://digkpk1dll4rj" path="res://art/fonts/alagard.ttf" id="3_title"]
+[ext_resource type="FontFile" uid="uid://cyi7e8b7pfw6o" path="res://art/fonts/m5x7.ttf" id="4_text"]
 
-[node name="PowerCard" type="Button"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_j6sfw"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kig27"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_mvxmv"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_lp0dh"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_x7njq"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bxu7n"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vt51d"]
+atlas = ExtResource("3_j6sfw")
+region = Rect2(0, 0, 80, 112)
+
+[node name="PowerCard" type="Button" unique_id=508070687]
 custom_minimum_size = Vector2(80, 112)
 offset_right = 80.0
 offset_bottom = 112.0
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_j6sfw")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_kig27")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_mvxmv")
+theme_override_styles/hover_pressed = SubResource("StyleBoxEmpty_lp0dh")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_x7njq")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_bxu7n")
 script = ExtResource("1_card")
 preview_power = ExtResource("2_power")
 
-[node name="Body" type="Control" parent="."]
-layout_mode = 3
+[node name="Body" type="Control" parent="." unique_id=1292889527]
 anchors_preset = 0
 offset_right = 80.0
 offset_bottom = 112.0
 mouse_filter = 2
 
-[node name="Window" type="ColorRect" parent="Body"]
+[node name="Window" type="ColorRect" parent="Body" unique_id=1096287744]
 layout_mode = 0
 offset_left = 12.0
-offset_top = 21.0
+offset_top = 19.0
 offset_right = 68.0
 offset_bottom = 57.0
 mouse_filter = 2
 color = Color(0.231373, 0.207843, 0.196078, 1)
 
-[node name="Frame" type="TextureRect" parent="Body"]
+[node name="Frame" type="TextureRect" parent="Body" unique_id=1097779954]
 layout_mode = 0
 offset_right = 80.0
 offset_bottom = 112.0
 mouse_filter = 2
+texture = SubResource("AtlasTexture_vt51d")
 
-[node name="Title" type="Label" parent="Body"]
+[node name="Title" type="Label" parent="Body" unique_id=1539392065]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 4.0
-offset_right = 64.0
-offset_bottom = 15.0
-mouse_filter = 2
+offset_left = 20.0
+offset_top = 5.0
+offset_right = 60.0
+offset_bottom = 16.0
+theme_override_colors/font_color = Color(0.11372549, 0.078431375, 0.0627451, 1)
 theme_override_fonts/font = ExtResource("3_title")
-theme_override_font_sizes/font_size = 16
-text = "Title"
+theme_override_font_sizes/font_size = 7
+text = "Mudball"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Text" type="Label" parent="Body"]
+[node name="Text" type="Label" parent="Body" unique_id=661395907]
 layout_mode = 0
-offset_left = 8.0
+offset_left = 9.0
 offset_top = 61.0
-offset_right = 72.0
+offset_right = 71.0
 offset_bottom = 98.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(0.113725, 0.0784314, 0.0627451, 1)
 theme_override_constants/line_spacing = 0
 theme_override_fonts/font = ExtResource("4_text")
-theme_override_font_sizes/font_size = 16
-text = "Description"
+theme_override_font_sizes/font_size = 8
+text = "Clods slow enemies by 40% for 2 s."
 autowrap_mode = 3
