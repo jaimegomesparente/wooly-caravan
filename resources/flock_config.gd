@@ -106,6 +106,9 @@ extends Resource
 @export var isolation_radius: float = 25.0
 ## finished_graze speed when the sheep has to leave (head comes up faster).
 @export var raise_speed_scale: float = 3.0
+## A stray met on the trail joins the flock when the shepherd or a sheep of the flock comes this
+## close (px).
+@export var stray_join_radius: float = 40.0
 
 @export_group("Wool")
 ## Chance, at the end of each graze, that a shorn sheep gets its wool back.

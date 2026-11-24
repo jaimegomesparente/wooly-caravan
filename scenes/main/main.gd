@@ -74,6 +74,7 @@ func _ready() -> void:
 	_attacks.sheep_captured.connect(_trip.on_sheep_captured)
 	_attacks.sheep_lost.connect(_trip.on_sheep_lost)
 	_trip.born.connect(_shearing.recruit.bind(&"lamb"))
+	($Strays as Strays).joined.connect(_trip.on_stray_joined)
 
 	_trip_label.text = "Trip %d/%d" % [RunManager.trip, RunManager.TRIPS]
 	# The theme's pixel font, at its size.

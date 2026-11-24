@@ -24,6 +24,7 @@
 [ext_resource type="PackedScene" uid="uid://dfuj5vfskm0fp" path="res://entities/sheep/lamb.tscn" id="22_lamb"]
 [ext_resource type="PackedScene" path="res://ui/shop_screen.tscn" id="23_shop"]
 [ext_resource type="PackedScene" uid="uid://b0uhtpcy23qha" path="res://entities/sheep/ram.tscn" id="24_ram"]
+[ext_resource type="Script" path="res://scenes/main/strays.gd" id="25_strays"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wool"]
 atlas = ExtResource("21_items")
@@ -72,6 +73,11 @@ wolf_scene = ExtResource("8_wolf")
 eagle_scene = ExtResource("16_eagle")
 packs = Array[int]([2, 3, 3])
 eagles = Array[int]([1, 1, 2])
+
+[node name="Strays" type="Node" parent="." unique_id=1730592846]
+script = ExtResource("25_strays")
+sheep_scene = ExtResource("3_sheep")
+lamb_scene = ExtResource("22_lamb")
 
 [node name="Shearing" type="Node" parent="." unique_id=1689612079 node_paths=PackedStringArray("attacks", "counter")]
 script = ExtResource("18_shearing")

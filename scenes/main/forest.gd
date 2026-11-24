@@ -262,6 +262,14 @@ func blocks(ground: Vector2, height: float, thrown_from: Vector2) -> bool:
 	return false
 
 
+## True when `point` is at least `margin` px away from every grove and lone tree of the trail.
+func is_clear(point: Vector2, margin: float) -> bool:
+	for obstacle in _obstacles:
+		if point.distance_to(Vector2(obstacle.x, obstacle.y)) < obstacle.z + margin:
+			return false
+	return true
+
+
 ## Sideways push away from the groves and lone trees ahead of a body at `from` heading `direction`
 ## (unit vector), each fading from 1 at its edge to 0 radius px away from it. One dead ahead pushes
 ## to the right.

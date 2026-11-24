@@ -1,6 +1,9 @@
 class_name Sheep
 extends CharacterBody2D
 
+## A stray joined the flock.
+signal joined
+
 enum Gait { REST, WALK, TROT, WANDER }
 ## Sub-states of REST: head up, lowering the head, grazing, raising the head.
 enum Rest { STAND, LOWERING, GRAZING, RAISING }
@@ -55,6 +58,10 @@ var grow_trips: int = 0
 ## FlockConfig ram_*); it is never shorn.
 @export var ram: bool = false
 
+## Met alone on the trail (`Strays`): out of the flock (not in the `sheep` group, so nothing hunts
+## or herds it), it grazes where it stands until the shepherd or a sheep of the flock comes within
+## stray_join_radius, then joins it (`join()`). A stray lamb with a stray mother joins with her.
+var stray: bool = false
 ## Taken too far by its captor: lost for good (the captor takes it out of sight).
 var lost: bool = false
 ## Height (px) of its sprite above its position, while held up in the air (`hang()`).
@@ -151,6 +158,9 @@ func _ready() -> void:
 	_set_facing_left(cos(_heading) < 0.0)
 	_think_timer = randf_range(0.0, config.think_interval_max)
 	_sprite.animation_finished.connect(_on_animation_finished)
+	if stray:
+		remove_from_group("sheep")
+		add_to_group("stray")
 	_enter_rest()
 
 
@@ -172,6 +182,9 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		_update_animation()
 		queue_redraw()
+		return
+	if stray:
+		_stray_step(delta)
 		return
 	if _guide != null and not is_instance_valid(_guide):
 		_guide = _shepherd
@@ -340,6 +353,39 @@ func teleport(point: Vector2) -> void:
 	reset_physics_interpolation()
 	_guide = null
 	_enter_rest()
+
+
+## A stray grazes where it stands until the shepherd or a sheep of the flock comes close. A lamb
+## whose mother is a stray too waits for her.
+func _stray_step(delta: float) -> void:
+	var mother_stray := lamb and mother != null and is_instance_valid(mother) and mother.stray
+	if not mother_stray:
+		var near := global_position.distance_to(_shepherd.global_position) < config.stray_join_radius
+		for other: Node2D in get_tree().get_nodes_in_group("sheep"):
+			if near:
+				break
+			near = global_position.distance_to(other.global_position) < config.stray_join_radius
+		if near:
+			join()
+			return
+	_speed = 0.0
+	velocity = Vector2.ZERO
+	_rest_step(delta, Vector2.ZERO)
+	_update_animation()
+	_update_debug_draw()
+
+
+## A stray joins the flock with a hop of joy, and so do its stray lambs.
+func join() -> void:
+	stray = false
+	remove_from_group("stray")
+	add_to_group("sheep")
+	_enter_rest()
+	_joy_timer = JOY_TIME
+	joined.emit()
+	for other: Sheep in get_tree().get_nodes_in_group("stray"):
+		if other.stray and other.lamb and other.mother == self:
+			other.join()
 
 
 ## Called by the enemy when the shepherd frees this sheep: it rejoins the flock.
@@ -577,7 +623,9 @@ func _rest_step(delta: float, separation: Vector2) -> Vector2:
 				var flock_radius := config.follow_gap * sqrt(get_tree().get_node_count_in_group("sheep")) * 0.6
 				var on_edge := global_position.distance_to(_flock_center()) > flock_radius
 				var chance := config.edge_wander_chance if on_edge else config.wander_chance
-				if _nearest_neighbor_distance() > config.isolation_radius * _temper(1.0) or randf() < chance:
+				if stray:
+					_set_rest(Rest.LOWERING)
+				elif _nearest_neighbor_distance() > config.isolation_radius * _temper(1.0) or randf() < chance:
 					_start_wander()
 				else:
 					_set_rest(Rest.LOWERING)

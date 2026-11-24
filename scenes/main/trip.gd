@@ -70,6 +70,11 @@ func _skip_to_pasture() -> void:
 			sheep.teleport(middle + Vector2.from_angle(randf() * TAU) * randf() * SKIP_RADIUS)
 
 
+## A stray met on the trail joined the flock: one more head to bring in.
+func on_stray_joined() -> void:
+	_total += 1
+
+
 func on_sheep_captured(_sheep: Sheep, _by: Enemy) -> void:
 	captures += 1
 
