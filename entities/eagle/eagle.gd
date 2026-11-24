@@ -142,13 +142,18 @@ func _physics_process(delta: float) -> void:
 	_update_shadow()
 	_update_sprite()
 	queue_redraw()
+	_marks.queue_redraw()
 
 
 func _draw() -> void:
-	if _state == State.TELEGRAPH and _target:
-		_draw_sight(to_local(_target.global_position + Vector2(0, -SHEEP_HEIGHT / 2.0)).round())
 	if Sheep.debug_draw and _target != null:
 		draw_line(Vector2.ZERO, to_local(_target.global_position), Color.MAGENTA, 1.0)
+
+
+## The sight on its target while it aims.
+func _draw_marks() -> void:
+	if _state == State.TELEGRAPH and _target:
+		_draw_sight(to_local(_target.global_position + Vector2(0, -SHEEP_HEIGHT / 2.0)).round())
 
 
 ## Four corner brackets around `center`.
@@ -158,8 +163,8 @@ func _draw_sight(center: Vector2) -> void:
 		# Horizontal then vertical arm, each a 1 px rect pointing back toward the center.
 		var arm_x := Rect2(tip, Vector2(-corner.x * SIGHT_CORNER, 1.0)).abs()
 		var arm_y := Rect2(tip, Vector2(1.0, -corner.y * SIGHT_CORNER)).abs()
-		draw_rect(arm_x, SIGHT_COLOR)
-		draw_rect(arm_y, SIGHT_COLOR)
+		_marks.draw_rect(arm_x, SIGHT_COLOR)
+		_marks.draw_rect(arm_y, SIGHT_COLOR)
 
 
 ## From the left screen edge, about at the height of the flock center, each pass a little different.

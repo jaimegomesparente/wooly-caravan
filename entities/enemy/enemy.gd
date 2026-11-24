@@ -45,6 +45,22 @@ var _mud_slows: int = 0
 ## Time (s) left stunned by a ram's butt: each enemy says what it does meanwhile.
 var _stun_timer: float = 0.0
 var _stars: StunStars
+## Draws its indicators (`_draw_marks()`) above everything in the world, the night's veil included;
+## each enemy redraws it every tick.
+var _marks: Node2D
+
+
+func _ready() -> void:
+	_marks = Node2D.new()
+	_marks.z_as_relative = false
+	_marks.z_index = Night.MARKS_Z
+	_marks.draw.connect(_draw_marks)
+	add_child(_marks)
+
+
+## Its indicators ("!", sight), drawn on `_marks`.
+func _draw_marks() -> void:
+	pass
 
 
 ## True while nearby sheep should panic.
@@ -127,6 +143,9 @@ func butted(direction: Vector2, damage: int, push: float, stun_time: float) -> v
 	if _stars == null or not is_instance_valid(_stars):
 		_stars = STUN_STARS.instantiate() as StunStars
 		_stars.position = head_offset
+		# Above the night's veil, like the other indicators.
+		_stars.z_as_relative = false
+		_stars.z_index = Night.MARKS_Z
 		add_child(_stars)
 	_stars.time = stun_time
 	var tween := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)

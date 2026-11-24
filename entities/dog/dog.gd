@@ -57,6 +57,8 @@ var _heading: float = 0.0
 var _speed: float = 0.0
 ## On the pasture between two trips: stops where it is and waits.
 var resting: bool = false
+## Draws the mode's icon above everything in the world, the night's veil included.
+var _marks: Node2D
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _shape: CollisionShape2D = $CollisionShape2D
@@ -68,11 +70,17 @@ var resting: bool = false
 func _ready() -> void:
 	data = RunManager.settings(data) as DogData
 	_goal = global_position
+	_marks = Node2D.new()
+	_marks.z_as_relative = false
+	_marks.z_index = Night.MARKS_Z
+	_marks.draw.connect(_draw_marks)
+	add_child(_marks)
 	mode_changed.emit(MODE_NAMES[_mode])
 
 
 func _physics_process(delta: float) -> void:
 	_mode_icon_timer = maxf(_mode_icon_timer - delta, 0.0)
+	_marks.queue_redraw()
 	if resting:
 		_state = State.WAIT
 		_move_to(global_position, delta)
@@ -202,14 +210,14 @@ func is_pushing() -> bool:
 
 
 func _draw() -> void:
-	if _mode_icon_timer > 0.0 and (_mode_icon_timer > MODE_ICON_BLINK or int(_mode_icon_timer * 10.0) % 2 == 0):
-		_draw_mode_icon()
 	if Sheep.debug_draw:
 		draw_line(Vector2.ZERO, to_local(_goal), Color.ORANGE_RED if _flanking else Color.SADDLE_BROWN, 1.0)
 
 
-## The current mode's icon, outlined so it reads on the grass.
-func _draw_mode_icon() -> void:
+## The current mode's icon after a change (blinking at the end), outlined so it reads on the grass.
+func _draw_marks() -> void:
+	if _mode_icon_timer <= 0.0 or (_mode_icon_timer <= MODE_ICON_BLINK and int(_mode_icon_timer * 10.0) % 2 != 0):
+		return
 	var pixels: Array[Vector2] = []
 	var rows: Array = MODE_ICONS[_mode]
 	for y in rows.size():
@@ -217,9 +225,9 @@ func _draw_mode_icon() -> void:
 			if rows[y][x] == "#":
 				pixels.append(MODE_ICON_OFFSET + Vector2(x, y))
 	for pixel in pixels:
-		draw_rect(Rect2(pixel - Vector2.ONE, Vector2(3, 3)), MODE_ICON_OUTLINE)
+		_marks.draw_rect(Rect2(pixel - Vector2.ONE, Vector2(3, 3)), MODE_ICON_OUTLINE)
 	for pixel in pixels:
-		draw_rect(Rect2(pixel, Vector2.ONE), MODE_ICON_COLOR)
+		_marks.draw_rect(Rect2(pixel, Vector2.ONE), MODE_ICON_COLOR)
 
 
 ## Stays where it is while within `reach` of the shepherd. Once farther than reach + follow_slack,
@@ -286,7 +294,8 @@ func play_bark() -> void:
 	var wave := BarkWave.new()
 	wave.radius = data.bark_distance + BARK_WAVE_MARGIN
 	wave.position = global_position + BARK_WAVE_OFFSET
-	wave.z_index = 1
+	# Above the night's veil, like the other indicators.
+	wave.z_index = Night.MARKS_Z
 	add_sibling(wave)
 
 

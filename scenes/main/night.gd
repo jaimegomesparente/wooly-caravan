@@ -5,9 +5,8 @@ extends Node2D
 ## the shepherd carries, whose light fades out in a few levels, dithered between them: the fade
 ## follows the shepherd smoothly (as he is drawn, between physics ticks) while the dithering
 ## pattern stays put on the world's pixels. What is drawn above OVERLAY_Z (MARKS_Z: the sheep's "!"
-## and rescue bar, the wolves' "!" and eyes, the aim preview at night) and the HUD and screens (on
-## their own layers) are never darkened. No eagle hunts at night; a wolf's eyes glow while it comes
-## through the forest (`Wolf`).
+## and rescue bar, the wolves' "!", the aim preview at night) and the HUD and screens (on their own
+## layers) are never darkened. No eagle hunts at night.
 
 const LANTERN_SHADER := preload("res://effects/lantern_light.gdshader")
 ## The night's veil is drawn at this z index; indicators are drawn at MARKS_Z, above it.

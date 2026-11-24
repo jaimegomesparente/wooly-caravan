@@ -52,7 +52,14 @@ func _send_pack(size: int, eagle_count: int) -> void:
 	var edge := Wolf.Edge.NEAREST
 	for i in size + eagle_count:
 		if i > 0:
-			await get_tree().create_timer(pack_stagger, false, true).timeout
+			# A timer of its own, freed with it: a trip left meanwhile (restart) never resumes here.
+			var stagger := Timer.new()
+			stagger.one_shot = true
+			stagger.process_callback = Timer.TIMER_PROCESS_PHYSICS
+			add_child(stagger)
+			stagger.start(pack_stagger)
+			await stagger.timeout
+			stagger.queue_free()
 		# The flock reached the pasture meanwhile: the rest of the pack stays in the forest.
 		if stopped:
 			break
