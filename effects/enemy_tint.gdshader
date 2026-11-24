@@ -1,5 +1,5 @@
 shader_type canvas_item;
-// Enemy tints done in code: a flash toward white when hit, grey once beaten (out of health), and a
+// Enemy tints done in code: a flash toward white when hit, grey once chased off, and a
 // muddy brown while slowed by mud.
 
 uniform float flash : hint_range(0.0, 1.0) = 0.0;

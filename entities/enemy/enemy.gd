@@ -8,7 +8,8 @@ signal sheep_lost(sheep: Sheep)
 ## Spawns and despawns this far (px) outside the visible screen.
 const OFFSCREEN_MARGIN := 24.0
 ## Every hit flashes the sprite white, fading over FLINCH_TIME s; a hit that leaves it some health
-## also makes it recoil (px), the last one turns it grey for good.
+## also makes it recoil (px). Chased off (out of health, barked at, made to drop its sheep), it turns
+## grey for good.
 const FLINCH_TIME := 0.12
 const FLINCH_RECOIL := 2.0
 const TINT_SHADER := preload("res://effects/enemy_tint.gdshader")
@@ -92,7 +93,7 @@ func carry_progress() -> float:
 	return 0.0
 
 
-## Barked at by the dog, or out of health: runs off (each enemy says how).
+## Barked at by the dog, or out of health: runs off, grey (each enemy says how).
 func scare() -> void:
 	pass
 

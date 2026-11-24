@@ -82,12 +82,13 @@ func carry_progress() -> float:
 	return clampf(1.0 - _edge_distance(_prey) / _carry_from, 0.0, 1.0)
 
 
-## Barked at by the dog: drops the dragged sheep, or gives up the attack, and runs off.
+## Barked at by the dog: drops the dragged sheep, or gives up the attack, and runs off, grey.
 func scare() -> void:
 	if _state == State.CARRY and _prey:
 		_let_go()
 	elif is_threat():
 		_leave(data.charge_speed)
+		_set_tint(&"grey", 1.0)
 
 
 func _physics_process(delta: float) -> void:
@@ -247,11 +248,13 @@ func _drag_prey() -> void:
 		_prey.global_position = global_position + point
 
 
-## Drops the dragged sheep (freed, it panics back to the flock) and runs off.
+## Chased off (barked at, or the shepherd came close): drops the dragged sheep (freed, it panics
+## back to the flock) and runs off, grey.
 func _let_go() -> void:
 	_prey.release()
 	_prey = null
 	_leave(data.charge_speed)
+	_set_tint(&"grey", 1.0)
 
 
 func _leave(speed: float) -> void:

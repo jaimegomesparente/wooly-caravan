@@ -95,6 +95,7 @@ func carry_progress() -> float:
 ## Barked at by the dog: drops the carried sheep on the ground below it, or gives up the dive, and
 ## flies off. Scared before diving (the flock reached the pasture), it ends its pass and goes away.
 func scare() -> void:
+	_set_tint(&"grey", 1.0)
 	if _state == State.CARRY and _prey:
 		_prey.release()
 		_prey.teleport(global_position)
