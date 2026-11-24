@@ -37,10 +37,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_show("Pick a power (testing)", RunManager.POWERS)
 
 
-func show_choice(saved: int) -> void:
+## After the trip report (`TripReport`).
+func show_choice() -> void:
 	_testing = false
-	_show("Trip %d/%d done: %d sheep\nChoose an upgrade" % [RunManager.trip, RunManager.TRIPS, saved],
-			RunManager.offer(CHOICES))
+	_show("Choose an upgrade", RunManager.offer(CHOICES))
 
 
 func _show(title: String, powers: Array[PowerData]) -> void:

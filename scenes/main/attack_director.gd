@@ -5,7 +5,9 @@ extends Node
 ## attack, that attack comes: its wolf pack, alternating between the top and bottom forest edges,
 ## then its eagles. E sends one more eagle at once, L one more wolf (testing aids).
 
-signal sheep_lost(sheep: Sheep)
+## A sheep caught, and a sheep lost, by `by`.
+signal sheep_captured(sheep: Sheep, by: Enemy)
+signal sheep_lost(sheep: Sheep, by: Enemy)
 
 @export var wolf_scene: PackedScene
 @export var eagle_scene: PackedScene
@@ -63,7 +65,8 @@ func _send_pack(size: int, eagle_count: int) -> void:
 ## Returns the forest edge the wolf comes out of.
 func _send_wolf(edge: Wolf.Edge = Wolf.Edge.NEAREST) -> Wolf.Edge:
 	var wolf := wolf_scene.instantiate() as Wolf
-	wolf.sheep_lost.connect(sheep_lost.emit)
+	wolf.sheep_captured.connect(sheep_captured.emit.bind(wolf))
+	wolf.sheep_lost.connect(sheep_lost.emit.bind(wolf))
 	# Beside Main's other children, so it is y-sorted with the sheep.
 	add_sibling(wolf)
 	return wolf.attack(edge)
@@ -71,6 +74,7 @@ func _send_wolf(edge: Wolf.Edge = Wolf.Edge.NEAREST) -> Wolf.Edge:
 
 func _send_eagle() -> void:
 	var eagle := eagle_scene.instantiate() as Eagle
-	eagle.sheep_lost.connect(sheep_lost.emit)
+	eagle.sheep_captured.connect(sheep_captured.emit.bind(eagle))
+	eagle.sheep_lost.connect(sheep_lost.emit.bind(eagle))
 	add_sibling(eagle)
 	eagle.attack()

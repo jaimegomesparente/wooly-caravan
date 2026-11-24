@@ -10,6 +10,8 @@ extends Node2D
 @export var lamb_grow_trips: Vector2i = Vector2i(2, 4)
 @export var spawn_radius: float = 60.0
 @export var dog_scene: PackedScene
+## What happened during the trip, shown on the pasture before the power choice.
+@export var trip_report_scene: PackedScene = preload("res://ui/trip_report.tscn")
 
 @onready var _shepherd: Shepherd = $Shepherd
 @onready var _ground: Ground = $Ground
@@ -25,6 +27,7 @@ extends Node2D
 @onready var _wool: WoolCounter = $Hud/Wool
 ## Hides the HUD during the trip, but on a change and on the pasture.
 var _hud := HudFader.new()
+var _report: TripReport
 
 
 func _ready() -> void:
@@ -68,6 +71,7 @@ func _ready() -> void:
 		dog.mode_changed.connect(_dog_mode.show_mode)
 		dog.mode_changed.connect(func(_mode_name: String) -> void: _hud.flash(_dog_mode))
 		add_child(dog)
+	_attacks.sheep_captured.connect(_trip.on_sheep_captured)
 	_attacks.sheep_lost.connect(_trip.on_sheep_lost)
 	_trip.born.connect(_shearing.recruit.bind(&"lamb"))
 
@@ -81,18 +85,21 @@ func _ready() -> void:
 	banner.play(_trip_label.text)
 	_hud.flash()
 	_trip.finished.connect(_on_trip_finished)
+	_report = trip_report_scene.instantiate() as TripReport
+	add_child(_report)
+	_report.closed.connect(_pasture.show_choice)
 	_pasture.chosen.connect(_shop.open)
 	_shop.bought.connect(_shearing.recruit)
 	_shop.closed.connect(_shearing.leave)
 	_trip.begin(count)
 
 
-## A flock that arrives on the pasture is shorn, then a power is chosen and recruits bought, unless it was the last trip:
-## the run is then over, as when no sheep is left.
+## A flock that arrives on the pasture is shorn and shown the trip report, then a power is chosen and
+## recruits bought, unless it was the last trip: the run is then over, as when no sheep is left.
 func _on_trip_finished(arrived: bool, saved: int, _total: int) -> void:
 	if arrived and not RunManager.is_last_trip():
 		_hud.pinned = true
-		_shearing.shorn.connect(_pasture.show_choice.bind(saved), CONNECT_ONE_SHOT)
+		_shearing.shorn.connect(_report.show_report.bind(_trip), CONNECT_ONE_SHOT)
 		_shearing.start()
 	else:
 		get_tree().paused = true

@@ -1,12 +1,18 @@
 class_name Trip
 extends Node
 ## One trip: ends when every remaining sheep stands in the end pasture (none being dragged away),
-## or when no sheep is left. Reports the result. N (testing aid) takes the whole flock, the shepherd
-## and the dog straight to the end pasture.
+## or when no sheep is left. Reports the result, and keeps what happened for the trip report: how
+## many sheep each kind of enemy took, and how many caught sheep were freed. N (testing aid) takes
+## the whole flock, the shepherd and the dog straight to the end pasture.
 
 signal finished(arrived: bool, saved: int, total: int)
 ## A sheep lost left a lamb (Pregnancy): it joins the flock, already counted in.
 signal born
+
+## Sheep lost, by who took them ("Wolves", "Eagles").
+var losses: Dictionary[String, int] = {}
+## Sheep caught, freed or not.
+var captures: int = 0
 
 var _total: int = 0
 var _lost: int = 0
@@ -16,7 +22,23 @@ var _running: bool = false
 func begin(total: int) -> void:
 	_total = total
 	_lost = 0
+	losses.clear()
+	captures = 0
 	_running = true
+
+
+## Head count of the trip: the flock that started it, and the lambs born on the way.
+func total() -> int:
+	return _total
+
+
+func lost() -> int:
+	return _lost
+
+
+## Caught sheep that were freed.
+func rescued() -> int:
+	return captures - _lost
 
 
 ## Spread of the flock (px) around the middle of the end pasture after N.
@@ -48,10 +70,16 @@ func _skip_to_pasture() -> void:
 			sheep.teleport(middle + Vector2.from_angle(randf() * TAU) * randf() * SKIP_RADIUS)
 
 
-## Counts the loss; with Pregnancy, a sheep (not a lamb) may leave a lamb, as long as some of the
-## flock is left to take it in.
-func on_sheep_lost(sheep: Sheep) -> void:
+func on_sheep_captured(_sheep: Sheep, _by: Enemy) -> void:
+	captures += 1
+
+
+## Counts the loss, by who took it; with Pregnancy, a sheep (not a lamb) may leave a lamb, as long
+## as some of the flock is left to take it in.
+func on_sheep_lost(sheep: Sheep, by: Enemy) -> void:
 	_lost += 1
+	var taker := "Eagles" if by is Eagle else "Wolves"
+	losses[taker] = losses.get(taker, 0) + 1
 	if sheep.lamb or randf() >= sheep.config.lamb_chance():
 		return
 	if get_tree().get_node_count_in_group("sheep") == 0:
