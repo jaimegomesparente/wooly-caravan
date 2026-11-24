@@ -153,3 +153,17 @@ extends Resource
 ## Trail trees closer than this (px) ahead make the sheep veer aside, harder the closer they are.
 @export var tree_avoid_radius: float = 14.0
 @export var tree_avoid_strength: float = 1.5
+
+@export_group("Pregnancy")
+## Times the Pregnancy power was taken: a sheep lost (not a lamb) then leaves a lamb in the flock,
+## with birth_chance, plus birth_chance_step for each time after the first.
+@export var pregnancies: int = 0
+@export_range(0.0, 1.0) var birth_chance: float = 0.25
+@export_range(0.0, 1.0) var birth_chance_step: float = 0.1
+
+
+## Chance that a sheep lost leaves a lamb (0 without Pregnancy).
+func lamb_chance() -> float:
+	if pregnancies <= 0:
+		return 0.0
+	return minf(birth_chance + birth_chance_step * (pregnancies - 1), 1.0)

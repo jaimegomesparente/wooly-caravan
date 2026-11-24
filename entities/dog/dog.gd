@@ -66,6 +66,7 @@ var resting: bool = false
 
 
 func _ready() -> void:
+	data = RunManager.settings(data) as DogData
 	_goal = global_position
 	mode_changed.emit(MODE_NAMES[_mode])
 

@@ -5,6 +5,8 @@ extends Node
 ## and the dog straight to the end pasture.
 
 signal finished(arrived: bool, saved: int, total: int)
+## A sheep lost left a lamb (Pregnancy): it joins the flock, already counted in.
+signal born
 
 var _total: int = 0
 var _lost: int = 0
@@ -46,8 +48,16 @@ func _skip_to_pasture() -> void:
 			sheep.teleport(middle + Vector2.from_angle(randf() * TAU) * randf() * SKIP_RADIUS)
 
 
-func on_sheep_lost(_sheep: Sheep) -> void:
+## Counts the loss; with Pregnancy, a sheep (not a lamb) may leave a lamb, as long as some of the
+## flock is left to take it in.
+func on_sheep_lost(sheep: Sheep) -> void:
 	_lost += 1
+	if sheep.lamb or randf() >= sheep.config.lamb_chance():
+		return
+	if get_tree().get_node_count_in_group("sheep") == 0:
+		return
+	_total += 1
+	born.emit()
 
 
 func _physics_process(_delta: float) -> void:

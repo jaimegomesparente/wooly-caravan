@@ -1,8 +1,8 @@
 extends Node
 ## State of the run (autoload `RunManager`), kept while the trip scene reloads: a run is TRIPS trips
 ## in a row, the flock that arrives starts the next one, and between two trips one power is chosen,
-## kept until the run ends. Powers change the run's own copy of the crook settings, never the base
-## resource. Going from one trip to the next, or to a new run, fades to black and back.
+## kept until the run ends. Powers change the run's own copies of the crook, flock and dog settings,
+## never the base resources. Going from one trip to the next, or to a new run, fades to black and back.
 
 const TRIPS := 5
 ## Time (s) of the fade to black, and of the fade back in.
@@ -15,6 +15,14 @@ const POWERS: Array[PowerData] = [
 	preload("res://resources/powers/long_throw.tres"),
 	preload("res://resources/powers/flat_throw.tres"),
 	preload("res://resources/powers/mudball.tres"),
+	preload("res://resources/powers/swift_hooves.tres"),
+	preload("res://resources/powers/tight_flock.tres"),
+	preload("res://resources/powers/hot_headed.tres"),
+	preload("res://resources/powers/pregnancy.tres"),
+	preload("res://resources/powers/loud_bark.tres"),
+	preload("res://resources/powers/quick_paws.tres"),
+	preload("res://resources/powers/keen_eye.tres"),
+	preload("res://resources/powers/relentless.tres"),
 ]
 
 ## Current trip, from 1.
@@ -36,7 +44,8 @@ var map_seed: int = randi()
 ## Wool shorn on the pastures, kept for the whole run.
 var wool: int = 0
 
-var _crook: CrookData
+## The run's copy of each base settings resource asked for (crook, flock, lamb, dog), by base.
+var _settings: Dictionary[Resource, Resource] = {}
 var _veil: ColorRect
 
 
@@ -60,7 +69,7 @@ func start_run() -> void:
 	lambs.clear()
 	powers.clear()
 	wool = 0
-	_crook = null
+	_settings.clear()
 	map_seed = randi()
 
 
@@ -127,24 +136,30 @@ func _fade(alpha: float) -> Tween:
 	return fade
 
 
-## The crook settings for this run: a copy of `base` with every power taken applied.
-func crook(base: CrookData) -> CrookData:
-	if _crook == null:
-		_crook = base.duplicate() as CrookData
+## The settings for this run (crook, flock, lamb or dog): a copy of `base` with every power taken
+## applied (each power only changes the settings of its target).
+func settings(base: Resource) -> Resource:
+	if not _settings.has(base):
+		var copy := base.duplicate()
 		for power in powers:
-			power.apply(_crook)
-	return _crook
+			power.apply(copy)
+		_settings[base] = copy
+	return _settings[base]
 
 
-## The run's crook settings as they are now (null before the shepherd first asked for them).
-func current_crook() -> CrookData:
-	return _crook
+## The run's settings `target`'s powers change, as they are now: the first copy made for it (the
+## sheep's before the lambs'), null before any was asked for.
+func current(target: PowerData.Target) -> Resource:
+	for copy: Resource in _settings.values():
+		if PowerData.target_of(copy) == target:
+			return copy
+	return null
 
 
 func take(power: PowerData) -> void:
 	powers.append(power)
-	if _crook:
-		power.apply(_crook)
+	for copy: Resource in _settings.values():
+		power.apply(copy)
 
 
 ## `count` different powers at random (fewer if the pool is smaller).

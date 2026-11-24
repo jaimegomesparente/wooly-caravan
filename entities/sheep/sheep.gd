@@ -136,6 +136,7 @@ var _overlay_drawn: bool = false
 
 
 func _ready() -> void:
+	config = RunManager.settings(config) as FlockConfig
 	_sprite_offset_x = _sprite.position.x
 	_shape_offset_x = _shape.position.x
 	_sprite_offset_y = _sprite.position.y

@@ -26,8 +26,9 @@ const PICK_HOLD := 0.25
 const LEAVE_TIME := 0.2
 ## Time (s) a card takes to go away, picked or not.
 const LEAVE_TOTAL := PICK_HOLD + LEAVE_TIME
-## How each crook setting reads on a hovered card: name, unit, decimals (-1: a percentage). A
-## setting missing here is not shown (arc_per_px goes with max_arc).
+## How each setting reads on a hovered card: name, unit, decimals (-1: a percentage), and the method
+## giving the value shown when it is not the setting itself. A setting missing here is not shown
+## (arc_per_px goes with max_arc).
 const STATS := {
 	&"throw_cooldown": ["Cooldown", " s", 2],
 	&"max_range": ["Reach", " px", 0],
@@ -38,6 +39,14 @@ const STATS := {
 	&"max_arc": ["Arc height", " px", 0],
 	&"mud_slow": ["Slow", "%", -1],
 	&"mud_time": ["Slow time", " s", 1],
+	&"trot_speed": ["Trot", " px/s", 0],
+	&"separation_radius": ["Spacing", " px", 1],
+	&"ram_cooldown": ["Recharge", " s", 1],
+	&"pregnancies": ["Lamb chance", "%", -1, &"lamb_chance"],
+	&"bark_distance": ["Bark reach", " px", 0],
+	&"run_speed": ["Speed", " px/s", 0],
+	&"gather_delay": ["Reaction", " s", 1],
+	&"bark_cooldown": ["Bark cooldown", " s", 1],
 }
 
 ## Editor preview only: the power whose title and description are shown.
@@ -74,24 +83,31 @@ func _ready() -> void:
 func setup(power: PowerData) -> void:
 	_show(power, power.target)
 	_description = power.description
-	_changes = changes(power, RunManager.current_crook())
+	_changes = changes(power, RunManager.current(power.target))
 
 
-## One line per crook setting `power` changes: its value in `crook` now, and after taking it
-## (empty without a crook).
-static func changes(power: PowerData, crook: CrookData) -> String:
-	if crook == null:
+## One line per setting `power` changes: its value in `settings` (the run's ones for its target) now,
+## and after taking it (empty without settings).
+static func changes(power: PowerData, settings: Resource) -> String:
+	if settings == null:
 		return ""
-	var after := crook.duplicate() as CrookData
+	var after := settings.duplicate()
 	power.apply(after)
 	var lines: PackedStringArray = []
 	for effect in power.effects:
 		if not STATS.has(effect.property):
 			continue
 		var stat: Array = STATS[effect.property]
-		lines.append("%s %s » %s%s" % [stat[0], _stat_value(crook.get(effect.property), stat[2]),
-				_stat_value(after.get(effect.property), stat[2]), stat[1]])
+		lines.append("%s %s » %s%s" % [stat[0], _stat_value(_stat_of(settings, effect.property, stat), stat[2]),
+				_stat_value(_stat_of(after, effect.property, stat), stat[2]), stat[1]])
 	return "\n".join(lines)
+
+
+## The value shown for `property` of `settings`: the setting itself, or what its method gives.
+static func _stat_of(settings: Resource, property: StringName, stat: Array) -> float:
+	if stat.size() > 3:
+		return settings.call(stat[3])
+	return settings.get(property)
 
 
 static func _stat_value(value: float, decimals: int) -> String:

@@ -69,6 +69,7 @@ func _ready() -> void:
 		dog.mode_changed.connect(func(_mode_name: String) -> void: _hud.flash(_dog_mode))
 		add_child(dog)
 	_attacks.sheep_lost.connect(_trip.on_sheep_lost)
+	_trip.born.connect(_shearing.recruit.bind(&"lamb"))
 
 	_trip_label.text = "Trip %d/%d" % [RunManager.trip, RunManager.TRIPS]
 	# The theme's pixel font, at its size.

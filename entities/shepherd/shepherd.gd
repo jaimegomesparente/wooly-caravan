@@ -31,7 +31,7 @@ var resting: bool = false
 
 func _ready() -> void:
 	if crook:
-		crook = RunManager.crook(crook)
+		crook = RunManager.settings(crook) as CrookData
 
 
 func _physics_process(delta: float) -> void:

@@ -44,7 +44,7 @@ func start() -> void:
 	shorn.emit()
 
 
-## A recruit bought in the shop (`sheep` or `lamb`) joins the flock in a burst of fluff, next to a
+## A recruit bought in the shop (`sheep` or `lamb`), or a lamb born during a trip, joins the flock in a burst of fluff, next to a
 ## sheep drawn at random: a sheep with its wool, or a lamb that sheep is the mother of. A `ram`
 ## takes the place of a sheep drawn at random among those that are not one yet (its lambs follow the
 ## ram).

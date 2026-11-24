@@ -1,8 +1,8 @@
 class_name PowerData
 extends Resource
-## An upgrade chosen between two trips, kept for the rest of the run. For now every power changes
-## the crook's settings (`CrookData`), and can be taken again (its effects add up). Its target picks
-## the card it is shown on (`PowerCard`).
+## An upgrade chosen between two trips, kept for the rest of the run. A power changes the settings of
+## its target (crook `CrookData`, sheep and lambs `FlockConfig`, dog `DogData`), and can be taken
+## again (its effects add up). Its target also picks the card it is shown on (`PowerCard`).
 
 ## In the order of the cards in `power_cards_frames.png`.
 enum Target { CROOK, SHEEP, DOG }
@@ -13,6 +13,18 @@ enum Target { CROOK, SHEEP, DOG }
 @export var effects: Array[PowerEffect] = []
 
 
-func apply(crook: CrookData) -> void:
+## Changes `settings` if they are its target's, otherwise leaves them as they are.
+func apply(settings: Resource) -> void:
+	if target_of(settings) != target:
+		return
 	for effect in effects:
-		effect.apply(crook)
+		effect.apply(settings)
+
+
+## The target whose powers change `settings`.
+static func target_of(settings: Resource) -> Target:
+	if settings is FlockConfig:
+		return Target.SHEEP
+	if settings is DogData:
+		return Target.DOG
+	return Target.CROOK
