@@ -159,6 +159,7 @@ func _ready() -> void:
 	_think_timer = randf_range(0.0, config.think_interval_max)
 	_sprite.animation_finished.connect(_on_animation_finished)
 	_marks = Node2D.new()
+	_marks.z_as_relative = false
 	_marks.z_index = Night.MARKS_Z
 	_marks.draw.connect(_draw_marks)
 	add_child(_marks)
@@ -714,7 +715,8 @@ func _flee_from(threat_position: Vector2, threat_velocity: Vector2, radius: floa
 func _panic_step(separation: Vector2) -> Vector2:
 	var threat := _nearest_threat()
 	var radius := config.panic_radius * _temper(-1.0) + (config.panic_margin if _panicking else 0.0)
-	var to_mother := lamb and mother != null and is_instance_valid(mother)
+	# Never toward a mother being carried off (she is out of the flock then).
+	var to_mother := lamb and mother != null and is_instance_valid(mother) and mother.is_in_group("sheep")
 	var to_center := (mother.global_position if to_mother else _flock_center()) - global_position
 	var packed_radius := config.follow_gap * sqrt(get_tree().get_node_count_in_group("sheep")) * 0.6
 	var danger := Vector2.INF

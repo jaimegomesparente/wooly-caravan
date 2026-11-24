@@ -19,11 +19,13 @@ func _draw() -> void:
 	var shepherd := get_tree().get_first_node_in_group("shepherd") as Shepherd
 	if shepherd == null:
 		return
+	# The run's settings, as the sheep use them (powers taken).
+	var config := RunManager.settings(flock_config) as FlockConfig
 	var trail := shepherd.get_trail()
 	if trail.size() >= 2:
 		draw_polyline(trail, Color(1, 1, 1, 0.5), 1.0)
-	draw_circle(shepherd.trail_point(flock_config.trail_lag), 2.0, Color.CYAN)
-	draw_arc(shepherd.global_position, flock_config.flight_radius, 0.0, TAU, 24, Color.RED, 1.0)
+	draw_circle(shepherd.trail_point(config.trail_lag), 2.0, Color.CYAN)
+	draw_arc(shepherd.global_position, config.flight_radius, 0.0, TAU, 24, Color.RED, 1.0)
 	for dog: Dog in get_tree().get_nodes_in_group("dog"):
-		var radius := flock_config.dog_flight_radius if dog.is_pushing() else flock_config.flight_radius
+		var radius := config.dog_flight_radius if dog.is_pushing() else config.flight_radius
 		draw_arc(dog.global_position, radius, 0.0, TAU, 32, Color.SADDLE_BROWN, 1.0)

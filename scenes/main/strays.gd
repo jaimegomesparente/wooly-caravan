@@ -13,6 +13,9 @@ signal joined
 @export_range(0.0, 1.0) var chance: float = 0.5
 ## Kept this far (px) from the groves and lone trees.
 @export var tree_margin: float = 16.0
+## Kept this far (px) from the pastures, beyond the reach of a sheep standing there
+## (FlockConfig.stray_join_radius), so it never joins a flock already arrived.
+@export var pasture_margin: float = 64.0
 
 enum Kind { SHEEP, LAMB, EWE_AND_LAMB }
 
@@ -30,8 +33,8 @@ func _place() -> void:
 	if trail == null:
 		return
 	var clearance := forest.wall_clearance if forest else 32.0
-	var area := Rect2(trail.patch_width + clearance, clearance,
-			trail.length - 2.0 * (trail.patch_width + clearance), trail.height - 2.0 * clearance)
+	var area := Rect2(trail.patch_width + pasture_margin, clearance,
+			trail.length - 2.0 * (trail.patch_width + pasture_margin), trail.height - 2.0 * clearance)
 	if area.size.x <= 0.0 or area.size.y <= 0.0:
 		return
 	var spot := Vector2.INF
