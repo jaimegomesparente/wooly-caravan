@@ -41,7 +41,9 @@ func _physics_process(_delta: float) -> void:
 	var between := trail.length - 2.0 * trail.patch_width
 	var point := trail.patch_width + between * (_next_attack + 1) / (packs.size() + 1)
 	if shepherd.global_position.x >= point:
-		_send_pack(packs[_next_attack], eagles[_next_attack] if _next_attack < eagles.size() else 0)
+		# No eagle hunts at night.
+		var eagle_count := eagles[_next_attack] if _next_attack < eagles.size() and not Night.active else 0
+		_send_pack(packs[_next_attack], eagle_count)
 		_next_attack += 1
 
 

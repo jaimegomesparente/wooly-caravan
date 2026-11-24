@@ -134,8 +134,8 @@ var _alert_cooldown: float = 0.0
 ## Time (s) left before a hop of joy starts, and of the hop.
 var _joy_delay: float = 0.0
 var _joy_timer: float = 0.0
-## True while something besides the debug lines is drawn (redrawn once more after, to clear it).
-var _overlay_drawn: bool = false
+## Draws the "!" and the rescue bar above everything in the world (the night's veil included).
+var _marks: Node2D
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var _shape: CollisionShape2D = $CollisionShape2D
@@ -158,6 +158,10 @@ func _ready() -> void:
 	_set_facing_left(cos(_heading) < 0.0)
 	_think_timer = randf_range(0.0, config.think_interval_max)
 	_sprite.animation_finished.connect(_on_animation_finished)
+	_marks = Node2D.new()
+	_marks.z_index = Night.MARKS_Z
+	_marks.draw.connect(_draw_marks)
+	add_child(_marks)
 	if stray:
 		remove_from_group("sheep")
 		add_to_group("stray")
@@ -177,6 +181,7 @@ func _physics_process(delta: float) -> void:
 		if _joy_delay <= 0.0:
 			_joy_timer = JOY_TIME
 	_joy_timer = maxf(_joy_timer - delta, 0.0)
+	_marks.queue_redraw()
 	if _captor:
 		_speed = 0.0
 		velocity = Vector2.ZERO
@@ -406,24 +411,26 @@ func cheer() -> void:
 	_joy_delay = randf_range(0.01, JOY_DELAY_MAX)
 
 
-# Redraw while debugging or showing the "!", plus once after to clear them.
+# Redraw while debugging, plus once after to clear the lines.
 func _update_debug_draw() -> void:
-	var overlay := _alert_timer > 0.0
-	if debug_draw or _debug_drawn or overlay or _overlay_drawn:
+	if debug_draw or _debug_drawn:
 		queue_redraw()
 	_debug_drawn = debug_draw
-	_overlay_drawn = overlay
 
 
-func _draw() -> void:
+## The "!" when startled, or the rescue bar while caught.
+func _draw_marks() -> void:
 	if _captor:
 		_draw_rescue_bar()
 	elif _alert_timer > 0.0:
 		var at := Vector2(roundf(_sprite.position.x), roundf(_sprite.position.y - _sprite_offset_y))
 		for pixel in ALERT_PIXELS:
-			draw_rect(Rect2(at + pixel - Vector2.ONE, Vector2(3, 3)), RESCUE_BAR_OUTLINE)
+			_marks.draw_rect(Rect2(at + pixel - Vector2.ONE, Vector2(3, 3)), RESCUE_BAR_OUTLINE)
 		for pixel in ALERT_PIXELS:
-			draw_rect(Rect2(at + pixel, Vector2.ONE), ALERT_COLOR)
+			_marks.draw_rect(Rect2(at + pixel, Vector2.ONE), ALERT_COLOR)
+
+
+func _draw() -> void:
 	if not debug_draw:
 		return
 	if _captor:
@@ -445,10 +452,10 @@ func _draw_rescue_bar() -> void:
 		return
 	# Over its head, lifted with it.
 	var at := RESCUE_BAR_AT - Vector2(0, roundf(lift))
-	draw_rect(Rect2(at - Vector2.ONE, Vector2(RESCUE_BAR_WIDTH + 2.0, 3.0)), RESCUE_BAR_OUTLINE)
+	_marks.draw_rect(Rect2(at - Vector2.ONE, Vector2(RESCUE_BAR_WIDTH + 2.0, 3.0)), RESCUE_BAR_OUTLINE)
 	var width := ceilf(left * RESCUE_BAR_WIDTH)
 	if width > 0.0:
-		draw_rect(Rect2(at, Vector2(width, 1.0)),
+		_marks.draw_rect(Rect2(at, Vector2(width, 1.0)),
 				RESCUE_BAR_URGENT_COLOR if urgent else RESCUE_BAR_COLOR)
 
 

@@ -19,6 +19,12 @@ const FLIP_THRESHOLD := 5.0
 ## Switches to another sheep only if it is clearly better by this much (px): farther from the flock
 ## center while approaching, closer to the wolf while charging.
 const RETARGET_MARGIN := 16.0
+## At night, its eyes glow on its head while it comes through the forest (drawn above the trees and
+## the night's veil): pixels from its feet, facing right (mirrored when flipped). Shut for BLINK_TIME
+## s every few seconds.
+const EYE_PIXELS: Array[Vector2] = [Vector2(5, -8), Vector2(7, -8)]
+const EYE_COLOR := Color("f8e070")
+const BLINK_TIME := 0.12
 
 @export var data: EnemyData
 
@@ -41,6 +47,18 @@ var _carry_from: float = 1.0
 @onready var _shape_offset_x: float = _shape.position.x
 ## Where the caught sheep stands (its feet), facing right; mirrored when the sprite is flipped.
 @onready var _prey_point: Marker2D = $PreyPoint
+## Draws the "!" and, at night, the eyes above everything in the world (the night's veil included).
+var _marks: Node2D
+## Time (s) left before its eyes blink (negative: shut).
+var _blink: float = 0.0
+
+
+func _ready() -> void:
+	_marks = Node2D.new()
+	_marks.z_index = Night.MARKS_Z
+	_marks.draw.connect(_draw_marks)
+	add_child(_marks)
+	_blink = randf_range(1.0, 3.0)
 
 
 ## Starts the attack from `edge`; returns the edge taken (never NEAREST). With no sheep left, the
@@ -131,19 +149,32 @@ func _physics_process(delta: float) -> void:
 	_update_facing()
 	_update_animation()
 	queue_redraw()
+	_blink -= delta
+	if _blink < -BLINK_TIME:
+		_blink = randf_range(1.5, 3.5)
+	_marks.queue_redraw()
 
 
 func _draw() -> void:
+	if Sheep.debug_draw and _target != null:
+		draw_line(Vector2.ZERO, to_local(_target.global_position), Color.MAGENTA, 1.0)
+
+
+## The blinking "!" while it howls, and at night its glowing eyes while it comes through the forest
+## (unless they blink).
+func _draw_marks() -> void:
 	if _state == State.TELEGRAPH and int(_timer * 8.0) % 2 == 0:
-		# Blinking "!" above the head, held inside the screen edge while the wolf is off screen.
+		# Above the head, held inside the screen edge while the wolf is off screen.
 		var view := _view_rect().grow(-ALERT_MARGIN)
 		var alert := global_position + ALERT_OFFSET
 		alert = alert.clamp(view.position, view.end)
 		alert = (to_local(alert)).round()
-		draw_rect(Rect2(alert + Vector2(-1, -4), Vector2(2, 5)), Color.RED)
-		draw_rect(Rect2(alert + Vector2(-1, 2), Vector2(2, 2)), Color.RED)
-	if Sheep.debug_draw and _target != null:
-		draw_line(Vector2.ZERO, to_local(_target.global_position), Color.MAGENTA, 1.0)
+		_marks.draw_rect(Rect2(alert + Vector2(-1, -4), Vector2(2, 5)), Color.RED)
+		_marks.draw_rect(Rect2(alert + Vector2(-1, 2), Vector2(2, 2)), Color.RED)
+	if Night.active and _state == State.PROWL and _blink >= 0.0:
+		for pixel in EYE_PIXELS:
+			var at := Vector2(-pixel.x - 1.0, pixel.y) if _sprite.flip_h else pixel
+			_marks.draw_rect(Rect2(at, Vector2.ONE), EYE_COLOR)
 
 
 func _appear() -> void:

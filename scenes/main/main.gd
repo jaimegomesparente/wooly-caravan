@@ -83,7 +83,7 @@ func _ready() -> void:
 	add_child(Crosshair.new())
 	var banner := TripBanner.new()
 	add_child(banner)
-	banner.play(_trip_label.text)
+	banner.play(_trip_label.text + (" - Night" if Night.active else ""))
 	_hud.flash()
 	_trip.finished.connect(_on_trip_finished)
 	_report = trip_report_scene.instantiate() as TripReport

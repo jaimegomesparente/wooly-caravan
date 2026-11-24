@@ -51,6 +51,9 @@ func _init() -> void:
 	y_sort_enabled = true
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# At night, above the night's veil (no tree hides them then).
+	if Night.active:
+		z_index = Night.MARKS_Z
 
 
 func _physics_process(_delta: float) -> void:
