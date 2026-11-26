@@ -280,6 +280,26 @@ func blocks(ground: Vector2, height: float, thrown_from: Vector2) -> bool:
 	return false
 
 
+## True when a tree drawn in front of a body whose feet are at `feet_y` (its foot lower down, y-sorted)
+## covers `point` of that body on screen, as drawn (its silhouette, `_profiles`).
+func hides(point: Vector2, feet_y: float) -> bool:
+	if _profiles.is_empty():
+		return false
+	var reach := _widest + PROFILE_SHIFT
+	var from := Vector2i(floori((point.x - reach) / BLOCK_CELL), floori(feet_y / BLOCK_CELL))
+	var to := Vector2i(floori((point.x + reach) / BLOCK_CELL), floori((point.y + cell_size) / BLOCK_CELL))
+	for cx in range(from.x, to.x + 1):
+		for cy in range(from.y, to.y + 1):
+			for tree: Vector3 in _trees_by_cell.get(Vector2i(cx, cy), []):
+				var level := int(tree.y - point.y)
+				if tree.y <= feet_y or level < 0 or level >= cell_size:
+					continue
+				var slice := _profiles[int(tree.z)][level]
+				if slice.y > 0.0 and absf(point.x - (tree.x + slice.x)) <= slice.y:
+					return true
+	return false
+
+
 ## True when `point` is at least `margin` px away from every grove and lone tree of the trail.
 func is_clear(point: Vector2, margin: float) -> bool:
 	for obstacle in _obstacles:

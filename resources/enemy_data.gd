@@ -8,6 +8,10 @@ extends Resource
 @export var turn_rate: float = 5.0
 ## Minimum time (s) it stands still with a blinking "!" before charging (also lasts the whole howl).
 @export var telegraph_time: float = 1.2
+## How far (px) it walks onto the band, out of the forest, before stopping to howl: past the trees
+## spilling onto it (`Forest.overflow`, 16 px) and their shade, so it is seen. It also walks on while
+## a tree drawn in front of it hides it (`Forest.hides()`).
+@export var telegraph_depth: float = 24.0
 
 @export_group("Charge")
 @export var charge_speed: float = 70.0

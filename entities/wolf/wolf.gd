@@ -177,7 +177,8 @@ func _appear() -> void:
 
 
 ## Walks toward the most isolated sheep (re-chosen on the way if another strays clearly farther) and
-## stops to telegraph as soon as it comes out of the forest edge, on screen or not.
+## stops to telegraph once out of the forest, on screen or not: data.telegraph_depth px onto the band
+## (past the trees spilling onto it and their shade) and with no tree drawn in front of it.
 func _prowl(delta: float) -> void:
 	var isolated := _most_isolated_sheep()
 	if isolated == null:
@@ -191,7 +192,8 @@ func _prowl(delta: float) -> void:
 				> _target.global_position.distance_to(center) + RETARGET_MARGIN:
 			_target = isolated
 	var to_target := _target.global_position - global_position
-	if _band().has_point(global_position):
+	var depth := data.telegraph_depth
+	if _band().grow_individual(0.0, -depth, 0.0, -depth).has_point(global_position) and not _hidden():
 		velocity = Vector2.ZERO
 		_heading = to_target.angle()
 		_state = State.TELEGRAPH
@@ -199,6 +201,18 @@ func _prowl(delta: float) -> void:
 		Sound.play(&"wolf_growl", global_position)
 		return
 	_steer(to_target, data.prowl_speed, data.turn_rate, delta)
+
+
+## True while a tree drawn in front of it covers its head, the middle of its body or its feet.
+func _hidden() -> bool:
+	var forest := get_tree().get_first_node_in_group("forest") as Forest
+	if forest == null:
+		return false
+	var feet := global_position.y
+	for point in [global_position + head_offset, seen_body().get_center(), global_position + Vector2(0, -1)]:
+		if forest.hides(point, feet):
+			return true
+	return false
 
 
 ## Runs at the target until it catches a sheep: never gives up, but switches to another sheep when
