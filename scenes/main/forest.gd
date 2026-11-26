@@ -3,8 +3,9 @@ extends Node2D
 ## The forest all around the trip, made of tree sprites in rows parallel to each wall. Its front line
 ## stands up to `overflow` px on the walkable band and recedes here and there (a smooth noise), with
 ## clearings where no tree grows. Its trees are y-sorted with the sheep, the dog and the wolves (keep
-## it a direct child of a y-sorted node): the bottom rows hide what walks behind them. Trees and the
-## ground under them darken by levels toward the back. Between the pastures, lone trees and small
+## it a direct child of a y-sorted node): the bottom rows hide what walks behind them. A shade laid
+## over the whole forest (`effects/forest_shade.gdshader`) darkens it, the trees, the ground and what
+## stands there alike, by dithered levels the deeper behind the front line. Between the pastures, lone trees and small
 ## groves stand on the walkable band, their trunks blocking the shepherd, the sheep and the dog (the
 ## sheep and the dog steer around them with `avoidance()`), with a flattened shade under each.
 ## Every tree stops the clods flying through it, as drawn: its silhouette, read from the sheet
@@ -39,12 +40,13 @@ enum Wall { TOP, BOTTOM, LEFT, RIGHT }
 @export var clearing_frequency: float = 0.05
 
 @export_group("Depth")
-## Levels from the front to the back, by depth (px behind the front line) where each starts: tree
-## tint, and ground shade (later levels draw over earlier ones; negative = in front of the trunks).
-@export var tint_starts: Array[float] = [0.0, 10.0, 30.0]
-@export var tint_colors: Array[Color] = [Color.WHITE, Color(0.62, 0.66, 0.72), Color(0.32, 0.34, 0.42)]
-@export var shade_starts: Array[float] = [-4.0, 4.0, 16.0]
-@export var shade_colors: Array[Color] = [Color(0.43, 0.52, 0.31), Color(0.3, 0.4, 0.23), Color(0.17, 0.22, 0.17)]
+## The forest's shade: from shade_start to shade_end px behind the front line (negative = in front
+## of the trunks), shade_levels levels from no change to shade_darkest (multiplied), dithered from
+## one to the next on the world's pixels.
+@export var shade_start: float = -4.0
+@export var shade_end: float = 40.0
+@export_range(2, 16) var shade_levels: int = 5
+@export var shade_darkest: Color = Color(0.3, 0.33, 0.42)
 
 @export_group("Trail trees")
 @export var lone_trees: int = 24
@@ -64,10 +66,12 @@ enum Wall { TOP, BOTTOM, LEFT, RIGHT }
 ## Shade of the trail trees: the whole inside of a grove (the outline of its trunks) is shaded, and
 ## the shade fades out across trail_shade_radius (px; vertical distances divided by
 ## trail_shade_squash, for a flat oval) around it; strength 1 inside, 0 at the radius, each level
-## starting at its threshold (colors: `shade_colors`).
+## (trail_shade_colors) starting at its threshold, dithered across dither_width px around it.
 @export var trail_shade_radius: float = 14.0
 @export var trail_shade_squash: float = 0.5
 @export var trail_shade_levels: Array[float] = [0.05, 0.45, 0.8]
+@export var trail_shade_colors: Array[Color] = [Color(0.43, 0.52, 0.31), Color(0.3, 0.4, 0.23), Color(0.17, 0.22, 0.17)]
+@export var dither_width: float = 8.0
 
 @export_group("Clod blocking")
 ## A clod is stopped inside a tree's silhouette shrunk by this many px (one grazing its edge passes).
@@ -80,6 +84,13 @@ const BLOCK_CELL := 16.0
 ## Farthest (px) the middle of a slice of a tree may be from its trunk, when looking for trees near a
 ## clod.
 const PROFILE_SHIFT := 4.0
+const SHADE_SHADER := preload("res://effects/forest_shade.gdshader")
+## The forest's shade is laid over everything in the world but the night and the indicators
+## (`Night.OVERLAY_Z`, `Night.MARKS_Z`).
+const SHADE_Z := 7
+## Ordered dithering thresholds (4x4 Bayer matrix, 0-15), by (y % 4) * 4 + x % 4, as in
+## `effects/dither.gdshaderinc`.
+const BAYER: Array[int] = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 
 var _trail: Ground
 ## Feet of the trail trees, all together and by grove (a lone tree is a grove of one).
@@ -126,36 +137,43 @@ func _ready() -> void:
 				var at := along + rng.randf_range(-jitter, jitter)
 				var tree_depth := depth + rng.randf() * jitter
 				if _out(side, at, tree_depth) < limits[side]:
-					_plant(rng, _point(side, at, _out(side, at, tree_depth)), tree_depth)
+					_plant(rng, _point(side, at, _out(side, at, tree_depth)))
 				along += spacing
 			depth += row_spacing
 
 	_plant_trail(rng)
 
+	# The forest's shade over everything in it (out past the camera limit).
+	var area := _trail.bounds().grow(_trail.edge_depth + cell_size)
 	var shade := Node2D.new()
-	# Below the trees and the entities, above the ground.
-	shade.z_index = -1
-	shade.draw.connect(_draw_shade.bind(shade))
+	shade.z_index = SHADE_Z
+	shade.material = _shade_material()
+	shade.draw.connect(func() -> void: shade.draw_rect(area, Color.WHITE))
 	add_child(shade)
+	# Below the trees and the entities, above the ground: the groves' shade.
+	var grove_shade := Node2D.new()
+	grove_shade.z_index = -1
+	grove_shade.draw.connect(_draw_grove_shades.bind(grove_shade))
+	add_child(grove_shade)
 
 
-func _plant(rng: RandomNumberGenerator, foot: Vector2, depth: float) -> void:
+func _plant(rng: RandomNumberGenerator, foot: Vector2) -> void:
 	foot = foot.round()
 	if _clearing_noise.get_noise_2dv(foot) > clearing_threshold:
 		return
-	_add_tree(rng, foot, tint_colors[_level(tint_starts, depth)] if not tint_colors.is_empty() else Color.WHITE)
+	_add_tree(rng, foot)
 
 
-func _add_tree(rng: RandomNumberGenerator, foot: Vector2, tint: Color) -> void:
+func _add_tree(rng: RandomNumberGenerator, foot: Vector2) -> Sprite2D:
 	var tree := Sprite2D.new()
 	tree.texture = tree_texture
 	tree.hframes = sheet_cells
 	tree.frame = rng.randi() % variants
 	_remember(to_global(foot), tree.frame)
 	tree.offset = Vector2(cell_size / 2.0 - trunk_x, -cell_size / 2.0)
-	tree.modulate = tint
 	tree.position = foot
 	add_child(tree)
+	return tree
 
 
 ## Keeps a tree for `blocks()`.
@@ -220,7 +238,7 @@ func _plant_trail(rng: RandomNumberGenerator) -> void:
 			var corners := PackedVector2Array()
 			var middle := Vector2.ZERO
 			for foot in feet:
-				_add_tree(rng, foot, Color.WHITE)
+				_add_tree(rng, foot)
 				middle += foot / feet.size()
 				var box := Rect2(foot - Vector2(trunk_size.x / 2.0, trunk_size.y), trunk_size)
 				corners.append_array([box.position, Vector2(box.end.x, box.position.y), box.end,
@@ -311,33 +329,40 @@ func _point(side: Wall, along: float, out: float) -> Vector2:
 	return Vector2(_trail.length + out, along)
 
 
-## Index of the last level whose start is at or before depth.
-func _level(starts: Array[float], depth: float) -> int:
-	var level := 0
-	for i in starts.size():
-		if depth >= starts[i]:
-			level = i
-	return level
+## The forest's shade: the shader finds each pixel's depth behind the front line from how far the
+## line recedes along each side (one row per side, one texel per px along it, as `_out()` gives it;
+## the shader holds the end values past the end of a side).
+func _shade_material() -> ShaderMaterial:
+	var top := _span(Wall.TOP)
+	var size := ceili(top.y) - floori(top.x)
+	var recess := Image.create(size, 4, false, Image.FORMAT_RF)
+	for row in 4:
+		var side: Wall = [Wall.TOP, Wall.BOTTOM, Wall.LEFT, Wall.RIGHT][row]
+		var origin := floori(top.x) if row < 2 else 0
+		for i in size:
+			# How far the front line recedes there (`_out()` = depth - overflow + recess).
+			recess.set_pixel(i, row, Color(_out(side, origin + i, 0.0) + overflow, 0.0, 0.0))
+	var material := ShaderMaterial.new()
+	material.shader = SHADE_SHADER
+	material.set_shader_parameter(&"start", shade_start)
+	material.set_shader_parameter(&"end", shade_end)
+	material.set_shader_parameter(&"levels", shade_levels)
+	material.set_shader_parameter(&"darkest", Vector3(shade_darkest.r, shade_darkest.g, shade_darkest.b))
+	material.set_shader_parameter(&"overflow", overflow)
+	material.set_shader_parameter(&"recess", ImageTexture.create_from_image(recess))
+	material.set_shader_parameter(&"along_origin", float(floori(top.x)))
+	material.set_shader_parameter(&"band", _trail.bounds().size)
+	return material
 
 
-## Each level is drawn 1 px stripe by 1 px stripe along each side, from its start out past the
-## camera limit, so its border follows the front line smoothly.
-func _draw_shade(canvas: Node2D) -> void:
-	var far := _trail.edge_depth + cell_size
-	for level in mini(shade_starts.size(), shade_colors.size()):
-		for side: Wall in [Wall.TOP, Wall.BOTTOM, Wall.LEFT, Wall.RIGHT]:
-			var span := _span(side)
-			for along in range(floori(span.x), ceili(span.y)):
-				var out := roundf(_out(side, along, shade_starts[level]))
-				var from := _point(side, along, out)
-				var to := _point(side, along + 1, far)
-				canvas.draw_rect(Rect2(from, to - from).abs(), shade_colors[level])
+func _draw_grove_shades(canvas: Node2D) -> void:
 	for feet: Array in _groves:
 		_draw_grove_shade(canvas, feet)
 
 
 ## The grove's outline in flattened space (y divided by trail_shade_squash): strength 1 inside,
-## fading to 0 trail_shade_radius away from it; drawn line by line, a run of one level per rect.
+## fading to 0 trail_shade_radius away from it, each level from its threshold, dithered across
+## dither_width px around it; drawn line by line, a run of one level per rect.
 func _draw_grove_shade(canvas: Node2D, feet: Array) -> void:
 	var flat := PackedVector2Array()
 	var box := Rect2(feet[0], Vector2.ZERO)
@@ -345,9 +370,13 @@ func _draw_grove_shade(canvas: Node2D, feet: Array) -> void:
 		box = box.expand(foot)
 		flat.append(Vector2(foot.x, foot.y / trail_shade_squash))
 	var outline := Geometry2D.convex_hull(flat) if flat.size() >= 3 else flat
-	var reach := Vector2(trail_shade_radius, trail_shade_radius * trail_shade_squash)
+	# Out to where the dithering of the faintest level ends.
+	var radius := trail_shade_radius + dither_width / 2.0
+	var reach := Vector2(radius, radius * trail_shade_squash)
 	box = box.grow_individual(reach.x, reach.y, reach.x, reach.y)
-	var levels := mini(trail_shade_levels.size(), shade_colors.size())
+	var levels := mini(trail_shade_levels.size(), trail_shade_colors.size())
+	# The dithering width in strength (it goes from 1 to 0 across trail_shade_radius px).
+	var width := maxf(dither_width / trail_shade_radius, 0.001)
 	for y in range(floori(box.position.y), ceili(box.end.y)):
 		var run_start := 0
 		var run_level := -1
@@ -356,12 +385,13 @@ func _draw_grove_shade(canvas: Node2D, feet: Array) -> void:
 			if x < ceili(box.end.x):
 				var point := Vector2(x + 0.5, (y + 0.5) / trail_shade_squash)
 				var strength := 1.0 - _outline_distance(outline, point) / trail_shade_radius
+				var threshold := (BAYER[posmod(y, 4) * 4 + posmod(x, 4)] + 0.5) / 16.0
 				for i in levels:
-					if strength >= trail_shade_levels[i]:
+					if clampf((strength - trail_shade_levels[i]) / width + 0.5, 0.0, 1.0) > threshold:
 						level = i
 			if level != run_level:
 				if run_level >= 0:
-					canvas.draw_rect(Rect2(run_start, y, x - run_start, 1), shade_colors[run_level])
+					canvas.draw_rect(Rect2(run_start, y, x - run_start, 1), trail_shade_colors[run_level])
 				run_start = x
 				run_level = level
 
