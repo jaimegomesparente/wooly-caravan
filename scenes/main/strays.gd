@@ -19,6 +19,10 @@ signal joined
 
 enum Kind { SHEEP, LAMB, EWE_AND_LAMB }
 
+## Where a lamb stands beside its mother, and the height (px) of a sheep above its feet.
+const LAMB_OFFSET := Vector2(-6, 2)
+const SHEEP_HEIGHT := 9.0
+
 
 func _ready() -> void:
 	# Once the forest has planted the trail trees.
@@ -40,7 +44,7 @@ func _place() -> void:
 	var spot := Vector2.INF
 	for attempt in 30:
 		var point := Vector2(randf_range(area.position.x, area.end.x), randf_range(area.position.y, area.end.y)).round()
-		if forest == null or forest.is_clear(point, tree_margin):
+		if forest == null or forest.is_clear(point, tree_margin) and _in_sight(forest, point):
 			spot = point
 			break
 	if spot == Vector2.INF:
@@ -52,7 +56,17 @@ func _place() -> void:
 			_add(lamb_scene, spot)
 		Kind.EWE_AND_LAMB:
 			var ewe := _add(sheep_scene, spot)
-			_add(lamb_scene, spot + Vector2(-6, 2), ewe)
+			_add(lamb_scene, spot + LAMB_OFFSET, ewe)
+
+
+## True when no tree drawn in front hides a sheep standing at `feet`, nor a lamb beside it (feet and
+## top of each, `Forest.hides()`): the bottom edge's crowns cover the band about 50 px deep.
+func _in_sight(forest: Forest, feet: Vector2) -> bool:
+	for at: Vector2 in [feet, feet + LAMB_OFFSET]:
+		for height: float in [1.0, SHEEP_HEIGHT]:
+			if forest.hides(at - Vector2(0, height), at.y):
+				return false
+	return true
 
 
 func _add(scene: PackedScene, at: Vector2, mother: Sheep = null) -> Sheep:
