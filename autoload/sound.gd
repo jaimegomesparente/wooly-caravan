@@ -11,9 +11,10 @@ const SFX_DIR := "res://audio/sfx/"
 const MUSIC_DIR := "res://audio/music/"
 const EXTENSIONS: PackedStringArray = ["wav", "ogg", "mp3"]
 ## The player's volumes (pause menu, Settings): steps from 0 (muted) to VOLUME_STEPS (full) for each
-## bus, kept in the player's `Settings` from one session to the next.
+## bus, kept in SETTINGS_PATH from one session to the next.
 const VOLUME_STEPS := 10
 const BUSES: Array[StringName] = [&"Master", &"Music", &"Sfx"]
+const SETTINGS_PATH := "user://settings.cfg"
 const SETTINGS_SECTION := "audio"
 
 var config: SoundConfig = preload("res://resources/sound_config.tres")
@@ -24,23 +25,27 @@ var _streams: Dictionary[String, Array] = {}
 var _last_played: Dictionary[StringName, int] = {}
 var _music: AudioStreamPlayer
 var _music_name: StringName = &""
+## The player's settings, as saved.
+var _settings := ConfigFile.new()
 
 
 func _ready() -> void:
 	# Sounds and fades go on while the game is paused (end screen).
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_settings.load(SETTINGS_PATH)
 	for bus in BUSES:
 		_apply_volume(bus)
 
 
 ## The player's volume of `bus`, in steps (0 muted, VOLUME_STEPS full).
 func volume(bus: StringName) -> int:
-	return clampi(int(Settings.get_value(SETTINGS_SECTION, bus, VOLUME_STEPS)), 0, VOLUME_STEPS)
+	return clampi(int(_settings.get_value(SETTINGS_SECTION, bus, VOLUME_STEPS)), 0, VOLUME_STEPS)
 
 
 ## Sets the player's volume of `bus` (steps) at once, and saves it.
 func set_volume(bus: StringName, level: int) -> void:
-	Settings.set_value(SETTINGS_SECTION, bus, clampi(level, 0, VOLUME_STEPS))
+	_settings.set_value(SETTINGS_SECTION, bus, clampi(level, 0, VOLUME_STEPS))
+	_settings.save(SETTINGS_PATH)
 	_apply_volume(bus)
 
 

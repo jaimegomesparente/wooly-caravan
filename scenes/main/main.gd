@@ -91,11 +91,6 @@ func _ready() -> void:
 	_report = trip_report_scene.instantiate() as TripReport
 	add_child(_report)
 	add_child(pause_menu_scene.instantiate())
-	if Tutorial.pending():
-		var tutorial := Tutorial.new()
-		add_child(tutorial)
-		_attacks.sheep_captured.connect(tutorial.on_sheep_captured)
-		_trip.finished.connect(tutorial.finish)
 	_report.closed.connect(_pasture.show_choice)
 	_pasture.chosen.connect(_shop.open)
 	_shop.bought.connect(_shearing.recruit)

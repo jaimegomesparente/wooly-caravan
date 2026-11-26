@@ -43,8 +43,6 @@ and a shop on the pasture between two trips.
   - spend wool in the **shop**: a sheep (10), a lamb (5) or a ram (15).
 
   The run ends after the fifth trip, or when no sheep is left; an end screen gives the result.
-- **Tutorial**: hints at the bottom of the screen during the first trip (moving, the dog's modes,
-  throwing, the goal, the first wolf, eagle and caught sheep), until one first trip is over.
 - **Pause menu** (Escape): resume, volume settings (saved), restart the run, quit.
 - **Sound**: every event and every music context is hooked up, but no sound file is there yet (see
   *Adding sounds*).
