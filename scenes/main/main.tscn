@@ -82,7 +82,6 @@ lamb_scene = ExtResource("22_lamb")
 
 [node name="Night" type="Node2D" parent="." unique_id=884127361]
 script = ExtResource("26_night")
-chance = 1.0
 
 [node name="Shearing" type="Node" parent="." unique_id=1689612079 node_paths=PackedStringArray("attacks", "counter")]
 script = ExtResource("18_shearing")
