@@ -129,6 +129,11 @@ func _reload() -> void:
 	_fade(0.0)
 
 
+## True while the screen fades to black or back in (between two trips, or to a new run).
+func is_fading() -> bool:
+	return _veil.modulate.a > 0.0
+
+
 ## The black veil fades to `alpha`, even while the game is paused.
 func _fade(alpha: float) -> Tween:
 	var fade := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)

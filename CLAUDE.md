@@ -16,7 +16,9 @@ Added since: a wolf (step 4), the trip band with an end screen (R restarts), the
 
 **Sound** (hooks ready, no file yet): the autoload `Sound` (`autoload/sound.gd`) plays files found by name, and a name with no file plays nothing, so a sound is added by dropping its file in: `Sound.play(name, at)` plays `audio/sfx/<name>.wav` (or `.ogg`, `.mp3`; or variants `<name>_1`, `<name>_2`... picked at random) on the `Sfx` bus, at a point of the world (`AudioStreamPlayer2D`, panned to its side of the screen) or, without `at`, in the middle (interface); `Sound.play_music(name)` crossfades to `audio/music/<name>.ogg` (or `.wav`, `.mp3`), looped, on the `Music` bus (buses in `default_bus_layout.tres`); a music with no file leaves the one playing on, and it goes on across the trip scene reloads. Settings in `SoundConfig` (`resources/sound_config.tres`): `pitch_spread` (each effect at +/-5% pitch), `repeat_interval` (the same effect never restarts sooner than 0.05 s), `panning_strength`, `max_distance`, `music_fade`, and `volumes` (dB by sound or music name). Effects: `throw`, `clod_hit` (enemy hit, health left), `enemy_ko` (no health left), `clod_crumble` (on the ground or a tree), `bark`, `wolf_howl` (comes out of the forest), `wolf_growl` (its red "!"), `eagle_cry` (its shadow passes), `eagle_dive`, `sheep_alert` (yellow "!"), `sheep_caught`, `sheep_lost`, `sheep_freed`, `ram_butt`, `stray_join`, `shear`, `puff` (lamb grows, recruit joins), and in the interface `wool` (an icon reaches the counter), `banner`, `power_pick`, `buy`, `refuse` (too dear), `click` (Continue). Music: `trip` or `night` during a trip, `attack` while an enemy is around (`AttackDirector`), `pasture` between two trips, `victory` / `defeat` on the end screen.
 
-Out of scope until explicitly requested: other dog postures (Vanguard, Circle) and the one-shot orders, enemies other than the wolf and the eagle, map, meta-progression, menus, tilemaps, shadows, other particles (only running dust and the clod's crumbs exist).
+**Pause**: Escape (action `pause`) pauses the game and shows the pause menu (`ui/pause_menu.tscn`, `PauseMenu`, added by `Main`) over a dark veil that takes the clicks: Resume (or Escape again), Restart run (`RunManager.restart()`), Quit; it does not open while the game is already paused (end screen, P testing screen) nor during a fade to black (`RunManager.is_fading()`), so the trip scene never reloads frozen.
+
+Out of scope until explicitly requested: other dog postures (Vanguard, Circle) and the one-shot orders, enemies other than the wolf and the eagle, map, meta-progression, menus other than the pause menu, tilemaps, shadows, other particles (only running dust and the clod's crumbs exist).
 
 **Do only the step you are asked to do, nothing more.** Do not add systems, menus or "nice to have" features.
 
@@ -117,6 +119,7 @@ Prototype uses only 2 orders (Go there, Fetch).
 - Check scripts: `godot --headless --quit` (from the project root)
 - Run the game: `godot --path .`
 - A run is 5 trips for now (`RunManager.TRIPS`, testing); between two trips the flock is shorn, the pasture screen offers 3 upgrades, click one, buy recruits in the shop, Continue, and the next trip fades in
+- Escape pauses: Resume (or Escape again), Restart run, Quit
 - On the end-of-run screen, R starts a new run
 - Space cycles the dog's mode (Gather, Rear guard, Hunt); the current mode is shown top left
 - Left click lobs a clod at the mouse

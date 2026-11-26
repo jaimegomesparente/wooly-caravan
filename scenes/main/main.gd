@@ -12,6 +12,8 @@ extends Node2D
 @export var dog_scene: PackedScene
 ## What happened during the trip, shown on the pasture before the power choice.
 @export var trip_report_scene: PackedScene = preload("res://ui/trip_report.tscn")
+## Escape pauses the game and shows it (resume, restart run, quit).
+@export var pause_menu_scene: PackedScene = preload("res://ui/pause_menu.tscn")
 
 @onready var _shepherd: Shepherd = $Shepherd
 @onready var _ground: Ground = $Ground
@@ -88,6 +90,7 @@ func _ready() -> void:
 	_trip.finished.connect(_on_trip_finished)
 	_report = trip_report_scene.instantiate() as TripReport
 	add_child(_report)
+	add_child(pause_menu_scene.instantiate())
 	_report.closed.connect(_pasture.show_choice)
 	_pasture.chosen.connect(_shop.open)
 	_shop.bought.connect(_shearing.recruit)
