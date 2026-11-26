@@ -82,8 +82,8 @@ Drop a file in the right folder under the right name and it plays; a name with n
 silent. Effects go in `audio/sfx/<name>.wav` (or `.ogg`, `.mp3`; variants `<name>_1`, `<name>_2`...
 are picked at random), music in `audio/music/<name>.ogg` (looped, crossfaded).
 
-- Effects: `throw`, `clod_hit`, `enemy_ko`, `clod_crumble`, `bark`, `wolf_howl`, `wolf_growl`,
-  `eagle_cry`, `eagle_dive`, `sheep_alert`, `sheep_caught`, `sheep_lost`, `sheep_freed`, `ram_butt`,
+- Effects: `throw`, `clod_hit`, `enemy_ko`, `clod_crumble`, `bark`, `wolf_howl`, `eagle_cry`,
+  `eagle_dive`, `sheep_alert`, `sheep_caught`, `sheep_lost`, `sheep_freed`, `ram_butt`,
   `stray_join`, `shear`, `puff`, and in the interface `wool`, `banner`, `power_pick`, `buy`,
   `refuse`, `click`
 - Music: `trip`, `night`, `attack` (while an enemy is around), `pasture`, `victory`, `defeat`

@@ -173,7 +173,6 @@ func _appear() -> void:
 	reset_physics_interpolation()
 	visible = true
 	_state = State.PROWL
-	Sound.play(&"wolf_howl", global_position)
 
 
 ## Walks toward the most isolated sheep (re-chosen on the way if another strays clearly farther) and
@@ -198,7 +197,7 @@ func _prowl(delta: float) -> void:
 		_heading = to_target.angle()
 		_state = State.TELEGRAPH
 		_timer = data.telegraph_time
-		Sound.play(&"wolf_growl", global_position)
+		Sound.play(&"wolf_howl", global_position)
 		return
 	_steer(to_target, data.prowl_speed, data.turn_rate, delta)
 
