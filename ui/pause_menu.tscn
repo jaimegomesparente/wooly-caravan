@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://ui/pause_menu.gd" id="1_script"]
+[ext_resource type="Script" path="res://ui/volume_bar.gd" id="2_volume"]
 
 [node name="PauseMenu" type="CanvasLayer"]
 process_mode = 3
@@ -33,17 +34,72 @@ theme_type_variation = &"HeadingLabel"
 text = "Paused"
 horizontal_alignment = 1
 
-[node name="Resume" type="Button" parent="Center/Box"]
+[node name="Buttons" type="VBoxContainer" parent="Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Resume" type="Button" parent="Center/Box/Buttons"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Resume"
 
-[node name="Restart" type="Button" parent="Center/Box"]
+[node name="SettingsButton" type="Button" parent="Center/Box/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Settings"
+
+[node name="Restart" type="Button" parent="Center/Box/Buttons"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Restart run"
 
-[node name="Quit" type="Button" parent="Center/Box"]
+[node name="Quit" type="Button" parent="Center/Box/Buttons"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Quit"
+
+[node name="Settings" type="VBoxContainer" parent="Center/Box"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Volumes" type="GridContainer" parent="Center/Box/Settings"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 2
+columns = 2
+
+[node name="VolumeLabel" type="Label" parent="Center/Box/Settings/Volumes"]
+layout_mode = 2
+text = "Volume"
+
+[node name="MasterBar" type="Control" parent="Center/Box/Settings/Volumes"]
+layout_mode = 2
+script = ExtResource("2_volume")
+bus = &"Master"
+
+[node name="MusicLabel" type="Label" parent="Center/Box/Settings/Volumes"]
+layout_mode = 2
+text = "Music"
+
+[node name="MusicBar" type="Control" parent="Center/Box/Settings/Volumes"]
+layout_mode = 2
+script = ExtResource("2_volume")
+bus = &"Music"
+
+[node name="EffectsLabel" type="Label" parent="Center/Box/Settings/Volumes"]
+layout_mode = 2
+text = "Effects"
+
+[node name="EffectsBar" type="Control" parent="Center/Box/Settings/Volumes"]
+layout_mode = 2
+script = ExtResource("2_volume")
+bus = &"Sfx"
+
+[node name="Back" type="Button" parent="Center/Box/Settings"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Back"
