@@ -41,7 +41,6 @@ func _init() -> void:
 
 ## Shows `text` once.
 func play(text: String) -> void:
-	Sound.play(&"banner")
 	var width := get_viewport().get_visible_rect().size.x
 	_strip.position = Vector2(0, STRIP_TOP)
 	_strip.size = Vector2(width, STRIP_HEIGHT)
@@ -54,6 +53,8 @@ func play(text: String) -> void:
 	_slide(outside_left)
 	var tween := create_tween()
 	tween.tween_interval(DELAY)
+	# The sound comes with the banner, once the screen is back from black.
+	tween.tween_callback(Sound.play.bind(&"banner"))
 	tween.tween_property(_strip, ^"modulate:a", 1.0, FADE_TIME)
 	tween.parallel().tween_method(_slide, outside_left, middle, SLIDE_IN_TIME) \
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
