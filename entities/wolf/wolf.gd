@@ -177,7 +177,8 @@ func _appear() -> void:
 
 ## Walks toward the most isolated sheep (re-chosen on the way if another strays clearly farther) and
 ## stops to telegraph once out of the forest, on screen or not: data.telegraph_depth px onto the band
-## (past the trees spilling onto it and their shade) and with no tree drawn in front of it.
+## (past the trees spilling onto it and their shade) and with no tree drawn in front of it, or once
+## data.telegraph_near px from its target (one grazing under the trees).
 func _prowl(delta: float) -> void:
 	var isolated := _most_isolated_sheep()
 	if isolated == null:
@@ -192,7 +193,11 @@ func _prowl(delta: float) -> void:
 			_target = isolated
 	var to_target := _target.global_position - global_position
 	var depth := data.telegraph_depth
-	if _band().grow_individual(0.0, -depth, 0.0, -depth).has_point(global_position) and not _hidden():
+	var band := _band()
+	var seen := band.grow_individual(0.0, -depth, 0.0, -depth).has_point(global_position) and not _hidden()
+	# A target grazing under the trees would let it reach it unseen: it howls there anyway.
+	var close := band.has_point(global_position) and to_target.length() <= data.telegraph_near
+	if seen or close:
 		velocity = Vector2.ZERO
 		_heading = to_target.angle()
 		_state = State.TELEGRAPH

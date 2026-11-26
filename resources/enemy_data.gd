@@ -12,6 +12,9 @@ extends Resource
 ## spilling onto it (`Forest.overflow`, 16 px) and their shade, so it is seen. It also walks on while
 ## a tree drawn in front of it hides it (`Forest.hides()`).
 @export var telegraph_depth: float = 24.0
+## It howls anyway once on the band and this close (px) to its target, even hidden: a target grazing
+## under the trees would otherwise let it reach it unseen and never howl.
+@export var telegraph_near: float = 32.0
 
 @export_group("Charge")
 @export var charge_speed: float = 70.0
