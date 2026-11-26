@@ -290,6 +290,7 @@ func _move_to(point: Vector2, delta: float) -> void:
 ## Plays the bark animation once (mode change, wolf chased), a ring spreading out to the bark's reach
 ## where it stands; moving resumes the usual animations.
 func play_bark() -> void:
+	Sound.play(&"bark", global_position)
 	_sprite.play(&"bark")
 	var wave := BarkWave.new()
 	wave.radius = data.bark_distance + BARK_WAVE_MARGIN

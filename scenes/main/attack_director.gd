@@ -28,6 +28,9 @@ var stopped: bool = false
 func _physics_process(_delta: float) -> void:
 	if stopped:
 		return
+	# The attack music while an enemy is around, the trip's own (day or night) otherwise.
+	var fighting := get_tree().get_node_count_in_group("enemy") > 0
+	Sound.play_music(&"attack" if fighting else &"night" if Night.active else &"trip")
 	if Input.is_action_just_pressed("spawn_eagle"):
 		_send_eagle()
 	if Input.is_action_just_pressed("spawn_wolf"):

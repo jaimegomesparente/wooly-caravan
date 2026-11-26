@@ -114,7 +114,9 @@ func _grow_lambs() -> void:
 		lamb.queue_free()
 
 
-func _puff(at: Vector2) -> void:
+## A burst of fluff at `at`, with its sound.
+func _puff(at: Vector2, sound: StringName = &"puff") -> void:
+	Sound.play(sound, at)
 	var fluff := fluff_scene.instantiate() as Node2D
 	fluff.position = at + Vector2(0, -5)
 	add_sibling(fluff)
@@ -122,6 +124,6 @@ func _puff(at: Vector2) -> void:
 
 func _shear(sheep: Sheep) -> void:
 	sheep.shear()
-	_puff(sheep.global_position)
+	_puff(sheep.global_position, &"shear")
 	RunManager.wool += wool_per_sheep
 	counter.collect(sheep.get_global_transform_with_canvas().origin + Vector2(0, -5), wool_per_sheep)

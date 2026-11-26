@@ -99,9 +99,11 @@ func _ready() -> void:
 ## recruits bought, unless it was the last trip: the run is then over, as when no sheep is left.
 func _on_trip_finished(arrived: bool, saved: int, _total: int) -> void:
 	if arrived and not RunManager.is_last_trip():
+		Sound.play_music(&"pasture")
 		_hud.pinned = true
 		_shearing.shorn.connect(_report.show_report.bind(_trip), CONNECT_ONE_SHOT)
 		_shearing.start()
 	else:
+		Sound.play_music(&"victory" if arrived else &"defeat")
 		get_tree().paused = true
 		_end_screen.show_result(arrived, saved, RunManager.flock_size)

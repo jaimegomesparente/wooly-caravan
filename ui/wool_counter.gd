@@ -79,6 +79,7 @@ func _fly(t: float, icon: Sprite2D, from: Vector2, to: Vector2) -> void:
 
 
 func _land(icon: Sprite2D, amount: int) -> void:
+	Sound.play(&"wool")
 	icon.queue_free()
 	_goal += amount
 	if _pop:

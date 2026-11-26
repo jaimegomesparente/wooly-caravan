@@ -56,6 +56,7 @@ func _physics_process(delta: float) -> void:
 ## keeps facing the walk).
 func _throw(mouse: Vector2) -> void:
 	_throw_timer = crook.throw_cooldown
+	Sound.play(&"throw", global_position)
 	for landing in landing_spots(aim(mouse)):
 		var clod := clod_scene.instantiate() as Clod
 		add_sibling(clod)

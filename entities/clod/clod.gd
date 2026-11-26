@@ -90,6 +90,7 @@ func _physics_process(delta: float) -> void:
 			var check := flight(_from, _to, _start_height, _end_height, _arc, lerpf(last_t, t, float(i) / TREE_CHECKS))
 			if _forest.blocks(Vector2(check.x, check.y), check.z, _from):
 				_place(check)
+				Sound.play(&"clod_crumble", global_position)
 				_crumble()
 				return
 	var point := flight(_from, _to, _start_height, _end_height, _arc, t)
@@ -99,6 +100,7 @@ func _physics_process(delta: float) -> void:
 	if _hit_enemy(point):
 		return
 	if point.z <= 0.0 or t >= MAX_FLIGHT:
+		Sound.play(&"clod_crumble", global_position)
 		_crumble()
 
 

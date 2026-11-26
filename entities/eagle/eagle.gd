@@ -181,6 +181,7 @@ func _start_pass() -> void:
 	reset_physics_interpolation()
 	visible = true
 	_state = State.PASS
+	Sound.play(&"eagle_cry", global_position)
 
 
 func _end_pass() -> void:
@@ -207,6 +208,7 @@ func _start_dive() -> void:
 	reset_physics_interpolation()
 	_timer = data.dive_time
 	_state = State.DIVE
+	Sound.play(&"eagle_dive", global_position)
 
 
 ## Straight down at the target, wherever it runs, and grabs it on landing.

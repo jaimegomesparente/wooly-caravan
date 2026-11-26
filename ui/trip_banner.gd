@@ -41,6 +41,7 @@ func _init() -> void:
 
 ## Shows `text` once.
 func play(text: String) -> void:
+	Sound.play(&"banner")
 	var width := get_viewport().get_visible_rect().size.x
 	_strip.position = Vector2(0, STRIP_TOP)
 	_strip.size = Vector2(width, STRIP_HEIGHT)

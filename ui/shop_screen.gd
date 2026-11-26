@@ -63,6 +63,7 @@ func _buy(card: Button, item: StringName, price: int) -> void:
 	if RunManager.wool < price:
 		_refuse(card)
 		return
+	Sound.play(&"buy")
 	RunManager.wool -= price
 	counter.spend(price)
 	bought.emit(item)
@@ -83,6 +84,7 @@ func _refresh() -> void:
 
 ## Too dear: the offer shakes sideways and flashes red, back to grey.
 func _refuse(card: Button) -> void:
+	Sound.play(&"refuse")
 	var home := _card_home(card)
 	var tween := _card_tween(card)
 	var shake_time := SHAKE_STEP * SHAKE_OFFSETS.size()
@@ -120,5 +122,6 @@ func _card_tween(card: Button) -> Tween:
 
 
 func _close() -> void:
+	Sound.play(&"click")
 	visible = false
 	closed.emit()

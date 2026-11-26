@@ -77,6 +77,7 @@ func _choose(power: PowerData, card: Button) -> void:
 	if _closing:
 		return
 	_closing = true
+	Sound.play(&"power_pick")
 	RunManager.take(power)
 	for child in _cards.get_children():
 		var power_card := child as PowerCard

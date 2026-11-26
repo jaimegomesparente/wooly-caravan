@@ -279,6 +279,7 @@ func _temper(direction: float) -> float:
 ## Called by an enemy that grabs this sheep: it leaves the flock until released. Lifted off the
 ## ground (`hang()`), it has no shadow.
 func capture(by: Node2D, lifted: bool = false) -> void:
+	Sound.play(&"sheep_caught", global_position)
 	_captor = by
 	if lifted:
 		_shadow.visible = false
@@ -331,6 +332,7 @@ func fends_off(enemy: Enemy) -> bool:
 	_hop_timer = HOP_TIME
 	var direction := enemy.global_position - global_position
 	_set_facing_left(direction.x < 0.0)
+	Sound.play(&"ram_butt", global_position)
 	enemy.butted(direction, config.ram_damage, config.ram_push, config.ram_stun_time)
 	return true
 
@@ -388,6 +390,7 @@ func join() -> void:
 	add_to_group("sheep")
 	_enter_rest()
 	_joy_timer = JOY_TIME
+	Sound.play(&"stray_join", global_position)
 	joined.emit()
 	for other: Sheep in get_tree().get_nodes_in_group("stray"):
 		if other.stray and other.lamb and other.mother == self:
@@ -396,6 +399,7 @@ func join() -> void:
 
 ## Called by the enemy when the shepherd frees this sheep: it rejoins the flock.
 func release() -> void:
+	Sound.play(&"sheep_freed", global_position)
 	_scare_point = _captor.global_position if _captor else global_position
 	_scare_timer = config.release_panic_time
 	_captor = null
@@ -739,6 +743,7 @@ func _panic_step(separation: Vector2) -> Vector2:
 		if not scared and _alert_cooldown <= 0.0:
 			_alert_timer = ALERT_TIME
 			_alert_cooldown = ALERT_COOLDOWN
+			Sound.play(&"sheep_alert", global_position)
 	_panicking = true
 
 	var away := global_position - danger

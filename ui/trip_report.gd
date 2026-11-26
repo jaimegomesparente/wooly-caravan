@@ -83,6 +83,7 @@ func _close() -> void:
 	if _closing:
 		return
 	_closing = true
+	Sound.play(&"click")
 	_continue.disabled = true
 	closed.emit()
 	var fade := create_tween().set_parallel()

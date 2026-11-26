@@ -123,11 +123,13 @@ func hit(direction: Vector2, damage: int = 1, mud_slow: float = 0.0, mud_time: f
 	if mud_slow > 0.0 and mud_time > 0.0:
 		_slow(mud_slow, mud_time)
 	if health <= 0:
+		Sound.play(&"enemy_ko", global_position)
 		HitStop.freeze(get_tree(), KO_STOP)
 		get_tree().call_group("camera", "shake", KO_SHAKE)
 		_set_tint(&"grey", 1.0)
 		scare()
 		return
+	Sound.play(&"clod_hit", global_position)
 	HitStop.freeze(get_tree(), HIT_STOP)
 	global_position += direction.normalized() * FLINCH_RECOIL
 
@@ -155,6 +157,7 @@ func butted(direction: Vector2, damage: int, push: float, stun_time: float) -> v
 
 ## `prey` is lost (no more rescue bar): a burst of wool where it is (`sheep_lost`).
 func _lose(prey: Sheep) -> void:
+	Sound.play(&"sheep_lost", prey.global_position)
 	var fluff := LOST_FLUFF.instantiate() as Node2D
 	fluff.position = prey.global_position + Vector2(0, -5 - prey.lift)
 	add_sibling(fluff)
