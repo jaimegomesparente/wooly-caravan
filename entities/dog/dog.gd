@@ -76,6 +76,8 @@ func _ready() -> void:
 	_marks.draw.connect(_draw_marks)
 	add_child(_marks)
 	mode_changed.emit(MODE_NAMES[_mode])
+	# Seen through the trees that hide it.
+	get_tree().call_group("forest", "track", self)
 
 
 func _physics_process(delta: float) -> void:

@@ -32,6 +32,8 @@ var resting: bool = false
 func _ready() -> void:
 	if crook:
 		crook = RunManager.settings(crook) as CrookData
+	# Seen through the trees that hide it.
+	get_tree().call_group("forest", "track", self)
 
 
 func _physics_process(delta: float) -> void:

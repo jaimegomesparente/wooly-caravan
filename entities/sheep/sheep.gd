@@ -167,6 +167,8 @@ func _ready() -> void:
 		remove_from_group("sheep")
 		add_to_group("stray")
 	_enter_rest()
+	# Seen through the trees that hide it.
+	get_tree().call_group("forest", "track", self)
 
 
 func _physics_process(delta: float) -> void:

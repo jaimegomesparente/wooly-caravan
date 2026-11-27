@@ -56,6 +56,8 @@ func _ready() -> void:
 	_marks.z_index = Night.MARKS_Z
 	_marks.draw.connect(_draw_marks)
 	add_child(_marks)
+	# Seen through the trees that hide it.
+	get_tree().call_group("forest", "track", self)
 
 
 ## Its indicators ("!", sight), drawn on `_marks`.

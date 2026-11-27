@@ -77,6 +77,12 @@ enum Wall { TOP, BOTTOM, LEFT, RIGHT }
 ## A clod is stopped inside a tree's silhouette shrunk by this many px (one grazing its edge passes).
 @export var block_margin: float = 1.0
 
+@export_group("Silhouettes")
+## A body hidden behind a tree shows through it as a silhouette dithered over the tree, in this
+## color: the flock, the shepherd and the dog; the enemies.
+@export var silhouette_friend: Color = Color("f3e8c8")
+@export var silhouette_enemy: Color = Color("c0242c")
+
 ## Collision layer 5 (obstacle).
 const OBSTACLE_LAYER := 1 << 4
 ## Size (px) of a cell of the grid of tree feet used by `blocks()`.
@@ -91,6 +97,11 @@ const SHADE_Z := 7
 ## Ordered dithering thresholds (4x4 Bayer matrix, 0-15), by (y % 4) * 4 + x % 4, as in
 ## `effects/dither.gdshaderinc`.
 const BAYER: Array[int] = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
+## Visibility layer 2: the bodies' masks (`BodyMask`), drawn only in the mask view, never on screen.
+## Layers cull their children too, so the masks' parents (this forest, Main) are on it as well.
+const MASK_LAYER := 1 << 1
+const TREE_SHADER := preload("res://effects/tree_silhouette.gdshader")
+const MASK_SHADER := preload("res://effects/body_mask.gdshader")
 
 var _trail: Ground
 ## Feet of the trail trees, all together and by grove (a lone tree is a grove of one).
@@ -108,6 +119,11 @@ var _profiles: Array[PackedVector2Array] = []
 var _widest: float = 0.0
 var _edge_noise := FastNoiseLite.new()
 var _clearing_noise := FastNoiseLite.new()
+## The silhouettes: the view of the bodies' masks (the same world, only MASK_LAYER, the same screen),
+## the masks (y-sorted like the bodies) and the trees' material that reads the view.
+var _mask_view: SubViewport
+var _masks: Node2D
+var _tree_material: ShaderMaterial
 
 
 func _ready() -> void:
@@ -116,6 +132,7 @@ func _ready() -> void:
 	_trail = get_tree().get_first_node_in_group("trail") as Ground
 	if _trail == null or tree_texture == null:
 		return
+	_setup_silhouettes()
 	_read_profiles()
 	var seed_value := layout_seed + RunManager.trip_seed()
 	_edge_noise.seed = seed_value
@@ -172,8 +189,57 @@ func _add_tree(rng: RandomNumberGenerator, foot: Vector2) -> Sprite2D:
 	_remember(to_global(foot), tree.frame)
 	tree.offset = Vector2(cell_size / 2.0 - trunk_x, -cell_size / 2.0)
 	tree.position = foot
+	tree.material = _tree_material
 	add_child(tree)
 	return tree
+
+
+## Shows `body` (its `AnimatedSprite2D`) as a silhouette wherever a tree hides it, an enemy's in red;
+## each body calls it once ready.
+func track(body: Node2D) -> void:
+	var sprite := body.get_node_or_null(^"AnimatedSprite2D") as AnimatedSprite2D
+	if _masks == null or sprite == null:
+		return
+	var mask := BodyMask.new()
+	mask.setup(body, sprite, body is Enemy, MASK_LAYER, MASK_SHADER)
+	_masks.add_child(mask)
+
+
+func _setup_silhouettes() -> void:
+	visibility_layer |= MASK_LAYER
+	var parent := get_parent() as CanvasItem
+	if parent:
+		parent.visibility_layer |= MASK_LAYER
+	get_viewport().canvas_cull_mask &= ~MASK_LAYER
+	_masks = Node2D.new()
+	_masks.y_sort_enabled = true
+	_masks.visibility_layer = MASK_LAYER
+	add_child(_masks)
+	_mask_view = SubViewport.new()
+	_mask_view.world_2d = get_viewport().world_2d
+	_mask_view.canvas_cull_mask = MASK_LAYER
+	_mask_view.transparent_bg = true
+	_mask_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(_mask_view)
+	_tree_material = ShaderMaterial.new()
+	_tree_material.shader = TREE_SHADER
+	_tree_material.set_shader_parameter(&"body_mask", _mask_view.get_texture())
+	_tree_material.set_shader_parameter(&"friend_color", silhouette_friend)
+	_tree_material.set_shader_parameter(&"enemy_color", silhouette_enemy)
+	# Once everything has moved this frame, camera included.
+	RenderingServer.frame_pre_draw.connect(_frame_mask_view)
+
+
+func _exit_tree() -> void:
+	if RenderingServer.frame_pre_draw.is_connected(_frame_mask_view):
+		RenderingServer.frame_pre_draw.disconnect(_frame_mask_view)
+
+
+## The mask view covers the screen as drawn: the window's pixels, the camera and the stretch.
+func _frame_mask_view() -> void:
+	var viewport := get_viewport()
+	_mask_view.size = get_window().size
+	_mask_view.canvas_transform = viewport.get_final_transform() * viewport.canvas_transform
 
 
 ## Keeps a tree for `blocks()`.
