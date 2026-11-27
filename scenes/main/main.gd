@@ -83,19 +83,27 @@ func _ready() -> void:
 	_trip_label.remove_theme_font_size_override(&"font_size")
 	add_child(AimPreview.new())
 	add_child(Crosshair.new())
-	var banner := TripBanner.new()
-	add_child(banner)
-	banner.play(_trip_label.text + (" - Night" if Night.active else ""))
-	_hud.flash()
 	_trip.finished.connect(_on_trip_finished)
 	_report = trip_report_scene.instantiate() as TripReport
 	add_child(_report)
 	add_child(pause_menu_scene.instantiate())
 	_report.closed.connect(_pasture.show_choice)
-	_pasture.chosen.connect(_shop.open)
 	_shop.bought.connect(_shearing.recruit)
 	_shop.closed.connect(_shearing.leave)
 	_trip.begin(count)
+	_open_trip()
+
+
+## A run opens with a power chosen, the game paused; then the trip's banner slides across.
+func _open_trip() -> void:
+	if RunManager.trip == 1 and RunManager.powers.is_empty():
+		_pasture.show_opening()
+		await _pasture.chosen
+	_pasture.chosen.connect(_shop.open)
+	var banner := TripBanner.new()
+	add_child(banner)
+	banner.play(_trip_label.text + (" - Night" if Night.active else ""))
+	_hud.flash()
 
 
 ## A flock that arrives on the pasture is shorn and shown the trip report, then a power is chosen and
